@@ -207,7 +207,8 @@ class OfficeScene:
             pyxel.line(cx + 22 * k, y, cx + 30 * k, y, ui.YELLOW)
             y += 30 * k
         if not built:
-            ui.text_center(cx, top - 16, "製造中", ui.YELLOW, border=ui.BLACK)
+            # 機体の上に出す。上のステータス欄に隠れるなら、欄のすぐ下へ
+            ui.text_center(cx, max(top - 16, self.lay.status_h + 6), "製造中", ui.YELLOW, border=ui.BLACK)
 
     def draw_rocket_in_hangar(self, cx, base, k, built=True):
         h = 190 * k
@@ -230,7 +231,8 @@ class OfficeScene:
             pyxel.line(cx - 30 * k, y, cx + 30 * k, y, ui.YELLOW)
             y += 30 * k
         if not built:
-            ui.text_center(cx, top - 16, "製造中", ui.YELLOW, border=ui.BLACK)
+            # 機体の上に出す。上のステータス欄に隠れるなら、欄のすぐ下へ
+            ui.text_center(cx, max(top - 16, self.lay.status_h + 6), "製造中", ui.YELLOW, border=ui.BLACK)
 
     def draw_message(self, speaker):
         lay = self.lay
