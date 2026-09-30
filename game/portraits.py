@@ -1,6 +1,7 @@
 """立ち絵の読み込みと表示。
 
-assets/portraits/<id>.png を読み込んで 128x128 の枠(360x360 の画面では 64x64)に表示する。
+assets/portraits/<id>.png を読み込んで 128x128 の枠(360x360 / 320x240 の画面では 64x64)に表示する。
+小さい画面では、64x64 用に描いた assets/portraits/<id>_64.png があればそちらを使う。
 PNG は 128x128 か 64x64 を想定し、枠に合わせて拡大・縮小する。
 ファイルがなければ名前入りの仮枠を出す。
 """
@@ -48,6 +49,9 @@ class Portraits:
             self.order.append(cid)
             return self.loaded[cid]
         path = ui.ASSETS / "portraits" / f"{cid}.png"
+        small = ui.ASSETS / "portraits" / f"{cid}_64.png"
+        if ui.SMALL and small.exists():
+            path = small
         if not path.exists():
             self.loaded[cid] = None
             return None
