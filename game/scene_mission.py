@@ -5,13 +5,24 @@ import random
 
 import pyxel
 
-from . import ui
+from . import audio, ui
 from .i18n import tr, trf
 from .missions import MissionRun
 
 ROCKET_W = 4.5  # 見やすさのため実寸(1.7 m)より太く描く
 SUBSTEPS = 2
 COUNTDOWN = 5.0
+
+# オープニングの飛行で画面に出す操作説明。(id, 文, 最短表示秒, 最長表示秒)
+# 最短を過ぎて該当する操作をしたか、最長を過ぎたら次へ進む
+TUTORIAL = [
+    ("intro", "Eagle 1 の初飛行。操縦するのは、あなただ。", 0, 0),
+    ("ignite", "SPACE で点火!", 0, 0),
+    ("throttle", "↑↓ でスロットル(推力)。このエンジンは 70% より下には絞れない。", 3, 7),
+    ("steer", "←→ でノズルを振って姿勢を変える。傾いたら、反対に当てて戻す。", 3, 8),
+    ("window", "右の窓: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
+    ("good", "いい調子だ。そのまま、まっすぐ上へ!", 0, 0),
+]
 
 
 class Particle:
@@ -25,8 +36,12 @@ class Particle:
 
 
 class MissionScene:
-    def __init__(self, app, mdef):
+    def __init__(self, app, mdef, cold_open=False):
+        """cold_open: ゲームの最初の飛行。操作説明を出し、途中で必ず爆発する。"""
         self.app = app
+        self.cold_open = cold_open
+        self.tut = 0  # 操作説明の何番目か
+        self.tut_time = 0.0
         # 画面サイズごとの配置: 左が飛行画面、右が計器パネル
         panel_w = 144 if ui.SMALL else 196 if ui.W > 640 else 188
         self.panel_x = ui.W - panel_w
@@ -36,7 +51,7 @@ class MissionScene:
         self.ppm = 1.0 if ui.TINY else 1.5 if ui.SMALL else 2.0  # 1 m あたりのピクセル数
         self.fs = 10 if ui.SMALL else 12  # 飛行画面に出すメッセージの文字
         self.m = mdef
-        self.run = MissionRun(mdef, inspected=app.state.inspected)
+        self.run = MissionRun(mdef, inspected=app.state.inspected, doomed=cold_open)
         self.v = self.run.v
         self.phase = "count"  # count / ready / flight / end
         self.count = COUNTDOWN
@@ -53,6 +68,8 @@ class MissionScene:
         self.stars = [(rng.uniform(0, self.view_w), rng.uniform(0, ui.H), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
                       for _ in range(160)]
         self.say("射場クリア。カウントダウン開始", ui.WHITE)
+        if not cold_open:
+            audio.bgm(None)  # 本番の打ち上げはエンジン音だけ(オープニングは曲を流したまま)
 
     def say(self, text, col=ui.WHITE, frames=180):
         self.messages.append([tr(text), col, frames])
@@ -66,6 +83,8 @@ class MissionScene:
         thr = (1 if pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP) else 0) - \
               (1 if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN) else 0)
         ignite = pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A)
+        if self.cold_open:
+            self.update_tutorial(steer, thr)
 
         if self.phase == "count":
             prev = math.ceil(self.count)
@@ -78,6 +97,7 @@ class MissionScene:
         elif self.phase == "ready":
             if ignite:
                 self.v.ignite()
+                audio.ignite()
                 self.phase = "flight"
                 self.say("点火!", ui.ORANGE, 90)
         elif self.phase == "flight":
@@ -101,17 +121,61 @@ class MissionScene:
             if self.run.result == "success" and not self.exploded:
                 self.v.step(1 / 60, 0, 0)
             if self.end_timer > 60 and ui.confirm() or self.end_timer > 240:
-                self.app.finish_mission(self.run)
+                if self.cold_open:
+                    self.app.after_cold_open()
+                else:
+                    self.app.finish_mission(self.run)
                 return
 
+        v = self.v
+        audio.engine(v.throttle if v.engine_on and not self.exploded else 0)
         self.update_particles()
         self.update_camera()
         for msg in self.messages:
             msg[2] -= 1
         self.messages = [m for m in self.messages if m[2] > 0]
 
+    def update_tutorial(self, steer, thr):
+        tid = TUTORIAL[self.tut][0]
+        self.tut_time += 1 / 60
+        if tid == "intro":
+            done = self.phase != "count"
+        elif tid == "ignite":
+            done = self.v.lifted_off
+        elif tid in ("throttle", "steer", "window"):
+            _, _, lo, hi = TUTORIAL[self.tut]
+            pressed = thr if tid == "throttle" else steer if tid == "steer" else True
+            done = self.tut_time >= hi or (self.tut_time >= lo and pressed)
+        else:
+            done = False
+        if done and self.tut + 1 < len(TUTORIAL):
+            self.tut += 1
+            self.tut_time = 0.0
+
+    def draw_tutorial(self):
+        """画面上部の操作説明。火災が起きたら消す。"""
+        if not self.cold_open or self.phase == "end" or self.run.fire_active:
+            return
+        tid, text, _, _ = TUTORIAL[self.tut]
+        fs = self.fs
+        lines = ui.wrap(text, self.view_w - 40, fs)
+        h = 14 + len(lines) * (fs + 4)
+        x, y, w = 12, 24 if not ui.TINY else 18, self.view_w - 24
+        pyxel.dither(0.8)
+        pyxel.rect(x, y, w, h, ui.BLACK)
+        pyxel.dither(1.0)
+        pyxel.rectb(x, y, w, h, ui.YELLOW if tid in ("ignite", "throttle", "steer") else ui.WHITE)
+        for i, line in enumerate(lines):
+            ui.text(x + 8, y + 7 + i * (fs + 4), line, ui.WHITE, size=fs)
+        if tid == "window" and self.frame // 15 % 2:  # 右の窓を指す矢印
+            ax, ay = self.view_w - 14, y + h + 10
+            pyxel.tri(ax, ay - 6, ax, ay + 6, ax + 10, ay, ui.YELLOW)
+
     def explode(self):
         self.exploded = True
+        audio.explosion()
+        if self.cold_open:
+            audio.bgm(None)  # 期待の曲が爆発で途切れる
         v = self.v
         cx, cy = self.rocket_center()
         for _ in range(260):
@@ -208,6 +272,7 @@ class MissionScene:
         self.draw_ladder()
         self.draw_messages()
         self.draw_fire_border()
+        self.draw_tutorial()
         if self.phase == "end":
             self.draw_banner()
         pyxel.clip()
@@ -381,7 +446,7 @@ class MissionScene:
         help_text = "SPACE点火 ↑↓出力 ←→姿勢" if ui.SMALL else "SPACE 点火   ↑↓ スロットル   ←→ 姿勢"
         ui.text(self.view_w - ui.text_width(help_text, 10) - 8, 6, help_text, ui.WHITE, size=10, border=ui.BLACK)
         if self.phase == "count":
-            ui.text_center(self.view_w // 2, ui.H // 4, f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
+            ui.text_center(self.view_w // 2, ui.H // 3 if self.cold_open else ui.H // 4, f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
 
     def draw_fire_border(self):
         if self.run.fire_active and self.frame // 8 % 2:

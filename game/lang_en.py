@@ -1,6 +1,19 @@
 """英語の訳。キーは画面に出す日本語の文言(数値が入る文は i18n.trf に渡すテンプレート)。"""
 
 EN = {
+    # ---- オープニング ----
+    "Eagle 1 の初飛行。操縦するのは、あなただ。": "Eagle 1's first flight. You're the one flying it.",
+    "SPACE で点火!": "Press SPACE to ignite!",
+    "↑↓ でスロットル(推力)。このエンジンは 70% より下には絞れない。":
+        "↑↓ sets the throttle. This engine can't go below 70%.",
+    "←→ でノズルを振って姿勢を変える。傾いたら、反対に当てて戻す。":
+        "←→ swings the nozzle to steer. If you tilt, counter-steer to come back.",
+    "右の窓: 高度 10 km を通過するとき、この範囲に入っていれば高評価。":
+        "The window on the right: be inside these ranges when you pass 10 km for a high rank.",
+    "いい調子だ。そのまま、まっすぐ上へ!": "Looking good. Keep going, straight up!",
+    "4年前——": "Four years earlier--",
+    "すべては、家具もない部屋から始まった。": "It all began in a room without furniture.",
+
     # ---- 会話: キックオフ ----
     "創業の日。借りたばかりの工業用ビルには、まだ家具すら届いていない。":
         "Founding day. The industrial building we just rented doesn't even have furniture yet.",
@@ -28,8 +41,8 @@ EN = {
         "A handful of people. No rocket, no track record. Still, this is where it all began.",
 
     # ---- 会話: プロローグ ----
-    "数か月後。倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC。":
-        "A few months later. A converted warehouse. A desk, a welder, and one secondhand laptop.",
+    "4年後。倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC。":
+        "Four years later. A converted warehouse. A desk, a welder, and one secondhand laptop.",
     "資本金は 100M$。それが全部。いい?":
         "We have 100M$ in capital. That's everything. Got it?",
     "軌道に届く小さなロケットを作る。いずれは、着陸して戻ってくるロケットを。":

@@ -4,7 +4,7 @@ import math
 
 import pyxel
 
-from . import kickoff, script, ui
+from . import audio, kickoff, script, ui
 from .i18n import trf
 from .missions import MISSIONS
 from .portraits import NAMES
@@ -178,6 +178,7 @@ class OfficeScene:
     # ---- 更新 ----
     def update(self):
         self.frame += 1
+        audio.bgm("mariachi" if self.dlg.active and self.dlg.index < self.party else "adv")
         if self.dlg.active:
             self.dlg.update()
             return

@@ -6,6 +6,7 @@ import re
 
 import pyxel
 
+from . import audio
 from .i18n import tr
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -144,6 +145,8 @@ class Dialogue:
         self.shown = 0
         self.on_done = None
 
+    QUIET = set(" 　、。,.!?！？…「」()（）—-ー")  # 声を鳴らさない文字
+
     def start(self, lines, on_done=None):
         self.lines = [(speaker, tr(body)) for speaker, body in lines]
         self.index = 0
@@ -161,9 +164,14 @@ class Dialogue:
     def update(self):
         if not self.active:
             return
-        _speaker, body = self.current
+        speaker, body = self.current
         if self.shown < len(body):
             self.shown += self.SPEED
+            # 3 フレームに 1 回、話者の声を鳴らす(しゃべっている感じ)
+            self.tick = getattr(self, "tick", 0) + 1
+            ch = body[min(self.shown, len(body)) - 1]
+            if self.tick % 3 == 0 and ch not in self.QUIET:
+                audio.voice(speaker)
             if confirm():
                 self.shown = len(body)
             return

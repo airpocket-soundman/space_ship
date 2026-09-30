@@ -1,7 +1,8 @@
 """ゲームを自動操作してスクリーンショットを撮る(動作確認用)。
 
 python tools/autoplay.py [640x480|720x720|360x360|320x240] [ja|en] [--quick]  → tools/shots/<画面サイズ>[_en]/*.png
-タイトル → プロローグ → 点検 → 打上 → Ch1-1 を自動操縦 → リザルト → 工場 まで進める。
+タイトル → オープニングの飛行(操作説明・爆発) → 「4年前」 → キックオフ・プロローグ → 点検 → 打上
+→ Ch1-1 を自動操縦 → リザルト → 工場 まで進める。オープニングの画面は 00_*.png。
 """
 
 import math
@@ -16,7 +17,7 @@ from PIL import Image  # noqa: E402
 
 from game import i18n, ui  # noqa: E402
 from game.app import App  # noqa: E402
-from game.scene_misc import ResultScene, TitleScene  # noqa: E402
+from game.scene_misc import CaptionScene, ResultScene, TitleScene  # noqa: E402
 from game.scene_mission import MissionScene  # noqa: E402
 from game.scene_office import OfficeScene  # noqa: E402
 
@@ -123,6 +124,40 @@ class Bot:
                 self.tap(pyxel.KEY_SPACE)
                 if QUICK and "02_office_dialog" in self.shots:
                     pyxel.quit()
+            return
+
+        if isinstance(sc, CaptionScene):
+            if sc.frame == 60:
+                self.shot_once("00_caption")
+            if sc.frame == 70:
+                self.tap(pyxel.KEY_SPACE)
+            return
+
+        if isinstance(sc, MissionScene) and sc.cold_open:
+            # オープニング: 操作説明の場面を撮りながら普通に飛ばす(途中で必ず爆発する)
+            v = sc.v
+            if sc.phase == "count" and sc.count < 3:
+                self.shot_once("00_open_count")
+            if sc.phase == "ready":
+                self.shot_once("00_open_ignite")
+                if self.t % 30 == 0:
+                    self.tap(pyxel.KEY_SPACE)
+            if sc.phase == "flight":
+                err = v.theta + 1.2 * v.omega
+                self.hold(pyxel.KEY_LEFT, err > math.radians(0.8))
+                self.hold(pyxel.KEY_RIGHT, err < -math.radians(0.8))
+                self.hold(pyxel.KEY_UP, v.throttle_cmd < 1.0)
+                if 4 < v.t < 4.1:
+                    self.shot_once("00_open_throttle")
+                if sc.run.fire_active:
+                    self.shot_once("00_open_fire")
+            if sc.phase == "end":
+                for k in list(self.held):
+                    self.hold(k, False)
+                if sc.end_timer == 70:
+                    self.shot_once("00_open_end")
+                if sc.end_timer == 90:
+                    self.tap(pyxel.KEY_SPACE)
             return
 
         if isinstance(sc, MissionScene):

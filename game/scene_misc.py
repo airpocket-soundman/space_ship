@@ -5,7 +5,7 @@ import random
 
 import pyxel
 
-from . import ui
+from . import audio, ui
 from .i18n import trf
 from .logo import load_logo
 from .title_earth import EarthView
@@ -19,13 +19,13 @@ class TitleScene:
     # 画面サイズごとの配置。背景と地球は bg_w x bg_h で描いて bg_scale 倍で表示する
     LAYOUTS = {
         "640x480": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=2, horizon=105,
-                        logo_y=72, logo=1, menu_y=336, menu=3, menu_row=26, tag=2),
+                        logo_y=40, logo=1, menu_y=336, menu=3, menu_row=26, tag=2),
         "720x720": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=2, horizon=150,
-                        logo_y=124, logo=1, menu_y=440, menu=3, menu_row=30, tag=2),
+                        logo_y=100, logo=1, menu_y=440, menu=3, menu_row=30, tag=2),
         "360x360": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=1, horizon=150,
-                        logo_y=44, logo=1, menu_y=218, menu=2, menu_row=18, tag=1),
+                        logo_y=26, logo=1, menu_y=218, menu=2, menu_row=18, tag=1),
         "320x240": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=1, horizon=105,
-                        logo_y=32, logo=1, menu_y=162, menu=2, menu_row=16, tag=1),
+                        logo_y=16, logo=1, menu_y=162, menu=2, menu_row=16, tag=1),
     }
 
     def __init__(self, app):
@@ -38,6 +38,7 @@ class TitleScene:
         self.bg.load(0, 0, str(ui.ASSETS / L["bg"]))
         self.earth = EarthView(L["bg_w"], L["bg_h"], L["bg_scale"], L["horizon"])
         self.logo = load_logo()
+        audio.bgm("opening")
         self.horizon = L["horizon"] * L["bg_scale"]  # 画面中央での地平線の高さ
         self.ky = self.horizon / 210  # 縦の倍率(640x480 が 1)
         rng = random.Random(5)
@@ -202,9 +203,40 @@ class TitleScene:
             ui.text(mx + (10 if small else 20), y + 16 + i * lh, line, ui.WHITE, size=fs)
 
 
+class CaptionScene:
+    """黒い画面に字幕を出して、次の場面へ進む(「1年前——」など)。"""
+
+    FADE = 40
+    HOLD = 150
+
+    def __init__(self, app, lines, on_done):
+        self.app = app
+        audio.bgm(None)
+        self.lines = lines
+        self.on_done = on_done
+        self.frame = 0
+
+    def update(self):
+        self.frame += 1
+        if self.frame > self.FADE and ui.confirm() or self.frame > self.FADE * 2 + self.HOLD:
+            self.on_done()
+
+    def draw(self):
+        pyxel.cls(ui.BLACK)
+        f = self.frame
+        a = min(1.0, f / self.FADE, max(0.0, (self.FADE * 2 + self.HOLD - f) / self.FADE))
+        pyxel.dither(a)
+        lh = 20 if not ui.SMALL else 16
+        y0 = ui.H // 2 - lh * len(self.lines) // 2
+        for i, line in enumerate(self.lines):
+            ui.text_center(ui.W // 2, y0 + i * lh, line, ui.WHITE if i == 0 else ui.GRAY)
+        pyxel.dither(1.0)
+
+
 class ResultScene:
     def __init__(self, app, run, summary):
         self.app = app
+        audio.bgm("adv")
         self.run = run
         self.s = summary
         self.frame = 0
@@ -280,6 +312,7 @@ class ResultScene:
 class GameOverScene:
     def __init__(self, app, lines):
         self.app = app
+        audio.bgm(None)
         self.dlg = ui.Dialogue()
         self.dlg.start(lines, on_done=app.to_title)
         self.frame = 0

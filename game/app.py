@@ -2,9 +2,10 @@
 
 import pyxel
 
-from . import i18n, script, ui
+from . import audio, i18n, script, ui
 from .portraits import Portraits
-from .scene_misc import GameOverScene, ResultScene, TitleScene
+from .missions import MISSIONS
+from .scene_misc import CaptionScene, GameOverScene, ResultScene, TitleScene
 from .scene_mission import MissionScene
 from .scene_office import OfficeScene
 from .state import GameState
@@ -16,6 +17,7 @@ class App:
         i18n.set_lang(lang)
         pyxel.init(ui.W, ui.H, title="StarX", fps=60, quit_key=pyxel.KEY_ESCAPE)
         ui.load_fonts()
+        audio.setup()
         self.portraits = Portraits()
         self.state = GameState()
         self.scene = TitleScene(self)
@@ -41,13 +43,23 @@ class App:
         self.scene = TitleScene(self)
 
     def new_game(self):
+        """いきなり初飛行から始める(操作説明つき。途中で必ず爆発する)。"""
         self.state = GameState()
+        self.scene = MissionScene(self, MISSIONS["1-1"], cold_open=True)
+
+    def after_cold_open(self):
+        """爆発のあと「4年前——」の字幕を出し、創業の日から物語を始める。"""
+        audio.engine(0)
+        self.scene = CaptionScene(self, script.FLASHBACK, self.start_story)
+
+    def start_story(self):
         self.scene = OfficeScene(self, script.KICKOFF + script.PROLOGUE, party=len(script.KICKOFF))
 
     def start_mission(self, mdef):
         self.scene = MissionScene(self, mdef)
 
     def finish_mission(self, run):
+        audio.engine(0)
         st = self.state
         st.rockets -= 1
         st.inspected = False

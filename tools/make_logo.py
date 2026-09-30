@@ -1,10 +1,10 @@
 """タイトルロゴを作る。
 
 python tools/make_logo.py
-- art/starx_logo.png(元の絵、背景は透明)から作る
+- art/starx_logo.webp(元の絵、背景は黒)から作る
 - assets/logo_<画面サイズ>.png  ゲーム用。画面ごとの幅に直接縮めて等倍で表示する(拡大するとギザギザになるため)。
-    黒い宇宙の上に置く前提で黒に重ね、game/logo.py の LOGO_COLORS のどれかに振り分ける。暗い所は黒(透明色)
-- docs/img/starx_logo.png  企画書ページ用。なめらかなまま縮めた透明 PNG
+    game/logo.py の LOGO_COLORS のどれかに振り分ける。暗い所は黒(透明色)なので、宇宙の背景にそのまま重なる
+- docs/img/starx_logo.png  企画書ページ用。明るさを透明度にした PNG(光のにじみも背景になじむ)
 """
 
 import sys
@@ -23,18 +23,17 @@ DARK = 48  # 黒に重ねてこれより暗い所は透明にする(0〜255)
 
 
 def main():
-    src = Image.open(ROOT / "art" / "starx_logo.png").convert("RGBA")
-    alpha = np.asarray(src)[..., 3]
-    ys, xs = np.nonzero(alpha > 16)
-    src = src.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+    src = Image.open(ROOT / "art" / "starx_logo.webp").convert("RGB")
+    bright = np.asarray(src).max(-1)
+    ys, xs = np.nonzero(bright > 24)
+    m = 6  # 光のにじみが切れないよう少し余白をとる
+    src = src.crop((xs.min() - m, ys.min() - m, xs.max() + 1 + m, ys.max() + 1 + m))
     pal = np.array([[(c >> 16) & 255, (c >> 8) & 255, c & 255] for c in LOGO_COLORS], dtype=float)
 
     for screen, width in LOGO_WIDTHS.items():
         h = round(src.height * width / src.width)
         small = src.resize((width, h), Image.LANCZOS)
-        dark = Image.new("RGBA", small.size, (0, 0, 0, 255))
-        dark.alpha_composite(small)
-        rgb = np.asarray(dark.convert("RGB")).astype(float)
+        rgb = np.asarray(small).astype(float)
         idx = ((rgb[:, :, None, :] - pal[None, None]) ** 2).sum(-1).argmin(-1)
         out = pal[idx].astype(np.uint8)
         out[rgb.max(-1) < DARK] = 0
@@ -42,8 +41,12 @@ def main():
         print(f"assets/logo_{screen}.png {width}x{h}")
 
     h = round(src.height * WEB_WIDTH / src.width)
+    web = np.asarray(src.resize((WEB_WIDTH, h), Image.LANCZOS)).astype(float)
+    alpha = web.max(-1)  # 黒い所ほど透明に。色は透明度で割り戻して元の明るさを保つ
+    rgb = np.clip(web / np.maximum(alpha, 1)[..., None] * 255, 0, 255)
+    rgba = np.dstack([rgb, alpha]).astype(np.uint8)
     (ROOT / "docs" / "img").mkdir(exist_ok=True)
-    src.resize((WEB_WIDTH, h), Image.LANCZOS).save(ROOT / "docs" / "img" / "starx_logo.png")
+    Image.fromarray(rgba, "RGBA").save(ROOT / "docs" / "img" / "starx_logo.png")
     print(f"docs/img/starx_logo.png {WEB_WIDTH}x{h}")
 
 

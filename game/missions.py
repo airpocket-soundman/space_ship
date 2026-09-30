@@ -70,8 +70,10 @@ class MissionRun:
     AOA_LIMIT = math.radians(12.0)
     Q_LIMIT = 12_000.0
     TILT_LIMIT = math.radians(45.0)
+    DOOMED_FIRE_AT = 27.0  # オープニングの飛行で火災が起きる時刻 [s]
 
-    def __init__(self, mdef, inspected=False, seed=None):
+    def __init__(self, mdef, inspected=False, seed=None, doomed=False):
+        """doomed: オープニングの飛行。決まった時刻に火災が起き、何をしても爆発する。"""
         self.m = mdef
         self.v = Vehicle(mdef.vehicle)
         if seed is not None:
@@ -79,6 +81,9 @@ class MissionRun:
         rng = self.v.rng
         chance = mdef.fire_chance_inspected if inspected else mdef.fire_chance
         self.fire_at = rng.uniform(22.0, 34.0) if rng.random() < chance else None
+        self.doomed = doomed
+        if doomed:
+            self.fire_at = self.DOOMED_FIRE_AT
         self.fire_active = False
         self.fire_done = False
         self.fire_time = 0.0
@@ -116,7 +121,9 @@ class MissionRun:
                 self.emit("warn", "エンジン区画で火災! 出力を最低まで絞れ!")
             self.fire_time += dt
             over = (v.throttle - v.p.min_throttle) / (1.0 - v.p.min_throttle)
-            if over > 0.08:
+            if self.doomed:  # 絞っても消えない
+                self.heat += 30.0 * dt
+            elif over > 0.08:
                 self.heat += (4.0 + 22.0 * over) * dt
             else:
                 self.heat = max(0.0, self.heat - 6.0 * dt)

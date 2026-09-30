@@ -132,7 +132,7 @@ def main():
     Image.fromarray(rgb[img]).save(root / "assets" / "title_bg.png")
     Image.fromarray(rgb[make_texture()]).save(root / "assets" / "earth_tex.png")
     # 正方形の画面(720x720 / 360x360)用。星の密度は 320x240 と同じ
-    img = make_bg(360, 360, np.random.default_rng(12), 440, (34, 28, 13), (337, 50, 13))
+    img = make_bg(360, 360, np.random.default_rng(12), 440, (34, 28, 13), (338, 118, 13))  # 火星はロゴの軌道の輪に掛からない低さ
     Image.fromarray(rgb[img]).save(root / "assets" / "title_bg_sq.png")
     Image.fromarray(rgb[make_relief()]).save(root / "assets" / "earth_relief.png")
 

@@ -8,8 +8,9 @@ from .i18n import trf
 
 @dataclass
 class GameState:
-    year: int = 1
-    month: int = 4
+    year: int = 5  # 物語は創業の日の 4 年後、初飛行の直前から始まる
+    month: int = 3
+    months_passed: int = 0  # ゲームを始めてから進んだ月数
     funds: float = 100.0  # M$
     reputation: int = 10
     tlm: int = 0
@@ -57,11 +58,12 @@ class GameState:
             self.rockets += done
             lines.append(("maya", trf("Eagle 1 が{n}機、完成したわ。いつでも飛ばせる。", n=done)))
         self.month += 1
+        self.months_passed += 1
         if self.month > 12:
             self.month = 1
             self.year += 1
         self.ap = self.ap_max
-        if self.month_index > 5 and self.ap_max > 1 and random.random() < self.STRIKE_CHANCE:
+        if self.months_passed >= 2 and self.ap_max > 1 and random.random() < self.STRIKE_CHANCE:
             from .script import SUPPLY_STRIKE
             self.ap -= 1
             lines += SUPPLY_STRIKE
