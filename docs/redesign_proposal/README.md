@@ -6,8 +6,8 @@
 
 | ファイル | 内容 | 想定用途 |
 | --- | --- | --- |
-| `character_faces_concept_720_v5.png` | 現行の12人の顔デザイン基準 | **全員正面向き**。90年代洋画系ゲーム風の、普通で少しコミカルな社員たち |
-| `character_faces_concept_720_v4.png` / `character_faces_concept_720_v3.png` / `character_faces_concept_720_v2.png` / `character_faces_concept_720.png` | 以前の顔案 | 比較・検討用の旧案 |
+| `character_faces_concept_720_v6.png` | 現行の12人の顔デザイン基準 | **全員正面向き**。ディーロンはイーロン・マスクの似顔絵に着想を得た架空キャラ |
+| `character_faces_concept_720_v5.png` / `character_faces_concept_720_v4.png` / `character_faces_concept_720_v3.png` / `character_faces_concept_720_v2.png` / `character_faces_concept_720.png` | 以前の顔案 | 比較・検討用の旧案 |
 | `characters_720_sheet.png` / `<人物ID>_720.png`（12枚） | 720画面用の128×128 px人物PNG | 会話枠の128×128枠に対応するドット絵試作 |
 | `office_screen_720.png` / `launch_screen_720.png` | 720×720 px の会社・打ち上げ画面案 | 正方形画面の構図とUI配置の基準 |
 | `starship_v3_detail.png` / `rocket_silhouette_study_v3.png` | 2026年のStarship V3を参照した修正案 | 耐熱タイル側とステンレス側、フラップ、機体の太さを検討 |
@@ -18,7 +18,7 @@
 
 ## 現状の作りと変更案
 
-- **人物**：`game/portraits.py` が `assets/portraits/<id>.png` を最大128 pxで読み込みます。既存12枚は `tools/make_portraits.py` が64×64 pxで生成。球体の陰影と細かなディザ、共通の顔立ちが主体です。今回の128×128版は顔の目・鼻・口をネイティブ解像度で描き直した技術試作です。`character_faces_concept_720_v5.png` は、全員正面を向いた、90年代洋画系ゲーム風の少しコミカルで普通の現場の人らしい造形基準です。**概念シートはそのままゲームに読み込める個別PNGではありません**。次の個別素材化では、このシートの人物差を保つ必要があります。
+- **人物**：`game/portraits.py` が `assets/portraits/<id>.png` を最大128 pxで読み込みます。既存12枚は `tools/make_portraits.py` が64×64 pxで生成。球体の陰影と細かなディザ、共通の顔立ちが主体です。今回の128×128版は顔の目・鼻・口をネイティブ解像度で描き直した技術試作です。`character_faces_concept_720_v6.png` は、全員正面を向いた、90年代洋画系ゲーム風の少しコミカルで普通の現場の人らしい造形基準です。ディーロンのみ、イーロン・マスクの似顔絵らしい顔立ちに寄せています。**概念シートはそのままゲームに読み込める個別PNGではありません**。次の個別素材化では、このシートの人物差を保つ必要があります。
 - **会社背景**：`game/scene_office.py` の `draw_hangar()` で壁、開いた扉、海、机、ホワイトボード、機体をPyxel図形で毎フレーム描画しています。静的な背景画像ファイルはありません。画面案では格納庫の奥行きを壁・梁・扉枠・海の面で表現し、前景の道具と機体を分離しました。最終実装では背景だけを画像化し、会話枠や状態表示は既存UIに合わせて重ねるのが自然です。
 - **打ち上げ背景**：`game/scene_mission.py` の `draw_sky()`、`draw_clouds()`、`draw_ground()` が高度に連動した空、雲、海、島、発射台を描きます。`draw_rocket()` は機体角度とジンバル角を使って回転する図形です。静止画への単純な置換では高度変化と回転を失うため、画面案は色・形の設計見本です。実装時は空と地表を別レイヤーにし、ロケットは角度に合わせて描画・回転できる素材に分けてください。
 - **タイトル**：変更対象外です。
