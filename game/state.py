@@ -1,5 +1,6 @@
 """会社の状態(資金・評判・月など)。"""
 
+import random
 from dataclasses import dataclass, field
 
 from .i18n import trf
@@ -23,6 +24,9 @@ class GameState:
     cleared: set = field(default_factory=set)
     last_fundraise: int = -99
     flights: list = field(default_factory=list)  # 飛行記録(のちのディーロン AI 用)
+    seen: set = field(default_factory=set)  # 一度だけ出すエピソードのうち、もう出したもの
+
+    STRIKE_CHANCE = 0.15  # 月が変わるとき、島への補給が遅れてストライキになる確率
 
     ROCKET_COST = 7.0
     ROCKET_MONTHS = 2
@@ -57,6 +61,10 @@ class GameState:
             self.month = 1
             self.year += 1
         self.ap = self.ap_max
+        if self.month_index > 5 and self.ap_max > 1 and random.random() < self.STRIKE_CHANCE:
+            from .script import SUPPLY_STRIKE
+            self.ap -= 1
+            lines += SUPPLY_STRIKE
         if self.funds < self.ROCKET_COST + self.fixed_cost and self.funds >= 0:
             lines.append(("sara", "……資金が危ないわ。次の失敗は、会社の終わりかもしれない。"))
         return lines

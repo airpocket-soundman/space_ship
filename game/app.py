@@ -42,7 +42,7 @@ class App:
 
     def new_game(self):
         self.state = GameState()
-        self.scene = OfficeScene(self, script.PROLOGUE)
+        self.scene = OfficeScene(self, script.KICKOFF + script.PROLOGUE, party=len(script.KICKOFF))
 
     def start_mission(self, mdef):
         self.scene = MissionScene(self, mdef)
@@ -69,8 +69,17 @@ class App:
             reason = run.fail_reason
             key = "fire" if "火災" in reason else "aero" if "分解" in reason else "tilt" if "姿勢" in reason else "other"
             lines = list(script.RESULT_FAIL_1_1[key])
-            if self.state.rockets <= 0:
+            st = self.state
+            if key in ("fire", "aero") and "rud" not in st.seen:
+                st.seen.add("rud")
+                lines += script.RESULT_RUD
+            if st.rockets <= 0:
                 lines += script.RESULT_FAIL_COMMON
+            recent = [f["result"] for f in st.flights[-3:]]
+            if recent == ["fail"] * 3 and "comeback" not in st.seen:
+                st.seen.add("comeback")
+                st.funds += script.COMEBACK_FUNDS
+                lines += script.COMEBACK
         lines.append(("sara", "打ち上げで今月は手一杯。「待機」で次の月へ進めましょう。"))
         self.scene = OfficeScene(self, lines)
 

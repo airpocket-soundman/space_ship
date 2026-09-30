@@ -84,8 +84,8 @@ header.hero {
 header.hero .inner { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }
 header.hero .kicker { color: #ff7a3d; font-weight: 700; letter-spacing: .12em; font-size: 13px; }
 header.hero h1 { font-size: clamp(34px, 7vw, 60px); margin: 4px 0 8px; letter-spacing: .02em; line-height: 1.15; }
-header.hero h1.logo { margin: 10px 0 14px; line-height: 0; }
-header.hero h1.logo img { width: 540px; max-width: 100%; height: auto; image-rendering: pixelated; }
+header.hero h1.logo { margin: 18px 0 20px; line-height: 0; }
+header.hero h1.logo img { width: 540px; max-width: 100%; height: auto; }
 header.hero p { max-width: 640px; color: #c9ccd4; margin: 0; }
 header.hero .meta { margin-top: 18px; font-size: 13px; color: #8d93a0; }
 header.hero svg.stars { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -214,7 +214,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <button class="theme-btn" id="themeBtn" type="button">テーマ切替</button>
   <div class="inner">
     <div class="kicker">GAME DESIGN DOCUMENT v0.3</div>
-    <h1 class="logo"><img src="img/starx_logo.png" alt="StarX" width="540" height="120"></h1>
+    <h1 class="logo"><img src="img/starx_logo.png" alt="StarX" width="540" height="69"></h1>
     <p>失敗しながら、ロケットを「扱える機械」に育てていく。<br>会社経営の ADV と、ロケット操縦のアクションを組み合わせた Pyxel ゲームの企画書。</p>
     <div class="meta">実在の宇宙企業と人物へのオマージュ(パロディ)作品です。社名・機体名・人物名は架空のもじりです。</div>
     <div class="play" id="play">
@@ -842,6 +842,25 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <li>提案を却下し続けると、ガレージ0の士気が下がり、提案が来なくなる。</li>
   </ul>
 
+  <h3>元ネタのエピソード</h3>
+  <p>実在の宇宙企業の創業期から現在までの有名な逸話を、架空の人物・名前に置き換えて物語やイベントに入れる。<span class="tag hist">実装済み</span> はデモに入っているもの、<span class="tag prop">予定</span> は該当する章で入れるもの。</p>
+  <div class="table-wrap"><table>
+    <tr><th>エピソード</th><th>元になった出来事</th><th>ゲームでの使い方</th></tr>
+    <tr><td class="nw">家具のないオフィスでマリアッチ<span class="tag hist">実装済み</span></td><td>創業直後、家具もない借りビルのカーペットの上で、マリアッチ楽団を呼んでキックオフ</td><td>ニューゲーム冒頭の背景つき場面。ディーロンがマラカスを振り上げて踊る</td></tr>
+    <tr><td class="nw">「ロケットが高すぎる」<span class="tag hist">実装済み</span></td><td>中古の大陸間ミサイルを買いに行って法外な値段で追い返され、帰りの機内で原材料費が数パーセントと計算して起業</td><td>キックオフの会話で、ディーロンが自作の理由を語る(「北の大国」)</td></tr>
+    <tr><td class="nw">寮への直電話<span class="tag hist">実装済み</span></td><td>無名の会社に人が来ないので、有名大学の学生寮に社長が直接電話してスカウト。詐欺電話と思われた</td><td>最初の「採用」コマンドの会話</td></tr>
+    <tr><td class="nw">機体名は映画から<span class="tag hist">実装済み</span></td><td>最初のロケットの名前は SF 映画の宇宙船から</td><td>プロローグ。Eagle は映画『スペース・ウォーズ』のミレニアム・イーグル号から</td></tr>
+    <tr><td class="nw">絶海の孤島の射場<span class="tag hist">実装済み</span></td><td>本土で許可が下りず、太平洋の環礁の島を拠点に。高温多湿、補給船が遅れて食料が尽き、ストライキも</td><td>射場は「クワゼラ環礁のオメガ島」。月送りで約 15% の確率で補給船遅延のストライキが起き、その月の AP が 1 減る</td></tr>
+    <tr><td class="nw">3連続失敗のスピーチ<span class="tag hist">実装済み</span></td><td>3回続けて失敗し倒産寸前のとき、社長が「絶対に諦めない」と全社に宣言し、4回目の資金を集めた</td><td>3回続けて失敗すると一度だけ発生。ディーロンが 15M$ を集めてくる。Chapter 1-4「最後の1機」の前ふり</td></tr>
+    <tr><td class="nw">失敗はデータ<span class="tag hist">実装済み</span></td><td>爆発を「予期せぬ急速な分解」と呼び、限界まで攻めて得たデータを成果とみなす文化</td><td>爆発・空中分解の後の会話(一度だけ)。マヤの口癖「失敗はデータよ」</td></tr>
+    <tr><td class="nw">「私のスケジュール」<span class="tag hist">実装済み</span></td><td>守れない締め切りを突っ込まれ「物理法則の限界の速さで進んだ場合の予定だ。遅れるのは君たちのせい」</td><td>最初の「調達」の会話</td></tr>
+    <tr><td class="nw">ジャンボジェットの使い捨て<span class="tag hist">実装済み</span></td><td>「ロケットを毎回捨てるのは、ジャンボジェットを毎回捨てるようなもの」「着陸は嵐の中で鉛筆を手のひらに立てるようなもの」</td><td>プロローグの会話。Chapter 2〜3 の再使用編で回収する</td></tr>
+    <tr><td class="nw">火星への窓<span class="tag hist">実装済み</span><span class="tag prop">予定</span></td><td>地球と火星が近づくのは 26 ヶ月に一度。無人着陸 → 有人 → 100万人の都市という計画</td><td>初飛行成功後の会話で予告。Chapter 12 では打ち上げが 26 ヶ月ごとの「窓」に限られる</td></tr>
+    <tr><td class="nw">箸キャッチ<span class="tag prop">予定</span></td><td>発射塔「メカジラ」の2本のアーム(通称チョップスティック)で、戻ってきた巨大ブースターを空中でつかむ</td><td>Chapter 7。発射塔の名前は「ハシラ」(箸 + 柱)。ハシモトの発案</td></tr>
+    <tr><td class="nw">衛星通信網の誕生<span class="tag prop">予定</span></td><td>もともとは火星計画の資金を稼ぐための副業。低い軌道に数千機を並べて、どこでも高速通信。災害地で通信を支えた</td><td>Chapter 5。Space Link 開始の理由と、災害支援イベント</td></tr>
+    <tr><td class="nw">火星移住の最初の乗員<span class="tag prop">予定</span></td><td>最初の有人火星飛行は死ぬ可能性が高い決死隊。医者で配線も直せる、といった多才な職人が選ばれる</td><td>Chapter 12 の乗員選考イベント</td></tr>
+  </table></div>
+
   <h3>名称一覧(元ネタとの対応)</h3>
   <div class="table-wrap"><table>
     <tr><th>ゲーム内の名前</th><th>元ネタ</th><th>備考</th></tr>
@@ -851,6 +870,9 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td class="nw">Phoenix / Crew Phoenix</td><td>Dragon / Crew Dragon</td><td>貨物カプセル / 有人カプセル。「燃え尽きずに還ってくる」から不死鳥</td></tr>
     <tr><td class="nw">Hopper</td><td>Grasshopper</td><td>着陸試験機</td></tr>
     <tr><td class="nw">Space Link</td><td>Starlink</td><td>自社の衛星通信網</td></tr>
+    <tr><td class="nw">オメガ島(クワゼラ環礁)</td><td>オメレク島(クェゼリン環礁)</td><td>Eagle 1 の射場</td></tr>
+    <tr><td class="nw">ハシラ</td><td>メカジラ(Mechazilla)</td><td>箸キャッチの発射塔。箸 + 柱</td></tr>
+    <tr><td class="nw">『スペース・ウォーズ』/ ミレニアム・イーグル号</td><td>『スター・ウォーズ』/ ミレニアム・ファルコン号</td><td>Eagle の名前の由来</td></tr>
     <tr><td class="nw">Mega Booster + Space Ship</td><td>Super Heavy + Starship</td><td>完全再使用の超大型機</td></tr>
     <tr><td class="nw">エンジン Hobby</td><td>Merlin</td><td>Eagle 1 / 9 の1段目。チゴハヤブサ(小型のハヤブサ類)。ケン「うちの主力エンジン、名前が趣味なんだけど」</td></tr>
     <tr><td class="nw">エンジン Lanner</td><td>Kestrel</td><td>Eagle 1 の2段目。ラナーハヤブサ</td></tr>
@@ -867,8 +889,16 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td class="nw">USSA</td><td>United States Space Administration</td><td>合衆国宇宙局</td><td>直球。架空感は薄め</td></tr>
   </table></div>
 
-  <h3>プロローグ</h3>  <div class="dialog">
-    <p class="stage">(倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC)</p>
+  <h3>プロローグ</h3>
+  <div class="dialog">
+    <p class="stage">(創業の日。家具もない借りビル。むき出しのカーペットの上で、マリアッチ楽団が演奏している)</p>
+    <p><span class="sp">ケン</span>「……で、なんでマリアッチ?」</p>
+    <p><span class="sp">ディーロン</span>「キックオフだ! 祝うのに理由はいらない。俺たちは火星に行くんだぞ!」</p>
+    <p><span class="sp">ノア</span>「そもそも、なぜロケットを自社で作るのですか」</p>
+    <p><span class="sp">ディーロン</span>「中古のミサイルを買いに行ったら、1基 800万ドルと言われて笑われた。帰りの飛行機で原材料を計算したら、値段のほんの数パーセントだった。だったら自分で作ったほうが早い」</p>
+  </div>
+  <div class="dialog">
+    <p class="stage">(数か月後。倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC)</p>
     <p><span class="sp">サラ</span>「資本金は 100M$。それが全部。いい?」</p>
     <p><span class="sp">マヤ</span>「軌道に届く小さなロケットを作る。いずれは、着陸して戻ってくるロケットを」</p>
     <p><span class="sp">ケン</span>「つまり、爆発シーンは撮り放題ってことだね!」</p>
@@ -890,6 +920,9 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <li>1-3 の失敗後、救済イベント「最後の1機」が発生する。</li>
   </ul>
   <div class="dialog">
+    <p class="stage">(3回連続の失敗。工場は重い空気に包まれている)</p>
+    <p><span class="sp">ディーロン</span>「俺は絶対に諦めない。文字通り、絶対にだ。物理的な原因を突き止めろ。4回目の資金は俺が集める。君たちはロケットを直してくれ」</p>
+    <p><span class="sp">ケン</span>「あれで弱気な顔されてたら、たぶん全員辞めてたね」</p>
     <p><span class="sp">サラ</span>「残っているのは、あと1機分の資金だけ。……次で決めて」</p>
     <p><span class="sp">ノア</span>「最後の1機です。今回だけは私に——」</p>
     <p><span class="sp">ディーロン</span>「最後の1機だからこそ、俺が飛ばす」</p>
@@ -937,7 +970,13 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </div>
 
   <h3>Chapter 5「星の網」</h3>
+  <div class="dialog">
+    <p><span class="sp">サラ</span>「正直に言って。これ、火星のお金を稼ぐための副業よね?」</p>
+    <p><span class="sp">ディーロン</span>「そうだ。だが世界中どこでもつながる通信網は、それだけで世界を変える」</p>
+    <p><span class="sp">マヤ</span>「遠い静止軌道に大きな衛星を数機、じゃない。高度 550 km に小さい衛星を何千機も並べる。遅延が桁違いに小さくなる」</p>
+  </div>
   <ul>
+    <li>災害イベント: 地上の通信網が壊れた被災地へ、Space Link のアンテナを送るかどうかの選択。送ると評判が大きく上がる。</li>
     <li>5-1 の初展開の後、加入者の数字が毎月増えていく画面を見せる。フライホイールが回り始める瞬間。</li>
     <li>打ち上げの回数が増え、ルーチン便はノアの担当に。ノアはちょっと得意げ。</li>
   </ul>
@@ -972,7 +1011,23 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </div>
   <ul>
     <li>箸キャッチは、管制室が沈黙 → アームが閉じる → 歓声。ゲームでいちばん盛り上がる瞬間にする。</li>
+  </ul>
+  <div class="dialog">
+    <p><span class="sp">ハシモト</span>「脚をつけると、そのぶん重くなって荷物が減る。だったら地上側でつかめばいい。発射塔の名前は“ハシラ”。箸で、柱だ」</p>
+    <p><span class="sp">ケン</span>「怪獣みたいな名前だね……」</p>
+    <p><span class="sp">マヤ</span>「つかんだら、そのまま発射台に戻して給油。数時間後にまた飛べる」</p>
+  </div>
+  <ul>
     <li>月、そして火星へ。ディーロンが火星行きの操縦席に座る。その裏で、ルーチン便のほぼすべてをディーロン AI が飛ばすようになっている。</li>
+    <li>Chapter 12 の火星便は、26 ヶ月に一度の「窓」でしか打ち上げられない。窓に向けて何か月も前から準備する。</li>
+  </ul>
+  <div class="dialog">
+    <p class="stage">(火星行きの乗員選考)</p>
+    <p><span class="sp">グレイ</span>「最初の火星便は、生きて帰れない可能性が高い。条件は、それを受け入れられること。医者でありながら配線も直せる、というような人間だ」</p>
+    <p><span class="sp">ケン</span>「ディーロン、配線直せないよね」</p>
+    <p><span class="sp">ディーロン</span>「操縦ならできる」</p>
+  </div>
+  <ul>
   </ul>
 
   <h3>世界の均衡(Chapter 9〜12 の背景)</h3>

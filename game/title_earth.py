@@ -19,7 +19,8 @@ from . import ui
 R_EARTH = 6371.0  # km
 ALTITUDE = 550.0  # km
 PERIOD = 95.6 * 60  # s
-TIME_SCALE = 12.0  # 実時間の何倍で軌道を進めるか(1 で実時間)
+TIME_SCALE = 12.0  # 実時間の何倍で軌道を進めるか(1 で実時間)。太陽の動きはこの速さ
+GROUND_SPEED = 0.5  # 地表の模様が流れる速さ(太陽の動きに対する比。見やすさのため実際より遅くする)
 FOV = math.radians(100)  # 横方向の画角
 SUN_BETA = math.radians(12)  # 太陽の軌道面からの角度(小さいほど進行方向の正面から昇る)
 ATMOS = 170.0  # 大気の光を描く高さ [km]
@@ -32,12 +33,13 @@ RED, ORANGE, YELLOW, LIME, CYAN, GRAY, PINK, PEACH = range(8, 16)
 BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]])
 
 MATS = [DBLUE, TEAL, BROWN, GRAY, WHITE, YELLOW]  # 地表の種類(マップの色)
+RELIEF_K = [0.0, 0.18, 0.18, 0.08, 0.08, 0.18]  # 地形の明暗の効き(海 / 陸 / 砂漠 / 雲 / 厚い雲 / 都市のある陸)
 
 # 地球だけに使う追加の色。標準の 16 色の後ろ(16 番〜)に足す。ほかの画面は 0〜15 番しか使わない
 EARTH_COLORS = [
-    0x040C2C, 0x0A2470, 0x1242AE, 0x1E66DA, 0x3C8EF4,  # 海(暗→明)
-    0x0E2A12, 0x1E5A1E, 0x38902C, 0x6CBE3E, 0xA8E06C,  # 緑の陸
-    0x3A2610, 0x7C5422, 0xBC8C3A, 0xE4C270,  # 砂漠
+    0x040C2C, 0x081E5C, 0x0E348E, 0x154CB8, 0x1E62D0,  # 海(暗→明)。昼も深い青
+    0x0B2210, 0x154418, 0x1F6624, 0x2A7A2C, 0x3F8A32,  # 緑の陸。昼も深い緑
+    0x30200E, 0x654418, 0x8C6A2C, 0xA8844A,  # 砂漠
     0x2E3C6C, 0x8AA2CC, 0xD4E0F4,  # 雲
     0x0A1C6A, 0x1A4CD8, 0x3094FF, 0x84D6FF, 0xE8FAFF,  # 大気の光
     0xFFD43A, 0xFF9A1A,  # 街の明かり
@@ -65,7 +67,7 @@ def lit(colors, L, b):
     """明るさ L(0〜1)に応じた色。暗い所(0.15 未満)は夜の色へ沈め、それより明るい所は colors の段階を使う。"""
     if L < 0.15:
         return ramp([NIGHT, colors[0]], L / 0.15, b)
-    return ramp(colors, 0.1 + 0.9 * (L - 0.15) / 0.85, b)
+    return ramp(colors, 0.1 + 0.75 * (L - 0.15) / 0.85, b)  # 真昼でも一番明るい色には届かせない
 
 
 def surface_color(mat, lq, haze, b):
@@ -110,6 +112,7 @@ class EarthView:
         self._precompute()
         self.theta = 0.0
         self.theta = self._find_dawn()
+        self.ground = self.theta  # 地表の模様の位置(太陽とは別の速さで進める)
 
     # ---- 準備 ----
     def _load_texture(self):
@@ -121,6 +124,9 @@ class EarthView:
             lut[m] = i
         self.tex = lut[raw]
         self.th, self.tw = self.tex.shape
+        img.load(0, 0, str(ui.ASSETS / "earth_relief.png"))  # 色の番号 0〜4 が暗→明
+        self.relief = np.ctypeslib.as_array(img.data_ptr()).reshape(546, 2048).astype(np.float32) - 2
+        self.relief_k = np.array(RELIEF_K, dtype=np.float32)
 
     def _build_luts(self):
         self.surf_lut = np.zeros((len(MATS), 16, 4, 16), dtype=np.uint8)
@@ -212,6 +218,7 @@ class EarthView:
     # ---- 毎フレーム ----
     def update(self, dt=1 / 60):
         self.theta += self.omega * TIME_SCALE * dt
+        self.ground += self.omega * TIME_SCALE * GROUND_SPEED * dt
 
     def light(self, alpha, cb, sb):
         # 地表の点の法線と太陽の向きの内積。点は衛星に対して -theta だけ回っている
@@ -219,11 +226,14 @@ class EarthView:
 
     def render(self):
         pix = self.pix.reshape(-1)
-        a = self.h_alpha + self.theta
+        a = self.h_alpha + self.ground
         u = ((a % TEX_SPAN) / TEX_SPAN * self.tw).astype(int) % self.tw
         mat = self.tex[self.h_v, u]
         L = self.light(self.h_alpha, self.h_cb, self.h_sb)
-        lq = np.clip((L * 2.0 + 0.25) * 15, 0, 15).astype(int)
+        # 地形の明暗: 日の当たる所ほど斜面の向きで明るさが変わる(夜は 0 のまま)
+        shade = 1 + self.relief[self.h_v, u] * self.relief_k[mat]
+        base = np.clip((L * 2.0 + 0.25) * 15, 0, 11)  # 真昼でも上限の少し下で止め、明暗の差を残す
+        lq = np.clip(base * shade * 15 / 11, 0, 15).astype(int)
         pix[self.hit_idx] = self.surf_lut[mat, lq, self.h_haze, self.h_bayer]
 
         gl = self.light(self.g_alpha, self.g_cb, self.g_sb)

@@ -67,7 +67,7 @@ python main.py 320x240   # 640x480 の画面に 2 倍で出す用
 | `tools/autoplay.py` | 自動操作でスクリーンショットを撮る(`python tools/autoplay.py 720x720 en` で画面サイズ・言語を指定) |
 | `tools/check_i18n.py` | 英語の訳が抜けている文言を探す |
 | `tools/make_portraits.py` | 仮の立ち絵を生成 |
-| `tools/make_logo.py` | `art/starx_logo.webp` からタイトルロゴ(`assets/logo.png`)と企画書用ロゴ(`docs/img/starx_logo.png`)を作る |
+| `tools/make_logo.py` | `art/starx_logo.png` から画面サイズごとのタイトルロゴ(`assets/logo_<画面サイズ>.png`)と企画書用ロゴ(`docs/img/starx_logo.png`)を作る |
 | `prototype/` | 元になったプロトタイプ |
 
 ## 立ち絵の仕様

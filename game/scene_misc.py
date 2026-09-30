@@ -19,13 +19,13 @@ class TitleScene:
     # 画面サイズごとの配置。背景と地球は bg_w x bg_h で描いて bg_scale 倍で表示する
     LAYOUTS = {
         "640x480": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=2, horizon=105,
-                        logo_y=40, logo=2, menu_y=336, menu=3, menu_row=26, tag=2),
+                        logo_y=72, logo=1, menu_y=336, menu=3, menu_row=26, tag=2),
         "720x720": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=2, horizon=150,
-                        logo_y=90, logo=2, menu_y=440, menu=3, menu_row=30, tag=2),
+                        logo_y=124, logo=1, menu_y=440, menu=3, menu_row=30, tag=2),
         "360x360": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=1, horizon=150,
-                        logo_y=30, logo=1, menu_y=218, menu=2, menu_row=18, tag=1),
+                        logo_y=44, logo=1, menu_y=218, menu=2, menu_row=18, tag=1),
         "320x240": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=1, horizon=105,
-                        logo_y=20, logo=1, menu_y=162, menu=2, menu_row=16, tag=1),
+                        logo_y=32, logo=1, menu_y=162, menu=2, menu_row=16, tag=1),
     }
 
     def __init__(self, app):
@@ -162,7 +162,7 @@ class TitleScene:
 
     # ---- ロゴ ----
     def draw_logo(self):
-        """ロゴ(assets/logo.png)を整数倍で表示し、その下に副題を出す。"""
+        """ロゴ(画面ごとの幅で作ってある assets/logo_<画面サイズ>.png)を表示し、その下に副題を出す。"""
         k = self.lay["logo"]
         w, h = self.logo.width, self.logo.height
         x = (ui.W - w * k) // 2

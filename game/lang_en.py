@@ -1,9 +1,35 @@
 """英語の訳。キーは画面に出す日本語の文言(数値が入る文は i18n.trf に渡すテンプレート)。"""
 
 EN = {
+    # ---- 会話: キックオフ ----
+    "創業の日。借りたばかりの工業用ビルには、まだ家具すら届いていない。":
+        "Founding day. The industrial building we just rented doesn't even have furniture yet.",
+    "あるのは、むき出しのカーペットとホワイトボードが一枚。そして、なぜかマリアッチ楽団。":
+        "Just bare carpet and a single whiteboard. And, for some reason, a mariachi band.",
+    "……で、なんでマリアッチ?": "...So, why a mariachi band?",
+    "キックオフだ! 祝うのに理由はいらない。俺たちは火星に行くんだぞ!":
+        "It's our kickoff! You don't need a reason to celebrate. We're going to Mars!",
+    "家具より先にバンドを呼ぶ会社、はじめて見たわ。":
+        "First company I've seen that booked a band before buying furniture.",
+    "設計図もまだ一枚もないのにね。": "And we don't have a single blueprint yet.",
+    "そもそも、なぜロケットを自社で作るのですか。既製品を買う選択肢もあったはずです。":
+        "Why build our own rockets at all? Buying an existing one should have been an option.",
+    "買いに行ったさ。北の大国まで、中古の大陸間ミサイルをな。":
+        "I tried. I flew to the great northern power to buy used ICBMs.",
+    "1基 800万ドルだと。しかも鼻で笑われて、追い返された。":
+        "Eight million dollars apiece. And they laughed me out of the room.",
+    "帰りの飛行機で、原材料の値段を全部計算した。アルミ、チタン、燃料……ロケットの値段のほんの数パーセントだった。":
+        "On the flight home I priced out every raw material. Aluminum, titanium, fuel... "
+        "just a few percent of what a rocket sells for.",
+    "だったら自分たちで作ったほうが早い。そう思ったら、会社を作ってた。":
+        "So it's faster to build them ourselves. Next thing I knew, I'd started a company.",
+    "……キレて会社作る人、はじめて見た。": "...First time I've seen someone rage-quit into founding a company.",
+    "社員は片手で数えるほど。ロケットも、実績もない。それでも、ここから全部が始まった。":
+        "A handful of people. No rocket, no track record. Still, this is where it all began.",
+
     # ---- 会話: プロローグ ----
-    "倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC。":
-        "A converted warehouse. A desk, a welder, and one secondhand laptop.",
+    "数か月後。倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC。":
+        "A few months later. A converted warehouse. A desk, a welder, and one secondhand laptop.",
     "資本金は 100M$。それが全部。いい?":
         "We have 100M$ in capital. That's everything. Got it?",
     "軌道に届く小さなロケットを作る。いずれは、着陸して戻ってくるロケットを。":
@@ -22,6 +48,40 @@ EN = {
         "Fixed costs are 3M$ a month. Take it easy and we'll be broke before we ever fly.",
     "【操作】←→ でコマンドを選び、SPACE / Z で決定。「打上」で初飛行へ。":
         "[Controls] Pick a command with ←→ and confirm with SPACE / Z. Choose \"Launch\" for the first flight.",
+
+    "ところでさ、なんで Eagle(イーグル)なの?": "By the way, why \"Eagle\"?",
+    "決まってるだろ。映画『スペース・ウォーズ』のミレニアム・イーグル号だ。":
+        "Obviously. The Millennium Eagle from the movie \"Space Wars.\"",
+    "……名前の由来まで宇宙オタクなのね。": "...Even the name is pure space nerd.",
+    "射場は太平洋のど真ん中、クワゼラ環礁のオメガ島。本土じゃ打ち上げの許可が下りなかったの。":
+        "The launch site is Omega Island on Kwazela Atoll, in the middle of the Pacific. "
+        "We couldn't get a launch permit on the mainland.",
+    "暑くて湿度はほぼ 100%。みんなプレハブ小屋に寝泊まりして、手で組み立ててる。":
+        "It's hot, with nearly 100% humidity. Everyone sleeps in prefab huts and builds by hand.",
+    "補給船が遅れると、食べるものもなくなるわ。覚悟しておいて。":
+        "When the supply ship runs late, the food runs out too. Be ready for it.",
+    "(大学の寮に片っ端から電話をかける)「ロケット会社を作った。世界を変えに来ないか?」":
+        "(cold-calls every university dorm) \"I started a rocket company. Want to come change the world?\"",
+    "……それ、完全に詐欺電話だよね。": "...That totally sounds like a scam call.",
+    "ほとんど切られたけど、一人だけ本当に来たわ。寝る間も惜しんで働く、腕のいい若いエンジニアよ。":
+        "Most of them hung up, but one actually came. A sharp young engineer who barely sleeps.",
+    "来月から AP が 1 増える。": "AP goes up by 1 from next month.",
+    "オメガ島への補給船が、また遅れている。": "The supply ship to Omega Island is late again.",
+    "島のみんなから連絡! 食料が尽きて、ストライキだって!":
+        "Message from the island! The food ran out, and they're on strike!",
+    "今月は人手が足りないわ。AP が 1 減るわよ。": "We're short-handed this month. AP goes down by 1.",
+
+    "今のロケットは、一回飛ばしたら海に捨てる。毎回ジャンボジェットを使い捨てて飛んでるようなもんだ。":
+        "Rockets today get dumped in the ocean after one flight. It's like throwing away a jumbo jet every trip.",
+    "ロケットの着陸は『嵐の中で鉛筆を投げ上げて、手のひらの上に立てる』ようなもの、と言われています。":
+        "Landing a rocket is said to be like \"tossing a pencil into a storm and balancing it on your palm.\"",
+    "だから面白いんだ。": "That's what makes it fun.",
+    "その次は火星だ。地球と火星が近づく『窓』は、26ヶ月に一度しか来ない。":
+        "Then Mars. The \"window\" when Earth and Mars line up only comes once every 26 months.",
+    "最初の窓で無人機を着陸させ、次の窓で有人飛行。その後、100万人が暮らす都市を作るには——":
+        "Land uncrewed ships in the first window, fly crew in the next. After that, to build a city of a million people--",
+    "1回の窓に、何千機も飛ばせばいい。": "We just launch thousands of ships every window.",
+    "……まずは宇宙まで行けるようになってからね。": "...Let's reach space first, shall we.",
 
     # ---- 会話: ブリーフィング ----
     "初飛行の目標は、高度 10 km の突破。WP1 と呼ぶわ。":
@@ -75,6 +135,30 @@ EN = {
     "でも、データは残った。": "But the data survived.",
     "打ち上げで今月は手一杯。「待機」で次の月へ進めましょう。":
         "The launch took up this whole month. Use \"Wait\" to move on to next month.",
+
+    # ---- 会話: 一度だけのエピソード ----
+    "ニュースじゃ『また失敗』って言われてるよ……": "The news is calling it \"another failure\"...",
+    "当社の公式発表では『予定外の急速な分解』と表現します。":
+        "Our official statement will call it a \"rapid unscheduled disassembly.\"",
+    "限界まで攻めたから、最高のデータが取れた。大成功だ。":
+        "We pushed it to the limit, so we got the best data possible. Huge success.",
+    "3回連続の失敗。工場は重い空気に包まれていた。": "Three failures in a row. A heavy silence hung over the factory.",
+    "全員、聞いてくれ。": "Everyone, listen up.",
+    "俺は絶対に諦めない。文字通り、絶対にだ。": "I will never give up. And I mean never.",
+    "なぜ失敗したのか、物理的な原因を突き止めろ。原因さえ分かれば直せる。":
+        "Find the physical cause of the failure. Once we know the cause, we can fix it.",
+    "4回目の打ち上げ資金は俺がなんとか集める。君たちはロケットを直してくれ。":
+        "I'll find the money for a fourth launch somehow. You fix the rocket.",
+    "……あの人、目が全然死んでない。むしろ燃えてる。": "...His eyes aren't dead at all. If anything, they're on fire.",
+    "あれで弱気な顔されてたら、たぶん全員辞めてたね。": "If he'd looked even a little shaken, we'd probably all have quit.",
+    "ディーロンが 15M$ かき集めてきたわ。……本当に、これが最後よ。":
+        "Dylon scraped together 15M$. ...This really is the last chance.",
+    "(投資家に)次の打ち上げは来月だ。俺たちは、戻ってくるロケットで宇宙を安くする。":
+        "(to investors) Next launch is next month. We'll make space cheap with rockets that come back.",
+    "……また守れない締め切りを言って。": "...Another deadline we can't possibly meet.",
+    "俺のスケジュールは、すべてが物理法則の限界の速さで進んだ場合のものだ。遅れるのは君たちのせいだ。":
+        "My schedule assumes everything goes perfectly, at the speed limit of physics. Any delay is on you.",
+    "……聞かなかったことにするわ。": "...I'll pretend I didn't hear that.",
 
     # ---- 会社の状態 ----
     "創業{year}年目 {month}月": "Year {year}, Month {month}",

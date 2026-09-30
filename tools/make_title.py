@@ -2,6 +2,7 @@
 
 - assets/title_bg.png   320x240(2倍表示)の星・月・火星。地球は game/title_earth.py が毎フレーム描く
 - assets/title_bg_sq.png 360x360 の同じ背景(720x720 では2倍、360x360 では等倍で表示)
+- assets/earth_relief.png 地形の明暗(ヒルシェード)。地表マップと同じ大きさで、色の番号 0〜4 が暗→明
 - assets/earth_tex.png  地表マップ。横は軌道方向 90°ぶん(左右がつながる)、縦は軌道からの横方向 -24〜+24°
     色が地表の種類を表す: DBLUE=海 / TEAL=陸 / BROWN=砂漠 / GRAY=薄い雲 / WHITE=厚い雲 / YELLOW=都市のある陸
 """
@@ -84,6 +85,22 @@ def make_texture():
     return mat
 
 
+def make_relief():
+    """地形の明暗。大陸の形と同じノイズに山並み(リッジノイズ)を足した標高を、左上から照らした陰影にする。"""
+    vs, us = np.mgrid[0:TH, 0:TW].astype(float)
+    P = 10
+    x = us / TW * P
+    y = vs / TW * P
+    base = fbm(x, y + 3, 1, 7, P)  # make_texture の陸と同じノイズ
+    ridge = 1 - np.abs(2 * fbm(x * 5, y * 5 + 9, 41, 5, P * 5) - 1)
+    elev = base + 0.12 * ridge ** 2 + 0.04 * fbm(x * 24, y * 24, 57, 3, P * 24)
+    # 左上からの光。横はつながっているので端は反対側と差を取る
+    gx = (np.roll(elev, -1, axis=1) - np.roll(elev, 1, axis=1)) / 2
+    gy = np.gradient(elev, axis=0)
+    shade = -(gx + gy) * 180
+    return np.clip(np.round(shade), -2, 2).astype(int) + 2
+
+
 def make_bg(w, h, rng, n_stars, moon, mars):
     """星・月・火星の背景。moon / mars は (x, y, 半径)。"""
     ys, xs = np.mgrid[0:h, 0:w].astype(float)
@@ -117,6 +134,7 @@ def main():
     # 正方形の画面(720x720 / 360x360)用。星の密度は 320x240 と同じ
     img = make_bg(360, 360, np.random.default_rng(12), 440, (34, 28, 13), (337, 50, 13))
     Image.fromarray(rgb[img]).save(root / "assets" / "title_bg_sq.png")
+    Image.fromarray(rgb[make_relief()]).save(root / "assets" / "earth_relief.png")
 
 
 if __name__ == "__main__":

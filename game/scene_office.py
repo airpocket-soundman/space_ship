@@ -4,7 +4,7 @@ import math
 
 import pyxel
 
-from . import script, ui
+from . import kickoff, script, ui
 from .i18n import trf
 from .missions import MISSIONS
 from .portraits import NAMES
@@ -40,11 +40,13 @@ class Command:
 
 
 class OfficeScene:
-    def __init__(self, app, lines=None):
+    def __init__(self, app, lines=None, party=0):
+        """party: 最初の何行のあいだ、背景を創業キックオフの場面にするか。"""
         self.app = app
         self.st = app.state
         self.dlg = ui.Dialogue()
         self.lay = Layout()
+        self.party = party
         self.sel = 0
         self.frame = 0
         self.commands = [
@@ -132,8 +134,13 @@ class OfficeScene:
         st.last_fundraise = st.month_index
         amount = round(3 + st.reputation * 0.4 + (10 if "1-1" in st.cleared else 0), 1)
         st.funds += amount
-        self.say([("dylon", "(投資家に)俺たちは、戻ってくるロケットで宇宙を安くする。"),
-                  ("sara", trf("{amount}M$ 集まったわ。", amount=amount))])
+        if "schedule" not in st.seen:
+            st.seen.add("schedule")
+            lines = list(script.FUND_FIRST)
+        else:
+            lines = [("dylon", "(投資家に)俺たちは、戻ってくるロケットで宇宙を安くする。")]
+        lines.append(("sara", trf("{amount}M$ 集まったわ。", amount=amount)))
+        self.say(lines)
 
     def cmd_hire(self):
         st = self.st
@@ -142,11 +149,13 @@ class OfficeScene:
             return
         if not self.use_ap(1):
             return
+        first = st.staff == 0
         st.ap_max += 1
         st.fixed_cost += 0.5
         st.staff += 1
-        self.say([("maya", "腕のいい溶接工を一人採用したわ。来月から AP が 1 増える。"),
-                  ("sara", trf("固定費は月 {cost:.1f}M$ になったわよ。", cost=st.fixed_cost))])
+        lines = list(script.HIRE_FIRST) if first else [("maya", "腕のいい溶接工を一人採用したわ。来月から AP が 1 増える。")]
+        lines.append(("sara", trf("固定費は月 {cost:.1f}M$ になったわよ。", cost=st.fixed_cost)))
+        self.say(lines)
 
     def cmd_launch(self):
         st = self.st
@@ -182,7 +191,11 @@ class OfficeScene:
     # ---- 描画 ----
     def draw(self):
         pyxel.cls(ui.BLACK)
-        self.draw_hangar()
+        if self.dlg.active and self.dlg.index < self.party:
+            lay = self.lay
+            kickoff.draw(lay.status_h + 1, lay.view_bottom, lay.k, lay.ox, self.frame)
+        else:
+            self.draw_hangar()
         self.draw_status()
         speaker = self.dlg.current[0] if self.dlg.active else ""
         if speaker:
