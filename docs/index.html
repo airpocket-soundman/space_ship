@@ -195,7 +195,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <svg class="stars" aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 400 200" id="stars"></svg>
   <button class="theme-btn" id="themeBtn" type="button">テーマ切替</button>
   <div class="inner">
-    <div class="kicker">GAME DESIGN DOCUMENT v0.2</div>
+    <div class="kicker">GAME DESIGN DOCUMENT v0.3</div>
     <h1>StarX</h1>
     <p>失敗しながら、ロケットを「扱える機械」に育てていく。<br>会社経営の ADV と、ロケット操縦のアクションを組み合わせた Pyxel ゲームの企画書。</p>
     <div class="meta">実在の宇宙企業へのオマージュ作品です。社名・機体名・人物はすべて架空です。</div>
@@ -207,17 +207,18 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <div class="label">CONTENTS</div>
     <div class="links">
       <a href="#concept">1. コンセプト</a>
-      <a href="#loop">2. ゲームループ</a>
-      <a href="#resources">3. リソース</a>
-      <a href="#adv">4. ADVパート</a>
-      <a href="#growth">5. 難易度と開発</a>
-      <a href="#act">6. ACTパート</a>
-      <a href="#campaign">7. キャンペーン</a>
-      <a href="#economy">8. 経済バランス</a>
-      <a href="#scenario">9. シナリオ</a>
-      <a href="#tech">10. 技術設計</a>
-      <a href="#milestones">11. マイルストーン</a>
-      <a href="#open">12. 未決事項</a>
+      <a href="#arc">2. 会社の進化</a>
+      <a href="#loop">3. ゲームループ</a>
+      <a href="#resources">4. リソース</a>
+      <a href="#adv">5. ADVパート</a>
+      <a href="#growth">6. 難易度と開発</a>
+      <a href="#act">7. ACTパート</a>
+      <a href="#campaign">8. キャンペーン</a>
+      <a href="#economy">9. 経済バランス</a>
+      <a href="#scenario">10. シナリオ</a>
+      <a href="#tech">11. 技術設計</a>
+      <a href="#milestones">12. マイルストーン</a>
+      <a href="#open">13. 未決事項</a>
     </div>
   </nav>
 
@@ -242,9 +243,59 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </div>
 </section>
 
+<!-- arc -->
+<section id="arc">
+  <h2><span class="num">02</span>会社の進化(ストーリーの骨格)</h2>
+  <p class="lead">StarX は「ロケットを作る会社」から「宇宙への輸送と通信を持つ会社」へ変わっていく。この事業の変化そのものを物語の背骨にする。</p>
+  <p>各段階で<strong>新しい稼ぎ方</strong>がひとつずつ解禁され、ADV パートでできることが増えていく。</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>段階</th><th>章</th><th>機体</th><th>事業の意味</th><th>ゲームで解禁されるもの</th></tr>
+    <tr><td class="nw">① 証明</td><td class="nw">Ch1</td><td>Eagle 1</td><td>「民間でも軌道に届く」を証明し、信用を得る。機体そのものでは儲からない</td><td>評判(= 信用)。宇宙機関の育成プログラム</td></tr>
+    <tr><td class="nw">② 輸送サービス</td><td class="nw">Ch2 第1部</td><td>Eagle 9 + 補給カプセル</td><td>宇宙機関はロケットを買うのではなく「運ぶサービス」を買う</td><td>マイルストーン払いの開発契約・複数回の輸送サービス契約</td></tr>
+    <tr><td class="nw">③ 再使用</td><td class="nw">Ch2 第2部</td><td>Eagle 9(回収型)</td><td>ロケット製造業からロケット運輸業へ。「同じ機体を何回飛ばせるか」が勝負</td><td>機体ごとの飛行回数・整備・回転率の管理(フリート管理)</td></tr>
+    <tr><td class="nw">④ 大型化</td><td class="nw">Ch2 第3部</td><td>Eagle Heavy</td><td>大型衛星・深宇宙の需要を Eagle 9 の技術でカバーする橋渡し</td><td>高単価の政府・深宇宙契約</td></tr>
+    <tr><td class="nw">⑤ 自社の需要</td><td class="nw">Ch2 第3部</td><td>Eagle 9 + StarNet 衛星</td><td>他社の衛星を打つ会社から、自分の衛星を大量に打つ会社へ。毎月の通信料が入る</td><td>衛星通信網 StarNet(加入者・月額収入)</td></tr>
+    <tr><td class="nw">⑥ 有人輸送</td><td class="nw">Ch2 第3部</td><td>Eagle 9 + 有人カプセル</td><td>同じインフラで人も運ぶ。失敗が許されない</td><td>有人輸送契約・緊急脱出システム</td></tr>
+    <tr><td class="nw">⑦ 完全再使用</td><td class="nw">Ch3</td><td>Mega Booster + Space Ship</td><td>両段とも再使用し、短時間で整備・給油・再打ち上げ。大量輸送を桁違いに安くする</td><td>次世代 StarNet の大量展開・月・火星・軌道上データセンター</td></tr>
+  </table></div>
+
+  <h3>事業の自己強化ループ(フライホイール)</h3>
+  <div class="fig">
+    <svg viewBox="0 0 640 300" role="img" aria-label="ロケットを安くするとStarNetを大量に打て、加入者の料金がロケット開発に戻るループ">
+      <defs>
+        <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="acc"/></marker>
+      </defs>
+      <rect x="230" y="14" width="180" height="46" rx="10" class="box"/>
+      <text x="320" y="36" text-anchor="middle" class="ink" font-weight="700" font-size="14">ロケットが安くなる</text>
+      <text x="320" y="52" text-anchor="middle" class="muted" font-size="11">再使用・回転率・Space Ship</text>
+
+      <rect x="440" y="124" width="180" height="46" rx="10" class="box"/>
+      <text x="530" y="146" text-anchor="middle" class="ink" font-weight="700" font-size="14">StarNet を大量に打てる</text>
+      <text x="530" y="162" text-anchor="middle" class="muted" font-size="11">最大の社内顧客</text>
+
+      <rect x="230" y="236" width="180" height="46" rx="10" class="box"/>
+      <text x="320" y="258" text-anchor="middle" class="ink" font-weight="700" font-size="14">加入者が増える</text>
+      <text x="320" y="274" text-anchor="middle" class="muted" font-size="11">カバー率が上がる</text>
+
+      <rect x="20" y="124" width="180" height="46" rx="10" class="box"/>
+      <text x="110" y="146" text-anchor="middle" class="ink" font-weight="700" font-size="14">毎月の通信料</text>
+      <text x="110" y="162" text-anchor="middle" class="muted" font-size="11">継続収益 → 開発へ投資</text>
+
+      <path d="M410,40 C480,50 520,80 528,120" fill="none" class="acc-s" stroke-width="2.5" marker-end="url(#arr2)"/>
+      <path d="M528,172 C520,215 480,250 412,258" fill="none" class="acc-s" stroke-width="2.5" marker-end="url(#arr2)"/>
+      <path d="M228,258 C160,250 120,215 112,174" fill="none" class="acc-s" stroke-width="2.5" marker-end="url(#arr2)"/>
+      <path d="M112,122 C120,80 160,50 228,40" fill="none" class="acc-s" stroke-width="2.5" marker-end="url(#arr2)"/>
+      <text x="320" y="152" text-anchor="middle" class="acc" font-weight="700" font-size="15">回すほど加速する</text>
+    </svg>
+    <div class="cap">外部の打ち上げ案件は月に数件しかない。StarNet を始めるまでは、ロケットを安くしても打つものがない。</div>
+  </div>
+  <div class="callout"><strong>ゲームとしての狙い</strong>Chapter 2 の中盤で「外部の案件だけでは機体が余る」状況を作り、StarNet の開始を CEO の決断として体験させる。StarNet 開始後は打ち上げるほど月収が増えるので、打ち上げの回転率を上げる動機が強くなる。</div>
+</section>
+
 <!-- 2 -->
 <section id="loop">
-  <h2><span class="num">02</span>ゲームループ</h2>
+  <h2><span class="num">03</span>ゲームループ</h2>
   <div class="fig">
     <svg viewBox="0 0 720 250" role="img" aria-label="ADVパートとACTパートを往復するゲームループ">
       <defs>
@@ -276,7 +327,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 3 -->
 <section id="resources">
-  <h2><span class="num">03</span>リソース</h2>
+  <h2><span class="num">04</span>リソース</h2>
   <div class="table-wrap"><table>
     <tr><th>リソース</th><th>内容</th><th>増える</th><th>減る</th></tr>
     <tr><td class="nw"><strong>資金 (M$)</strong></td><td>百万ドル単位。0 未満で倒産</td><td>契約報酬・投資・自社サービス収入</td><td>固定費(毎月)・開発・製造・失敗損失</td></tr>
@@ -291,7 +342,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 4 -->
 <section id="adv">
-  <h2><span class="num">04</span>ADVパート(会社経営)</h2>
+  <h2><span class="num">05</span>ADVパート(会社経営)</h2>
   <h3>画面構成(256×256)</h3>
 <div class="mock">
     <div class="mock-screen">
@@ -329,11 +380,38 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <li>資金が 0 未満なら倒産判定</li>
   </ol>
   <div class="callout"><strong>救済イベント「最後の1機」</strong>初めて資金が 1 回分の打ち上げ費用を下回ったとき、1度だけ発生する。この1回を成功させると大型契約(宇宙機関の補給便契約)が入る。Chapter 1 のステージ 1-4 に組み込む。</div>
+
+  <h3>契約の種類(事業の段階で解禁)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>契約</th><th>解禁</th><th>支払い方</th><th>特徴</th></tr>
+    <tr><td class="nw">単発の打ち上げ</td><td>Ch1</td><td>成功時に一括</td><td>大学・小型衛星。安いが失敗に寛容</td></tr>
+    <tr><td class="nw">育成プログラム</td><td>Ch1 中盤</td><td>開発マイルストーンごと</td><td>宇宙機関が開発費を段階的に払う。期限までに達成しないと打ち切り</td></tr>
+    <tr><td class="nw">輸送サービス</td><td>Ch2 第1部</td><td>1便ごと(N便契約)</td><td>「荷物を運ぶ」サービスを売る。安定収入だが、毎回の期日と精度が厳しい</td></tr>
+    <tr><td class="nw">商業衛星</td><td>Ch2</td><td>成功時</td><td>価格競争がある。再使用で安くできると受注率が上がる</td></tr>
+    <tr><td class="nw">政府・深宇宙</td><td>Ch2 第3部</td><td>成功時(高単価)</td><td>Eagle Heavy が必要</td></tr>
+    <tr><td class="nw">有人輸送</td><td>Ch2 第3部</td><td>1便ごと(高単価)</td><td>失敗すると評判が壊滅し、事業停止の審査が入る</td></tr>
+  </table></div>
+
+  <h3>フリート管理(再使用の解禁後)</h3>
+  <ul>
+    <li>回収した1段目は機体ごとに<strong>飛行回数・整備度・次に飛べるまでの日数</strong>を持つ。</li>
+    <li>ADV のコマンドの重心が「製造」から「整備」へ移る。製造業から運輸業への変化をコマンドで体感させる。</li>
+    <li>回転率(整備にかかる日数)は研究で短くなる。同じ機体の最多飛行回数は称号として記録する。</li>
+    <li>整備を削ると安く早く飛ばせるが、故障イベントの確率が上がる。</li>
+  </ul>
+
+  <h3>需要の上限と StarNet</h3>
+  <ul>
+    <li>外部の打ち上げ案件は<strong>月に数件まで</strong>。価格を下げると少し増えるが頭打ちになる。</li>
+    <li>StarNet を始めると、自社の衛星という<strong>上限のない社内需要</strong>が生まれる。</li>
+    <li>StarNet の衛星数 → カバー率 → 加入者数 → 毎月の通信料、の順に効いていく。</li>
+    <li>衛星には寿命があり、数年で減る。補充の打ち上げが続くので、社内需要は途切れない。</li>
+  </ul>
 </section>
 
 <!-- 5 -->
 <section id="growth">
-  <h2><span class="num">05</span>難易度と開発</h2>
+  <h2><span class="num">06</span>難易度と開発</h2>
   <h3>設計原則</h3>
   <p class="lead">要求はステージごとに厳しくなり、機体は開発で扱いやすくなる。この2本の曲線の差がゲームの難易度になる。</p>
   <div class="fig">
@@ -395,7 +473,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 6 -->
 <section id="act">
-  <h2><span class="num">06</span>ACTパート(ロケット操縦)</h2>
+  <h2><span class="num">07</span>ACTパート(ロケット操縦)</h2>
   <p>既存のプロトタイプ <code>rocket_thrast_control.py</code> の物理(推力・重力・姿勢・着地判定・パーティクル)を土台に拡張する。</p>
 
   <h3>操作</h3>
@@ -485,12 +563,16 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 7 -->
 <section id="campaign">
-  <h2><span class="num">07</span>キャンペーン</h2>
+  <h2><span class="num">08</span>キャンペーン</h2>
   <p>史実の打ち上げを下敷きにし、実際の失敗の原因を「プレイヤーが操作や経営判断で乗り越えられる課題」に置き換える。<span class="tag hist">史実</span> は元になった出来事があるステージ、<span class="tag prop">提案</span> は創作。</p>
 
   <div class="chapter">
     <div class="ch-head"><span class="ch-no">CHAPTER 1</span><span class="ch-title">軌道へ</span><span class="ch-vehicle">小型ロケット Eagle 1(元ネタ: Falcon 1, 2006–2009)</span></div>
-    <p>小さな島の射場から、3回失敗して「最後の1機」で軌道に届き、最初の商業衛星を放出するまで。</p>
+    <p>小さな島の射場から、3回失敗して「最後の1機」で軌道に届き、最初の商業衛星を放出するまで。Eagle 1 は売って儲けるための機体ではなく、<strong>「この会社は本当にロケットを作れる」という信用を得るための機体</strong>。</p>
+    <ul>
+      <li>1-2 の後、宇宙機関の<strong>育成プログラム</strong>に選ばれる。次の機体 Eagle 9 と補給カプセルの開発費が、マイルストーンごとに入り始める。</li>
+      <li>1-4 に成功すると、宇宙機関から<strong>12便の補給サービス契約</strong>が入る(救済)。</li>
+    </ul>
     <div class="table-wrap"><table>
       <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法</th></tr>
       <tr><td class="nw">1-1 初飛行<span class="tag hist">史実</span></td><td>高度 10 km を突破 (WP1)</td><td>上昇中の火災警告(燃料漏れ)</td><td>ADV で点検すると発生率が下がる。発生したら推力を絞って耐える</td></tr>
@@ -502,20 +584,35 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </div>
 
   <div class="chapter">
-    <div class="ch-head"><span class="ch-no">CHAPTER 2</span><span class="ch-title">戻ってくるロケット</span><span class="ch-vehicle">中型ロケット Eagle 9 / Eagle Heavy(元ネタ: Falcon 9 / Falcon Heavy, 2010–2018)</span></div>
-    <p>大型化した Eagle 9 で補給便と商業衛星を飛ばしながら、1段目の回収に挑む。着陸が成功すると再使用で打ち上げ単価が下がり、会社の経営が一気に楽になる。最後は Eagle 9 の1段目を3本たばねた Eagle Heavy。</p>
+    <div class="ch-head"><span class="ch-no">CHAPTER 2</span><span class="ch-title">宇宙を商売にする</span><span class="ch-vehicle">中型ロケット Eagle 9 / Eagle Heavy + カプセル + StarNet(元ネタ: Falcon 9 / Falcon Heavy / Dragon / Starlink, 2006–2020)</span></div>
+    <p>「ロケットを作れる会社」が「宇宙輸送を商売にする会社」になる章。3部構成で、部ごとに新しい稼ぎ方が解禁される。</p>
+
+    <h4>第1部 打ち上げを商売にする(輸送サービス)</h4>
     <div class="table-wrap"><table>
       <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
-      <tr><td class="nw">2-1 Eagle 9 初飛行<span class="tag hist">史実</span></td><td>試験カプセルを軌道に投入</td><td>9基エンジンの新機体で操縦性がピーキーに戻る</td><td>Chapter 1 の制御ソフト研究は引き継げる</td></tr>
-      <tr><td class="nw">2-2 補給便<span class="tag hist">史実</span></td><td>補給カプセルを宇宙ステーションの接近窓に投入</td><td>位置・速度・時刻の窓がとても狭い(ランデブー)</td><td>打ち上げ時刻も窓(遅れると失敗)</td></tr>
-      <tr><td class="nw">2-3 跳ねるバッタ<span class="tag hist">史実</span></td><td>試験機 Hopper で 10 m → 100 m → 横移動 → 着地</td><td>最低スロットル 70% でホバリング不可</td><td>ホバースラムを覚えるチュートリアル</td></tr>
-      <tr><td class="nw">2-4 海面に立つ<span class="tag hist">史実</span></td><td>1段目を海面の上で速度 0 にする(洋上ソフト着水)</td><td>再突入燃焼 → 着陸燃焼の2回点火</td><td>研究「再点火」「グリッドフィン」が必要</td></tr>
-      <tr><td class="nw">2-5 台船の試練<span class="tag hist">史実</span></td><td>1段目を洋上の台船に着地</td><td>台船の揺れ・横風・狭い甲板</td><td>史実どおり、最初は失敗しやすい調整</td></tr>
-      <tr><td class="nw">2-6 帰ってきた<span class="tag hist">史実</span></td><td>通信衛星 11 機を順番に放出 → 1段目は発射場に戻って着地</td><td>複数放出(再点火)+ 帰還の燃料配分</td><td>1段の燃料を残しすぎると上昇が足りない</td></tr>
-      <tr><td class="nw">2-7 海の上の小さな島<span class="tag hist">史実</span></td><td>補給便 + 台船着地の両方を成功</td><td>2-2 と 2-5 の複合</td><td>成功すると「再使用」が解禁</td></tr>
-      <tr><td class="nw">2-8 高い軌道へ<span class="tag hist">史実</span></td><td>静止衛星を楕円軌道に投入</td><td>1段の燃料が少なく、再突入が高速</td><td>台船は遠く、着陸燃焼の余裕がない</td></tr>
-      <tr><td class="nw">2-9 二度目の空<span class="tag hist">史実</span></td><td>回収した機体で打ち上げる</td><td>整備度が低いと故障イベントが起きやすい</td><td>ADV の点検と整備費のトレードオフ</td></tr>
-      <tr><td class="nw">2-10 三本の柱<span class="tag hist">史実</span></td><td>Eagle Heavy 初飛行。社長の愛車(赤いオープンカー)を宇宙へ</td><td>サイドブースター2本の同時着地 + センターコアの台船着地</td><td>下の「二機同時操縦」を参照</td></tr>
+      <tr><td class="nw">2-1 Eagle 9 初飛行<span class="tag hist">史実</span></td><td>試験カプセルを軌道に投入</td><td>9基エンジンの新機体で操縦性がピーキーに戻る</td><td>Chapter 1 の制御ソフト研究は引き継げる。育成プログラムのマイルストーン</td></tr>
+      <tr><td class="nw">2-2 民間初の到着<span class="tag hist">史実</span></td><td>補給カプセルを宇宙ステーションの接近窓に投入</td><td>位置・速度・時刻の窓がとても狭い(ランデブー)</td><td>打ち上げ時刻も窓。成功すると補給サービスの定期便が始まる</td></tr>
+      <tr><td class="nw">2-3 商業衛星<span class="tag hist">史実</span></td><td>静止衛星を楕円軌道に投入</td><td>重いペイロードで燃料の余裕がない</td><td>オールドスペース社との価格競争が始まる</td></tr>
+    </table></div>
+
+    <h4>第2部 戻ってくるロケット(再使用)</h4>
+    <div class="table-wrap"><table>
+      <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
+      <tr><td class="nw">2-4 跳ねるバッタ<span class="tag hist">史実</span></td><td>試験機 Hopper で 10 m → 100 m → 横移動 → 着地</td><td>最低スロットル 70% でホバリング不可</td><td>ホバースラムを覚えるチュートリアル</td></tr>
+      <tr><td class="nw">2-5 海面に立つ<span class="tag hist">史実</span></td><td>1段目を海面の上で速度 0 にする(洋上ソフト着水)</td><td>再突入燃焼 → 着陸燃焼の2回点火</td><td>研究「再点火」「グリッドフィン」が必要</td></tr>
+      <tr><td class="nw">2-6 台船の試練<span class="tag hist">史実</span></td><td>1段目を洋上の台船に着地</td><td>台船の揺れ・横風・狭い甲板</td><td>史実どおり、最初は失敗しやすい調整</td></tr>
+      <tr><td class="nw">2-7 帰ってきた<span class="tag hist">史実</span></td><td>通信衛星 11 機を順番に放出 → 1段目は発射場に戻って着地</td><td>複数放出(再点火)+ 帰還の燃料配分</td><td>1段の燃料を残しすぎると上昇が足りない</td></tr>
+      <tr><td class="nw">2-8 海の上の小さな島<span class="tag hist">史実</span></td><td>補給便 + 台船着地の両方を成功</td><td>ランデブーと台船着地の複合</td><td>成功すると再使用とフリート管理が解禁</td></tr>
+      <tr><td class="nw">2-9 二度目の空<span class="tag hist">史実</span></td><td>回収した機体で商業衛星を打ち上げる</td><td>整備度が低いと故障イベントが起きやすい</td><td>ADV の整備費と回転率のトレードオフ</td></tr>
+    </table></div>
+
+    <h4>第3部 自分で需要を作る(大型化・StarNet・有人)</h4>
+    <div class="table-wrap"><table>
+      <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
+      <tr><td class="nw">2-10 三本の柱<span class="tag hist">史実</span></td><td>Eagle Heavy 初飛行。社長の愛車(赤いオープンカー)を宇宙へ</td><td>サイドブースター2本の同時着地 + センターコアの台船着地</td><td>下の「二機同時操縦」を参照。政府・深宇宙契約が解禁</td></tr>
+      <tr><td class="nw">2-11 星の網<span class="tag hist">史実</span></td><td>StarNet 衛星 60 機を一度に放出</td><td>放出姿勢と角速度の窓が厳しい + 1段は台船へ</td><td>成功すると StarNet の加入者受付が始まる</td></tr>
+      <tr><td class="nw">2-12 百回目の着地<span class="tag prop">提案</span></td><td>同じ1段目で N 回目の飛行を成功させる</td><td>劣化した機体(応答が少し鈍る)での着陸</td><td>回転率を上げた整備の成果を試す</td></tr>
+      <tr><td class="nw">2-13 人を乗せる<span class="tag hist">史実</span></td><td>有人カプセルを宇宙ステーションへ</td><td>上昇中の異常で緊急脱出の判断(脱出キー)</td><td>許容幅は全ステージで最も厳しい。失敗すると事業停止の審査</td></tr>
     </table></div>
     <h4>二機同時操縦(2-10)</h4>
     <ul>
@@ -526,23 +623,31 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <h4>この章の ADV イベント</h4>
     <ul>
       <li><span class="tag hist">史実</span> 飛行中の空中分解(部品の強度不足)/ 燃料充填中の射点爆発 → 点検と品質管理の重要性</li>
-      <li>再使用が解禁されると、機体在庫と整備度の管理が加わる</li>
-      <li>衛星通信網 StarNet の構想が始まり、月次収入の柱になる</li>
+      <li>第1部: 補給サービス契約が始まり、「ロケットを売るのではなく、運ぶサービスを売る」ビジネスモデルに入る</li>
+      <li>第2部: 再使用が解禁されると、機体ごとの飛行回数・整備度・回転率の管理が加わる</li>
+      <li>第3部の入口: 外部の案件だけでは回収した機体が余る → CEO の決断で StarNet を始める</li>
     </ul>
   </div>
 
   <div class="chapter">
-    <div class="ch-head"><span class="ch-no">CHAPTER 3</span><span class="ch-title">巨人</span><span class="ch-vehicle">超大型機 Mega Booster + X-Ship(元ネタ: Starship, 2023–)</span></div>
-    <p>ステンレスの超大型機。操縦性はまたピーキーに戻る。「爆発しても前に進めば成功」の試験を重ねる。</p>
+    <div class="ch-head"><span class="ch-no">CHAPTER 3</span><span class="ch-title">巨人</span><span class="ch-vehicle">超大型機 Mega Booster + Space Ship(元ネタ: Starship, 2023–)</span></div>
+    <p>ステンレスの超大型機 Space Ship。1段目だけでなく2段目も再使用し、短時間で整備・給油・再打ち上げする「航空機のような運用」を目指す。StarNet の月収で開発費をまかなう。操縦性はまたピーキーに戻り、「爆発しても前に進めば成功」の試験を重ねる。</p>
     <div class="table-wrap"><table>
       <tr><th>#</th><th>目標</th><th>成功条件</th></tr>
       <tr><td class="nw">3-1 巨人の初飛行<span class="tag hist">史実</span></td><td>段分離まで到達</td><td>分離できれば成功(その後の爆発は問題にしない)</td></tr>
       <tr><td class="nw">3-2 二つの着水<span class="tag hist">史実</span></td><td>ブースターとシップの両方を指定海域に着水させる</td><td>着水地点に落とせれば成功(着水後の爆発は問題にしない)</td></tr>
       <tr><td class="nw">3-3 箸でつかめ<span class="tag hist">史実</span></td><td>ブースターを発射塔のアームでキャッチ</td><td>アームの間でホバリング → <kbd>C</kbd> でキャッチ</td></tr>
       <tr><td class="nw">3-4 腹から落ちる<span class="tag hist">史実</span></td><td>シップの再突入(腹ばいで降下 → 直前に反転 → 着水)</td><td>耐熱ゲージを残して着水</td></tr>
-      <tr><td class="nw">3-5 両方つかめ<span class="tag prop">提案</span></td><td>シップもアームでキャッチ</td><td>―</td></tr>
-      <tr><td class="nw">終章<span class="tag prop">提案</span></td><td>軌道上の燃料補給 → 月 → 火星</td><td>エンディングへ</td></tr>
+      <tr><td class="nw">3-5 次世代 StarNet<span class="tag hist">史実</span></td><td>Space Ship で次世代の大型 StarNet 衛星を展開</td><td>貨物扉から衛星を1機ずつ放出。途中でエンジン異常が起き、予定より早く飛行を終える判断が求められる</td></tr>
+      <tr><td class="nw">3-6 両方つかめ<span class="tag prop">提案</span></td><td>シップもアームでキャッチ</td><td>―</td></tr>
+      <tr><td class="nw">終章<span class="tag prop">提案</span></td><td>軌道上の燃料補給 → 月 → 火星 / 軌道上データセンター</td><td>エンディングへ</td></tr>
     </table></div>
+    <h4>この章の ADV</h4>
+    <ul>
+      <li>StarNet の加入者数と月収が、Space Ship の開発資金の柱になる(フライホイール)。</li>
+      <li>「整備 → 給油 → 再打ち上げ」の日数を研究で縮め、打ち上げ頻度を上げる。</li>
+      <li>安い大量輸送を前提にした新事業(月面輸送、軌道上データセンターなど)の構想イベント。</li>
+    </ul>
   </div>
 
   <p>各章には「試験ミッション(自社の費用で飛ぶ)」と「受注ミッション(報酬が出る)」の両方を用意する。資金が苦しいときは受注で稼ぐ、という判断を入れる。</p>
@@ -560,7 +665,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 8 -->
 <section id="economy">
-  <h2><span class="num">08</span>経済バランス(叩き台)</h2>
+  <h2><span class="num">09</span>経済バランス(叩き台)</h2>
   <div class="table-wrap"><table>
     <tr><th>項目</th><th>値</th></tr>
     <tr><td>初期資金</td><td>100 M$</td></tr>
@@ -569,16 +674,19 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td>Hopper 製造 / 整備</td><td>5 / 1 M$</td></tr>
     <tr><td>Eagle 9 新造 / 再使用整備</td><td>50 / 12 M$</td></tr>
     <tr><td>Eagle Heavy 新造</td><td>90 M$</td></tr>
-    <tr><td>Mega Booster + X-Ship 新造</td><td>120 M$</td></tr>
+    <tr><td>Mega Booster + Space Ship 新造</td><td>120 M$</td></tr>
     <tr><td>衛星打ち上げ受注</td><td>小型 5〜10 M$ / 中型 60〜90 M$</td></tr>
-    <tr><td>補給便大型契約(救済イベント)</td><td>400 M$(分割で入金)</td></tr>
-    <tr><td>StarNet 収入</td><td>衛星 1 回放出ごとに +2 M$/月(積み上がる)</td></tr>
+    <tr><td>育成プログラム</td><td>マイルストーン 1 件ごとに 30〜60 M$</td></tr>
+    <tr><td>補給サービス契約(救済イベント)</td><td>12 便・1 便あたり 130 M$(成功するたびに入金)</td></tr>
+    <tr><td>有人輸送</td><td>1 便あたり 250 M$</td></tr>
+    <tr><td>外部の打ち上げ案件</td><td>月に 1〜3 件(価格を下げると少し増えるが頭打ち)</td></tr>
+    <tr><td>StarNet 収入</td><td>加入者数 × 月額。加入者はカバー率(衛星数)に比例して増える。衛星は数年で寿命</td></tr>
   </table></div>
 </section>
 
 <!-- 9 -->
 <section id="scenario">
-  <h2><span class="num">09</span>シナリオ</h2>
+  <h2><span class="num">10</span>シナリオ</h2>
   <h3>登場人物(すべて架空)</h3>
   <div class="table-wrap"><table>
     <tr><th>名前</th><th>役職</th><th>性格・役割</th></tr>
@@ -610,29 +718,66 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <p><span class="sp">マヤ</span>「分離のタイミングは直した。あとは、あなたの手よ」</p>
   </div>
   <ul>
-    <li>1-4 に成功すると、宇宙機関のグレイから補給便の大型契約の連絡が入る。</li>
+    <li>1-2 の後、グレイが工場を訪ねてくる。宇宙機関の育成プログラムに選ばれる。</li>
+  </ul>
+  <div class="dialog">
+    <p><span class="sp">グレイ</span>「我々はロケットを買うつもりはない。ステーションまで荷物を届けてくれるなら、その“サービス”に金を払う」</p>
+    <p><span class="sp">サラ</span>「……つまり、航空会社みたいなもの?」</p>
+    <p><span class="sp">グレイ</span>「まずは軌道に届いてからの話だ」</p>
+  </div>
+  <ul>
+    <li>1-4 に成功すると、グレイから 12 便の補給サービス契約の連絡が入る。倒産の危機を脱する。</li>
   </ul>
 
-  <h3>Chapter 2「戻ってくるロケット」</h3>
+  <h3>Chapter 2「宇宙を商売にする」</h3>
+  <h4>第1部 打ち上げを商売にする</h4>
   <ul>
-    <li>2-3 の Hopper で、マヤがホバースラムを教える。</li>
+    <li>2-2 で民間初の宇宙ステーション到着。定期便が始まり、会社は「打ち上げサービス会社」になる。</li>
+    <li>オールドスペース社が価格を下げて対抗してくる。「このままでは価格で負ける」というサラの一言が、再使用への動機になる。</li>
+  </ul>
+  <h4>第2部 戻ってくるロケット</h4>
+  <ul>
+    <li>2-4 の Hopper で、マヤがホバースラムを教える。</li>
   </ul>
   <div class="dialog">
     <p><span class="sp">マヤ</span>「燃料が減って軽くなると、最低出力でも浮き上がるの。浮き続けることはできない。止まる瞬間を“狙う”のよ」</p>
   </div>
   <ul>
     <li>台船の名前はクルーがつけたジョーク(例: 「説明書を読め号」「まだ好きだよ号」)。</li>
-    <li>2-7 に成功したときのケン「海の上に……立ってる!!」 → 評判が大きく上がる。</li>
+    <li>2-8 に成功したときのケン「海の上に……立ってる!!」 → 評判が大きく上がる。</li>
+  </ul>
+  <div class="dialog">
+    <p><span class="sp">サラ</span>「機体を作るお金より、同じ機体を何回飛ばせるかのほうが大事になった。うちはもう、製造業じゃなくて運輸業ね」</p>
+  </div>
+  <h4>第3部 自分で需要を作る</h4>
+  <ul>
     <li>2-10 の Eagle Heavy では、宇宙を漂う社長の愛車の映像でケンが泣く。</li>
+    <li>ところが、回収した機体が格納庫に並んだまま飛ばない。外の注文が足りないのだ。</li>
+  </ul>
+  <div class="dialog">
+    <p><span class="sp">ケン</span>「ロケットはこんなに安くなったのに、打つ衛星がないってどういうこと?」</p>
+    <p><span class="sp">マヤ</span>「なら、自分で打つものを作ればいい」</p>
+    <p><span class="sp">サラ</span>「自分の衛星で通信サービスを売る。毎月お金が入ってくる事業……賭けとしては大きいわよ」</p>
+    <p class="next">▶ 選択: StarNet を始める / 見送る(見送ると成長が頭打ちになり、身売りエンディングへの分岐が近づく)</p>
+  </div>
+  <ul>
+    <li>2-11 の StarNet 初展開で、加入者の数字が毎月増えていく画面を見せる。フライホイールが回り始める瞬間。</li>
+    <li>2-13 の有人輸送は、脱出キーの判断を含む緊張感の高いステージにする。成功すると「人も運べる会社」になる。</li>
   </ul>
 
   <h3>Chapter 3「巨人」</h3>
+  <div class="dialog">
+    <p><span class="sp">マヤ</span>「Eagle 9 は1段目しか戻ってこない。Space Ship は全部戻す。飛行機みたいに、着いたら給油してまた飛ぶの」</p>
+    <p><span class="sp">サラ</span>「開発費は StarNet の月収でまかなえる。……創業の頃には想像もできなかったわね」</p>
+  </div>
   <div class="dialog">
     <p><span class="sp">ケン</span>「分離した! 分離したぞ! ……そして爆発した! でも成功だ!!」</p>
     <p><span class="sp">マヤ</span>「海に還すまでが試験です」</p>
   </div>
   <ul>
     <li>3-3 の箸キャッチは、管制室が沈黙 → アームが閉じる → 歓声。ゲームでいちばん盛り上がる瞬間にする。</li>
+    <li>3-5 で Space Ship が初めて実際の StarNet 衛星を運ぶ。試験機が「本番の輸送機」になる転換点。</li>
+    <li>終章の構想会議: 安い大量輸送を前提に、月面輸送・火星・軌道上データセンターといった新事業が並ぶ。</li>
   </ul>
 
   <h3>エンディング</h3>
@@ -647,7 +792,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 10 -->
 <section id="tech">
-  <h2><span class="num">10</span>技術設計(Pyxel)</h2>
+  <h2><span class="num">11</span>技術設計(Pyxel)</h2>
 <pre>starx/
 ├─ main.py              # エントリ。シーン管理
 ├─ scenes/
@@ -681,7 +826,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 11 -->
 <section id="milestones">
-  <h2><span class="num">11</span>開発マイルストーン</h2>
+  <h2><span class="num">12</span>開発マイルストーン</h2>
   <div class="table-wrap"><table>
     <tr><th>#</th><th>内容</th><th>完了の目安</th></tr>
     <tr><td>M1</td><td>物理を Vehicle に分離・パラメータ化・縦スクロールカメラ・遠心力近似</td><td>高度数百 km まで飛べる</td></tr>
@@ -689,7 +834,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td>M3</td><td>ADV の最小構成(月ターン・資金・開発 3 種・倒産)</td><td>ADV ↔ ACT のループが回る</td></tr>
     <tr><td>M4</td><td>日本語フォント・会話ウィンドウ・プロローグ</td><td>ストーリーが読める</td></tr>
     <tr><td>M5</td><td>Chapter 1 全ステージ</td><td>―</td></tr>
-    <tr><td>M6</td><td>Chapter 2(着陸・台船・再使用・Heavy)</td><td>―</td></tr>
+    <tr><td>M6</td><td>Chapter 2(契約の種類・着陸・台船・フリート管理・Heavy・StarNet・有人)</td><td>―</td></tr>
     <tr><td>M7</td><td>Chapter 3(超大型機・着水・箸キャッチ・再突入)</td><td>―</td></tr>
     <tr><td>M8</td><td>演出・サウンド・バランス調整・Web 公開</td><td>―</td></tr>
   </table></div>
@@ -697,9 +842,8 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
 <!-- 12 -->
 <section id="open">
-  <h2><span class="num">12</span>未決事項</h2>
+  <h2><span class="num">13</span>未決事項</h2>
   <ul>
-    <li>リポジトリ名(現在は <code>space_ship</code>。<code>starx</code> にリネームするか)</li>
     <li>WP の許容幅・時間制限の具体的な数値(プロトタイプで遊びながら詰める)</li>
     <li>上昇フェーズをどこまで手動にするか(研究「自動上昇」の解禁タイミング)</li>
     <li>ADV の立ち絵をドットで描くか、テキスト中心にするか</li>
