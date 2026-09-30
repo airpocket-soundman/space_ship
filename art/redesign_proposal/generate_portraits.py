@@ -19,6 +19,59 @@ P = {
 }
 
 
+def add_face_detail(im, cid, spec):
+    """One-pixel accents at the final 64px resolution, not doubled 32px blocks."""
+    if spec.get("robot"):
+        return im
+    d = ImageDraw.Draw(im)
+    def dot(x, y, color): d.point((x, y), fill=P[color])
+    def stroke(points, color): d.line(points, fill=P[color], width=1)
+    hair = spec["hair"]
+    light = spec["hair_light"]
+    # Irregular locks follow the cap shape and distinguish individual hairlines.
+    for i, (x, y) in enumerate(((24, 18), (28, 17), (34, 18), (39, 20))):
+        if spec.get("style") != "bald":
+            stroke((x, y, x + (1 if i % 2 else -1), y + 3), light)
+            dot(x + 1, y + 4, hair)
+    if spec.get("style") in ("bob", "parted"):
+        stroke((18, 29, 18, 39), light)
+        stroke((46, 28, 46, 40), hair)
+    if spec.get("style") == "spikes":
+        for x, y in ((23, 12), (31, 8), (38, 10)):
+            dot(x, y, "white")
+    # Face shading: contour, bridge of nose, nostril, cheek light.
+    stroke((23, 26, 23, 33), "brown")
+    stroke((42, 29, 42, 36), "brown")
+    dot(30, 33, "skin")
+    dot(34, 33, "brown")
+    dot(31, 34, "brown")
+    dot(25, 34, "pink" if cid in ("mimi", "sara") else "skin")
+    dot(39, 34, "brown")
+    # Retain the strong eyebrow but break the eye into sclera, iris and catchlight.
+    if not spec.get("visor"):
+        for x in (27, 39):
+            dot(x, 29, "white")
+            dot(x + 1, 30, "teal" if cid in ("dylon", "dylon_ai") else "blue")
+            dot(x + 1, 29, "white")
+            dot(x + 2, 31, "brown")
+        stroke((25, 26, 29, 26), hair)
+        stroke((37, 26, 41, 26), hair)
+    # Mouth: lip highlight is thinner than the 32px construction line.
+    stroke((29, 37, 36, 37), "brown")
+    dot(30, 38, "pink" if cid in ("mimi", "sara") else "skin")
+    dot(35, 38, "skin")
+    if spec.get("smile"):
+        dot(28, 36, "brown")
+        dot(37, 36, "brown")
+    if spec.get("beard"):
+        for x, y in ((26, 38), (29, 41), (33, 42), (37, 40)):
+            dot(x, y, hair)
+    if spec.get("glasses"):
+        dot(25, 28, "white")
+        dot(39, 28, "white")
+    return im
+
+
 def portrait(cid, spec):
     im = Image.new("RGB", (32, 32), P[spec["bg"]])
     d = ImageDraw.Draw(im)
@@ -154,7 +207,8 @@ def portrait(cid, spec):
                 L((0, y, 31, y), "teal")
             R((4, 3, 6, 4), "mint")
             R((25, 27, 27, 28), "mint")
-    im.resize((64, 64), Image.Resampling.NEAREST).save(OUT / f"{cid}.png")
+    im = add_face_detail(im.resize((64, 64), Image.Resampling.NEAREST), cid, spec)
+    im.save(OUT / f"{cid}.png")
     return im
 
 

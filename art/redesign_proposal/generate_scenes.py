@@ -31,7 +31,7 @@ def rocket(d, x, top, height, width, variant, legs=False):
     bottom = top + height
     half = width // 2
     left, right = x-half, x+half
-    nose = max(10, round(width * (1.6 if variant == "starship" else 1.4)))
+    nose = max(10, round(width * (1.2 if variant == "starship" else 1.4)))
     # Body shadow and stepped highlight explain the cylinder at game scale.
     box(d, (left-1, top+nose, right+1, bottom), "black")
     box(d, (left, top+nose, right, bottom-1), "gray" if variant == "starship" else "white")
@@ -45,13 +45,25 @@ def rocket(d, x, top, height, width, variant, legs=False):
     line(d, (x-2,top+1,left+2,top+nose-2), "white")
     poly(d, [(x+2,top+1),(right-1,top+nose-2),(right-3,top+nose)], "blue" if variant == "starship" else "gray")
     if variant == "starship":
-        # Black heat-shield strip and four aerodynamic flaps, two visible in profile.
-        box(d, (x+1, top+nose//2, right, bottom-14), "navy")
-        for y in range(top+nose+6, bottom-18, 7):
-            line(d, (x+2,y,right-1,y), "black")
-        poly(d, [(left,top+nose+9),(left-8,top+nose+3),(left-6,top+nose+22),(left,top+nose+25)], "gray")
-        poly(d, [(right,bottom-23),(right+10,bottom-27),(right+8,bottom-7),(right,bottom-5)], "black")
-        box(d, (left,bottom-4,right,bottom), "black")
+        # Three visible body planes: sunlit stainless, midtone, tiled windward face.
+        box(d, (left+2, top+nose, x-2, bottom-4), "white")
+        box(d, (x-1, top+nose, x+4, bottom-4), "gray")
+        box(d, (x+5, top+nose//2, right, bottom-4), "black")
+        poly(d, [(x+2,top+1),(x+5,top+6),(right-1,top+nose-3),
+                 (right,top+nose),(x+5,top+nose)], "black")
+        # Pixel-scale tile joints and the stainless ring-weld cadence.
+        for y in range(top+nose+8, bottom-8, 7):
+            line(d, (left+3,y,x-2,y), "gray")
+            line(d, (x+6,y,right-1,y), "navy")
+            for tx in range(x+7,right-1,5):
+                line(d,(tx,y-3,tx,y-1),"navy")
+        # Small forward flaps near the nose, broad aft flaps low on the hull.
+        poly(d, [(left,top+nose+10),(left-6,top+nose+5),
+                 (left-6,top+nose+20),(left,top+nose+24)], "gray")
+        line(d,(left-4,top+nose+8,left-4,top+nose+18),"white")
+        poly(d, [(right,bottom-34),(right+10,bottom-38),
+                 (right+11,bottom-14),(right,bottom-10)], "black")
+        box(d, (left,bottom-5,right,bottom), "black")
         for nx in (x-5,x,x+5): box(d,(nx-1,bottom,nx+1,bottom+4),"gray")
     else:
         inter = top + int(height*.41)
@@ -82,7 +94,7 @@ def rocket_sheet():
     for x in range(0,320,16): line(d,(x,205,x+9,201),"blue")
     rocket(d,55,80,113,11,"eagle")
     rocket(d,156,41,153,12,"falcon",True)
-    rocket(d,260,23,166,19,"starship")
+    rocket(d,260,23,166,28,"starship")
     for x in (55,156,260):
         box(d,(x-31,204,x+31,205),"gray")
         box(d,(x-21,209,x+21,210),"blue")
@@ -93,7 +105,7 @@ def rocket_sheet():
     d.text((16,218),"SINGLE ENGINE",fill=C["ice"])
     d.text((118,218),"LEGS + GRID FINS",fill=C["ice"])
     d.text((224,218),"FLAPS + TILES",fill=C["ice"])
-    save(im,"rocket_silhouette_study.png")
+    save(im,"rocket_silhouette_study_v3.png")
 
 
 def office():
@@ -182,7 +194,51 @@ def launch():
     save(im,"launch_screen_proposal.png")
 
 
+def starship_v3_detail():
+    """Two orthographic views of the V3 upper stage, based on 2026 flight hardware."""
+    im,d = new(320,240,"night")
+    box(d,(0,0,319,26),"black")
+    d.text((11,9),"STARSHIP V3  /  UPPER STAGE",fill=C["white"])
+    for x in (83,237):
+        box(d,(x-51,214,x+51,216),"blue")
+    # Left: heat-shield side, facing the viewer. Long tapered nose and
+    # broad cylinder approximate the 52m x 9m ratio from SpaceX's vehicle page.
+    for x,tile_view in ((83,True),(237,False)):
+        top,bottom,w=41,198,27
+        l,r=x-w//2,x+w//2
+        poly(d,[(x-2,top),(x+2,top),(x+8,top+6),(r-2,top+24),
+                (r,top+30),(l,top+30),(l+2,top+24),(x-8,top+6)],
+             "black" if tile_view else "gray")
+        box(d,(l,top+30,r,bottom),"black")
+        if tile_view:
+            box(d,(l+1,top+30,l+4,bottom-1),"gray")
+            box(d,(l+5,top+30,r-1,bottom-1),"black")
+            for y in range(top+35,bottom-6,6):
+                line(d,(l+6,y,r-2,y),"navy")
+                off=2 if (y//6)%2 else 0
+                for xx in range(l+7+off,r-2,5):
+                    line(d,(xx,y-4,xx,y-1),"navy")
+            poly(d,[(l,top+44),(l-8,top+41),(l-8,top+58),(l,top+64)],"black")
+            poly(d,[(r,bottom-44),(r+11,bottom-50),(r+11,bottom-20),(r,bottom-15)],"black")
+        else:
+            box(d,(l+1,top+30,l+4,bottom-1),"white")
+            box(d,(l+5,top+30,r-7,bottom-1),"gray")
+            box(d,(r-6,top+30,r-1,bottom-1),"blue")
+            line(d,(l+3,top+10,l+1,top+29),"white")
+            for y in range(top+39,bottom-4,9):
+                line(d,(l+2,y,l+4,y),"gray")
+                line(d,(l+5,y,r-8,y),"ice")
+            poly(d,[(l,top+44),(l-7,top+40),(l-7,top+58),(l,top+62)],"gray")
+            poly(d,[(r,bottom-44),(r+11,bottom-48),(r+11,bottom-20),(r,bottom-15)],"gray")
+            line(d,(r+2,bottom-40,r+8,bottom-26),"white")
+        box(d,(l,bottom-5,r,bottom),"navy")
+        for nx in (x-6,x,x+6):
+            poly(d,[(nx-2,bottom),(nx+2,bottom),(nx+3,bottom+6),(nx-3,bottom+6)],"gray")
+    d.text((37,221),"HEAT-SHIELD SIDE",fill=C["ice"])
+    d.text((198,221),"STEEL SIDE",fill=C["ice"])
+    save(im,"starship_v3_detail.png")
+
+
 if __name__ == "__main__":
     rocket_sheet()
-    office()
-    launch()
+    starship_v3_detail()
