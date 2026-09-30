@@ -4,11 +4,11 @@ import math
 
 import pyxel
 
-from . import audio, kickoff, script, ui
+from . import audio, kickoff, rocket_art, script, state, ui
 from .i18n import trf
 from .missions import MISSIONS
 from .portraits import NAMES
-
+from .vehicles import EAGLE9_S1R, EAGLE9_S2, HOPPER
 
 
 class Layout:
@@ -50,14 +50,29 @@ class OfficeScene:
         self.sel = 0
         self.frame = 0
         self.commands = [
-            Command("build", "製造", 1, trf("Eagle 1 を製造する({cost:.0f}M$・{months}ヶ月)", cost=self.st.ROCKET_COST, months=self.st.ROCKET_MONTHS), self.cmd_build),
+            Command("build", "製造", 1, "", self.cmd_build),
             Command("inspect", "点検", 1, trf("次の打ち上げの故障を起きにくくする({cost}M$)", cost=self.st.INSPECT_COST), self.cmd_inspect),
             Command("fund", "調達", 1, "資金を集める(3ヶ月に1回)", self.cmd_fund),
-            Command("launch", "打上", 0, "打ち上げる(その月の残り AP をすべて使う)", self.cmd_launch),
+            Command("launch", "打上", 0, "", self.cmd_launch),
             Command("wait", "待機", 0, "次の月へ進む", self.cmd_wait),
         ]
+        self.eagle9 = None  # 格納庫に立てる Eagle 9 の絵(必要になったら読み込む)
+        state.save(self.st)  # 会社に戻るたびに自動でセーブする
         if lines:
             self.dlg.start(lines)
+
+    def describe(self, cmd):
+        """コマンドの説明文(製造と打上は、いまのステージに合わせて変わる)。"""
+        st = self.st
+        if cmd.key == "build":
+            cost, months = st.build_cost()
+            if st.craft == "eagle9" and st.recovered > 0:
+                return trf("回収した1段目を整備して Eagle 9 にする({cost:.0f}M$・{months}ヶ月)", cost=cost, months=months)
+            return trf("{name} を製造する({cost:.0f}M$・{months}ヶ月)", name=st.craft_name, cost=cost, months=months)
+        if cmd.key == "launch":
+            m = MISSIONS[st.stage]
+            return trf("{title}: {goal}(その月の残り AP をすべて使う)", title=ui.tr(m.title), goal=ui.tr(m.goal))
+        return cmd.desc
 
     # ---- コマンド ----
     def say(self, lines, on_done=None):
@@ -72,17 +87,20 @@ class OfficeScene:
 
     def cmd_build(self):
         st = self.st
-        if st.rockets + len(st.building) >= 2:
+        if st.ready() + st.building_now() >= 2:
             self.say([("maya", "もう2機あるわ。置き場所がない。")])
             return
-        if st.funds < st.ROCKET_COST:
+        cost, months = st.build_cost()
+        if st.funds < cost:
             self.say([("sara", "製造するお金が足りないわ。")])
             return
         if not self.use_ap(1):
             return
-        st.funds -= st.ROCKET_COST
-        st.building.append(st.ROCKET_MONTHS)
-        self.say([("maya", trf("Eagle 1 の製造を始めたわ。{months}ヶ月後に完成する。", months=st.ROCKET_MONTHS))])
+        st.funds -= cost
+        if st.craft == "eagle9" and st.recovered > 0:
+            st.recovered -= 1
+        st.building.append([st.craft, months])
+        self.say([("maya", trf("{name} の製造を始めたわ。{months}ヶ月後に完成する。", name=st.craft_name, months=months))])
 
     def cmd_inspect(self):
         st = self.st
@@ -93,7 +111,7 @@ class OfficeScene:
             return
         st.funds -= st.INSPECT_COST
         st.inspected = True
-        self.say([("maya", "燃料ラインを見直した。火災はだいぶ起きにくくなるはず。")])
+        self.say([("maya", "機体を隅々まで見直した。故障はだいぶ起きにくくなるはず。")])
 
     def cmd_fund(self):
         st = self.st
@@ -103,17 +121,17 @@ class OfficeScene:
         if not self.use_ap(1):
             return
         st.last_fundraise = st.month_index
-        amount = round(3 + st.reputation * 0.4 + (10 if "1-1" in st.cleared else 0), 1)
+        amount = st.fundraise_amount()
         st.funds += amount
         self.say([("sara", trf("{amount}M$ 集まったわ。", amount=amount))])
 
     def cmd_launch(self):
         st = self.st
-        if st.rockets <= 0:
+        if st.ready() <= 0:
             self.say([("maya", "機体がないわ。「製造」して。")])
             return
-        mdef = MISSIONS.get(st.stage) or MISSIONS["1-1"]
-        lines = list(script.BRIEFING_1_1)
+        mdef = MISSIONS[st.stage]
+        lines = list(script.BRIEFING[mdef.id])
         lines += script.BRIEFING_INSPECTED if st.inspected else script.BRIEFING_NOT_INSPECTED
         lines += script.BRIEFING_END
         self.say(lines, on_done=lambda: self.app.start_mission(mdef))
@@ -162,10 +180,10 @@ class OfficeScene:
         pyxel.rect(0, 0, ui.W, h, ui.NAVY)
         pyxel.line(0, h, ui.W, h, ui.DBLUE)
         col = ui.RED if st.funds < 10 else ui.YELLOW
-        build = trf(" 製造中{n}", n=len(st.building)) if st.building else ""
+        build = trf(" 製造中{n}", n=st.building_now()) if st.building_now() else ""
         funds = trf("資金 {funds:6.1f}M$", funds=st.funds)
         rep = trf("評判 {rep}", rep=st.reputation)
-        rockets = trf("機体 {n}{build}", n=st.rockets, build=build)
+        rockets = trf("機体 {n}{build}", n=st.ready(), build=build)
         if ui.SMALL:  # 2段に分ける
             c1, c2 = ui.W // 3, ui.W * 2 // 3
             ui.text(6, 3, st.date_str(), ui.WHITE, size=10)
@@ -213,21 +231,59 @@ class OfficeScene:
         by = floor - 189 * k
         pyxel.rect(ox + 160 * k, by, 150 * k, 90 * k, ui.WHITE)
         pyxel.rectb(ox + 160 * k, by, 150 * k, 90 * k, ui.GRAY)
-        ui.text(ox + 170 * k, by + 6 * k, "EAGLE 1", ui.DBLUE, size=10 if ui.SMALL else 12)
+        ui.text(ox + 170 * k, by + 6 * k, self.st.craft_name.upper(), ui.DBLUE, size=10 if ui.SMALL else 12)
         pyxel.circb(ox + 235 * k, by + 60 * k, 22 * k, ui.RED)
         pyxel.circ(ox + 235 * k, by + 60 * k, 6 * k, ui.DBLUE)
         pyxel.line(ox + 170 * k, by + 28 * k, ox + 250 * k, by + 28 * k, ui.BLACK)
         if not ui.TINY:  # 320x240 ではボードが小さくて入らない
-            ui.text(ox + 260 * k, by + 34 * k, "10km!", ui.RED, size=10)
+            goal = script.BOARD.get(self.st.stage, "")
+            ui.text(ox + 304 * k - ui.text_width(goal, 10), by + 34 * k, goal, ui.RED, size=10)
         # 机とノートPC
         pyxel.rect(ox + 40 * k, floor - 40 * k, 120 * k, 10 * k, ui.BROWN)
         pyxel.rect(ox + 48 * k, floor - 30 * k, 6 * k, 40 * k, ui.BROWN)
         pyxel.rect(ox + 146 * k, floor - 30 * k, 6 * k, 40 * k, ui.BROWN)
         pyxel.rect(ox + 80 * k, floor - 58 * k, 40 * k, 18 * k, ui.GRAY)
         pyxel.rect(ox + 82 * k, floor - 56 * k, 36 * k, 14 * k, ui.TEAL if self.frame // 30 % 2 else ui.LIME)
-        # Eagle 1(機体があれば格納庫に立っている)
-        if self.st.rockets > 0 or self.st.building:
-            self.draw_rocket_in_hangar(ox + 470 * k, floor, k, built=self.st.rockets > 0)
+        # 機体(あれば格納庫に立っている)
+        if self.st.ready() > 0 or self.st.building_now():
+            built = self.st.ready() > 0
+            cx = ox + 470 * k
+            if self.st.craft == "eagle1":
+                self.draw_rocket_in_hangar(cx, floor, k, built=built)
+            else:
+                self.draw_craft_in_hangar(cx, floor, k, built)
+
+    def draw_craft_in_hangar(self, cx, base, k, built):
+        """Eagle 9 / Hopper。Eagle 9 は用意した絵(assets/rockets)があればそれを使う。"""
+        craft = self.st.craft
+        top = base - 200 * k
+        if craft == "eagle9":
+            if self.eagle9 is None:
+                path = ui.ASSETS / "rockets" / f"eagle9_{ui.SCREEN}.png"
+                self.eagle9 = pyxel.Image.from_image(str(path)) if path.exists() else False
+            img = self.eagle9
+            if img:
+                top = base - img.height
+                pyxel.blt(cx - img.width // 2, top, img, 0, 0, img.width, img.height, ui.PURPLE)
+            else:
+                rocket_art.vehicle(rocket_art.upright(cx, base, 200 * k / 54), [EAGLE9_S1R, EAGLE9_S2], "fairing")
+        else:
+            top = base - 120 * k
+            rocket_art.vehicle(rocket_art.upright(cx, base, 120 * k / 18), [HOPPER])
+        if not built:
+            pyxel.dither(0.5)
+            pyxel.rect(cx - 30 * k, top, 60 * k, base - top, ui.NAVY)
+            pyxel.dither(1.0)
+        # 足場
+        for x in (cx - 30 * k, cx + 30 * k):
+            pyxel.line(x, top + 30 * k, x, base, ui.YELLOW)
+        y = top + 40 * k
+        while y < base:
+            pyxel.line(cx - 30 * k, y, cx - 22 * k, y, ui.YELLOW)
+            pyxel.line(cx + 22 * k, y, cx + 30 * k, y, ui.YELLOW)
+            y += 30 * k
+        if not built:
+            ui.text_center(cx, top - 16, "製造中", ui.YELLOW, border=ui.BLACK)
 
     def draw_rocket_in_hangar(self, cx, base, k, built=True):
         h = 190 * k
@@ -277,7 +333,7 @@ class OfficeScene:
             dy = 10 if ui.SMALL else 16
             # 320x240 は操作説明を省いて、説明文に 2 行使う
             n = lay.msg_lines - (1 if ui.TINY else 2)
-            for i, line in enumerate(ui.wrap(cmd.desc, tw)[:n]):
+            for i, line in enumerate(ui.wrap(self.describe(cmd), tw)[:n]):
                 ui.text(m + pad, y0 + dy + (i + 1) * ui.LINE_H, line, ui.WHITE)
             if not ui.TINY:
                 ui.text(m + pad, y0 + h - (16 if ui.SMALL else 20), "←→ 選択 / SPACE・Z 決定", ui.GRAY, size=10)

@@ -614,6 +614,15 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 <section id="campaign">
   <h2><span class="num">08</span>キャンペーン</h2>
   <p>史実の打ち上げを下敷きにし、実際の出来事や失敗の原因を「プレイヤーが操作や経営判断で乗り越えられる課題」に置き換える。<span class="tag hist">史実</span> は元になった出来事があるステージ、<span class="tag prop">提案</span> は創作。</p>
+  <div class="callout green"><strong>実装状況(Chapter 1〜3)</strong>Chapter 1-1 から 3-6 までの 16 ステージが遊べる。下の表からの主な違い:
+    <ul>
+      <li>惑星を実物の約 1/10(半径 600 km、軌道速度 約 2.2 km/s)にして、1 回の飛行を 1〜4 分に収めた。軌道の高さは表の数値ではなく 100〜200 km(2-4 は遠地点 2000 km)。</li>
+      <li>軌道投入は「遠地点を上げる → 遠地点で水平に噴いて近地点を上げる」の 2 回噴射(2段目は 3〜4 回点火できる)。惰性飛行は自動で早送りになる。</li>
+      <li>2-2 と 2-3 は軌道の上から、3-2 と 3-3 は 1段目の落下中から始まる(打ち上げは省略)。3-4 と 3-5 の 2段目は、分離の条件を満たせば自動で軌道へ向かう。3-5 のランデブーは省略。</li>
+      <li>着陸は、再突入噴射(3 基)と着陸噴射(1 基)。画面に「噴射の目安」の線と「着地予想」を出す。</li>
+      <li>研究ツリーと契約の選択はまだない。会社のコマンドは 製造・点検・調達・打上・待機 の 5 つ。</li>
+    </ul>
+  </div>
 
   <h3>章の一覧</h3>
   <div class="table-wrap"><table>
@@ -807,7 +816,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <figure><img src="img/portraits/mimi.png" alt="ミミのドット絵" width="128" height="128"><figcaption><strong>ミミ</strong><span>ガレージ0・ハッカー</span></figcaption></figure>
     <figure><img src="img/portraits/gen.png" alt="ゲンさんのドット絵" width="128" height="128"><figcaption><strong>ゲンさん</strong><span>ガレージ0・職人</span></figcaption></figure>
   </div>
-  <p class="note">64×64 ドット・Pyxel 標準 16 色。立体の陰影をディザで表現したリアル寄りの画風。<code>tools/make_portraits.py</code> で生成し、Pyxel 用のデータは <code>assets/portraits.py</code> に出力。</p>
+  <p class="note">128×128 ドット(小さい画面用に 64×64 も用意)・Pyxel 標準 16 色。<code>art/redesign_proposal/</code> の顔デザイン案から <code>export_portraits.py</code> で書き出し、<code>assets/portraits/</code> に置いている。</p>
   <div class="table-wrap"><table>
     <tr><th>名前</th><th>役職</th><th>性格・役割</th></tr>
     <tr><td class="nw"><strong>ディーロン・マスク</strong></td><td>CEO(プレイヤー)</td><td>技術オタクで自動操縦も大好き。でも夢は宇宙船のパイロットで、操縦桿は誰にも渡さない。口癖は「俺が飛ばす」</td></tr><tr><td class="nw"><strong>ノア</strong></td><td>技術 AI</td><td>飛行制御と経営分析を担う AI。事あるごとに「私が操縦したほうが成功率は高いです」と提案し、毎回却下される。のちにディーロンの飛行記録を学び、ディーロン AI の土台になる</td></tr><tr><td class="nw"><strong>ディーロン AI</strong></td><td>ディーロンの複製 AI</td><td>ディーロンが成功させた飛行を学習して生まれた AI。飛び方も口癖もディーロンそっくり。ルーチン便を担当するうちに、「もっと飛ぶには、もっと計算資源が要る」と考えはじめる</td></tr>
@@ -855,7 +864,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td class="nw">3連続失敗のスピーチ<span class="tag hist">実装済み</span></td><td>3回続けて失敗し倒産寸前のとき、社長が「絶対に諦めない」と全社に宣言し、4回目の資金を集めた</td><td>3回続けて失敗すると一度だけ発生。ディーロンが 15M$ を集めてくる。Chapter 1-4「最後の1機」の前ふり</td></tr>
     <tr><td class="nw">失敗はデータ<span class="tag prop">予定</span></td><td>爆発を「予期せぬ急速な分解」と呼び、限界まで攻めて得たデータを成果とみなす文化</td><td>爆発・空中分解の後の会話(一度だけ)。マヤの口癖「失敗はデータよ」</td></tr>
     <tr><td class="nw">「私のスケジュール」<span class="tag prop">予定</span></td><td>守れない締め切りを突っ込まれ「物理法則の限界の速さで進んだ場合の予定だ。遅れるのは君たちのせい」</td><td>最初の「調達」の会話</td></tr>
-    <tr><td class="nw">ジャンボジェットの使い捨て<span class="tag prop">予定</span></td><td>「ロケットを毎回捨てるのは、ジャンボジェットを毎回捨てるようなもの」「着陸は嵐の中で鉛筆を手のひらに立てるようなもの」</td><td>プロローグの会話。Chapter 2〜3 の再使用編で回収する</td></tr>
+    <tr><td class="nw">ジャンボジェットの使い捨て<span class="tag hist">実装済み</span></td><td>「ロケットを毎回捨てるのは、ジャンボジェットを毎回捨てるようなもの」「着陸は嵐の中で鉛筆を手のひらに立てるようなもの」</td><td>Chapter 2-5 と 3-1 の成功後の会話(「捨てなければいい」「旅客機を 1 回飛ばすたびに捨てるようなもの」)</td></tr>
     <tr><td class="nw">火星への窓<span class="tag prop">予定</span></td><td>地球と火星が近づくのは 26 ヶ月に一度。無人着陸 → 有人 → 100万人の都市という計画</td><td>初飛行成功後の会話で予告。Chapter 12 では打ち上げが 26 ヶ月ごとの「窓」に限られる</td></tr>
     <tr><td class="nw">箸キャッチ<span class="tag prop">予定</span></td><td>発射塔「メカジラ」の2本のアーム(通称チョップスティック)で、戻ってきた巨大ブースターを空中でつかむ</td><td>Chapter 7。発射塔の名前は「ハシラ」(箸 + 柱)。ハシモトの発案</td></tr>
     <tr><td class="nw">衛星通信網の誕生<span class="tag prop">予定</span></td><td>もともとは火星計画の資金を稼ぐための副業。低い軌道に数千機を並べて、どこでも高速通信。災害地で通信を支えた</td><td>Chapter 5。Space Link 開始の理由と、災害支援イベント</td></tr>

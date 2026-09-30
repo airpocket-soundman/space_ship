@@ -120,11 +120,14 @@ _voice_slots = {}
 _current = None  # 流れている BGM
 _sfx_state = None  # チャンネル 3 で鳴らしているもの: "engine" / "sfx" / "voice" / None
 _ready = False
+MUTE = False  # True にしてから setup() を呼ぶと、音を一切鳴らさない(自動操作のテスト用)
 
 
 def setup():
     """起動時に一度だけ、曲と効果音をサウンドに組み立てる。"""
     global _ready
+    if MUTE:
+        return
     snd = 0
     for name, (mi, parts, speed) in SONGS.items():
         seqs = []

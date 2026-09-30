@@ -8,6 +8,7 @@ import pyxel
 from . import audio, ui
 from .i18n import trf
 from .logo import load_logo
+from .state import CRAFTS
 from .title_earth import EarthView
 
 
@@ -62,7 +63,8 @@ class TitleScene:
             if item == "NEW GAME":
                 self.app.new_game()
             elif item == "CONTINUE":
-                self.popup = ["セーブ機能は準備中です。"]
+                if not self.app.continue_game():
+                    self.popup = ["セーブデータがありません。"]
             elif item == "OPTIONS":
                 self.popup = ["オプションは準備中です。"]
             else:
@@ -185,7 +187,7 @@ class TitleScene:
         pyxel.dither(1.0)
         for i, item in enumerate(self.MENU):
             y = y0 + i * row
-            disabled = item in ("CONTINUE", "OPTIONS")
+            disabled = item == "OPTIONS"
             col = ui.WHITE if i == self.sel else (ui.GRAY if disabled else ui.LBLUE)
             ui.big_text(x, y, item, ms, col, shadow=ui.BLACK if i == self.sel else None)
             if i == self.sel and self.frame // 20 % 3:
@@ -244,7 +246,7 @@ class ResultScene:
     def update(self):
         self.frame += 1
         if self.frame > 30 and ui.confirm():
-            self.app.back_to_office_after(self.run)
+            self.app.back_to_office_after(self.run, self.s)
 
     def draw(self):
         pyxel.cls(ui.NAVY)
@@ -252,14 +254,14 @@ class ResultScene:
             # 320x240: 行間をさらに詰める
             ox, oy, fs, lh = 0, 0, 10, 12
             win = (4, 4, ui.W - 8, ui.H - 8)
-            ys = dict(title=10, status=26, reason=40, wp=56, rows=70, gap=4, sec=16, sec_row=13, prompt=ui.H - 22)
-            cols = dict(head=12, label=18, win=70, val=214, mark=262, alt=120)
+            ys = dict(title=8, status=20, reason=32, wp=46, rows=58, gap=2, sec=14, sec_row=12, prompt=ui.H - 20)
+            cols = dict(head=12, label=18, win=84, val=214, mark=272, alt=120)
         elif ui.SMALL:
             # 360x360: 10px の文字で詰めて並べる
             ox, oy, fs, lh = 0, 0, 10, 14
             win = (6, 6, ui.W - 12, ui.H - 12)
             ys = dict(title=14, status=32, reason=48, wp=70, rows=86, gap=6, sec=20, sec_row=16, prompt=ui.H - 26)
-            cols = dict(head=14, label=22, win=78, val=250, mark=300, alt=140)
+            cols = dict(head=14, label=22, win=92, val=250, mark=306, alt=140)
         else:
             # 640x480 の配置。大きい画面では中央に置く
             ox, oy, fs, lh = (ui.W - 640) // 2, (ui.H - 480) // 2, 12, 18
@@ -271,40 +273,47 @@ class ResultScene:
         ok = run.result == "success"
         wx, wy, ww, wh = win
         ui.window(ox + wx, oy + wy, ww, wh, fill=ui.BLACK, border=ui.LIME if ok else ui.RED)
-        ui.text_center(cx, oy + ys["title"], "飛行結果", ui.WHITE)
+        ui.text_center(cx, oy + ys["title"], trf("飛行結果  {title}", title=ui.tr(run.m.title)), ui.WHITE)
         ui.text_center(cx, oy + ys["status"], "ミッション成功" if ok else "ミッション失敗", ui.LIME if ok else ui.RED)
         if not ok:
             ui.text_center(cx, oy + ys["reason"], run.fail_reason, ui.WHITE, size=fs)
         y = oy + ys["wp"]
-        wp = run.m.waypoint
-        ui.text(ox + cols["head"], y, trf("{name}(高度 {alt:.0f} km 通過時)", name=wp.name, alt=wp.altitude / 1000),
-                ui.YELLOW, size=fs)
+        ui.text(ox + cols["head"], y, run.report_head(), ui.YELLOW, size=fs)
         y = oy + ys["rows"]
-        for key, w in wp.windows.items():
-            ui.text(ox + cols["label"], y, w.label, ui.GRAY, size=fs)
-            ui.text(ox + cols["win"], y, trf("窓 {lo:+.0f} ~ {hi:+.0f} {unit}", lo=w.lo, hi=w.hi, unit=w.unit),
-                    ui.WHITE, size=fs)
-            if run.wp_values:
-                val = run.wp_values[key]
-                good = w.ok(val)
-                ui.text(ox + cols["val"], y, f"{val:+.1f}", ui.LIME if good else ui.RED, size=fs)
-                ui.text(ox + cols["mark"], y, "○" if good else "×", ui.LIME if good else ui.RED, size=fs)
-            else:
-                ui.text(ox + cols["val"], y, "---", ui.GRAY, size=fs)
+        for label, target, value, good in run.report():
+            ui.text(ox + cols["label"], y, ui.tr(label, "window"), ui.GRAY, size=fs)
+            ui.text(ox + cols["win"], y, target, ui.WHITE, size=fs)
+            col = ui.GRAY if value == "---" else ui.LIME if good else ui.RED
+            ui.text(ox + cols["val"], y, value, col, size=fs)
+            if value != "---":
+                ui.text(ox + cols["mark"], y, "○" if good else "×", col, size=fs)
             y += lh
         y += ys["gap"]
         ui.text(ox + cols["head"], y, trf("ランク {rank}", rank=run.rank()), ui.YELLOW, size=fs)
-        ui.text(ox + cols["alt"], y, trf("最高高度 {alt:.2f} km", alt=run.max_alt / 1000), ui.WHITE, size=fs)
+        if run.max_alt > 0:
+            ui.text(ox + cols["alt"], y, trf("最高高度 {alt:.2f} km", alt=run.max_alt / 1000), ui.WHITE, size=fs)
         y += ys["sec"]
         s = self.s
         ui.text(ox + cols["head"], y, "会社への影響", ui.YELLOW, size=fs)
         y += ys["sec_row"]
         ui.text(ox + cols["label"], y, trf("テレメトリ +{tlm}", tlm=s["tlm"]), ui.CYAN, size=fs)
-        y += lh
+        half = ox + cols["alt"] + (40 if not ui.SMALL else 30)
         rep = s["rep"]
-        ui.text(ox + cols["label"], y, trf("評判 {rep:+d}", rep=rep), ui.LIME if rep >= 0 else ui.RED, size=fs)
+        ui.text(half, y, trf("評判 {rep:+d}", rep=rep), ui.LIME if rep >= 0 else ui.RED, size=fs)
         y += lh
-        ui.text(ox + cols["label"], y, "機体 -1(Eagle 1 は使い捨て)", ui.WHITE, size=fs)
+        if s["funds"]:
+            ui.text(ox + cols["label"], y, trf("資金 +{funds:.0f}M$", funds=s["funds"]), ui.YELLOW, size=fs)
+            y += lh
+        name = CRAFTS[run.m.craft][0]
+        if s["kept"]:
+            craft = trf("機体は無事({name} はもう一度使える)", name=name)
+        elif s["recovered"]:
+            craft = "1段目を回収(次は整備だけで飛べる)"
+        elif ok:
+            craft = trf("機体 -1({name} は使い捨て)", name=name)
+        else:
+            craft = trf("機体 -1({name} を失った)", name=name)
+        ui.text(ox + cols["label"], y, craft, ui.WHITE, size=fs)
         if self.frame // 20 % 2:
             ui.text_center(cx, oy + ys["prompt"], "SPACE で工場へ戻る", ui.WHITE)
 
