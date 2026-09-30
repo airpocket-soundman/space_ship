@@ -1,6 +1,8 @@
-# space_ship
+# StarX (space_ship)
 
-Pyxel 製のロケット操縦ゲーム。
+Pyxel 製のロケット経営×操縦ゲーム。
+
+企画書: https://airpocket-soundman.github.io/space_ship/
 [pyxel_sandbox](https://github.com/airpocket-soundman/pyxel_sandbox) の `rocket/rocket_thrast_control.py` をベースに開発。
 
 ## ブラウザで遊ぶ (Pyxel Web Launcher)

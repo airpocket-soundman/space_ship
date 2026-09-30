@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarX ゲーム企画書</title>
+<meta name="description" content="Pyxel 製ロケット経営×操縦ゲーム StarX の企画書(ゲームシステム・ステージ・シナリオ)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efeee8;
+  --text: #1c1d21;
+  --muted: #5d6068;
+  --border: #dcdad2;
+  --accent: #d9480f;
+  --accent-soft: #fde8dc;
+  --blue: #1c6fb8;
+  --blue-soft: #e1eefa;
+  --green: #2b8a3e;
+  --green-soft: #e3f4e6;
+  --warn: #b35c00;
+  --code-bg: #efeee8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1116;
+    --surface: #171a21;
+    --surface-2: #1f232c;
+    --text: #e7e8ec;
+    --muted: #9aa0ab;
+    --border: #2c313c;
+    --accent: #ff7a3d;
+    --accent-soft: #3a2116;
+    --blue: #6cb2f0;
+    --blue-soft: #16273a;
+    --green: #69c97c;
+    --green-soft: #15291a;
+    --warn: #f0a24a;
+    --code-bg: #1f232c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1116;
+  --surface: #171a21;
+  --surface-2: #1f232c;
+  --text: #e7e8ec;
+  --muted: #9aa0ab;
+  --border: #2c313c;
+  --accent: #ff7a3d;
+  --accent-soft: #3a2116;
+  --blue: #6cb2f0;
+  --blue-soft: #16273a;
+  --green: #69c97c;
+  --green-soft: #15291a;
+  --warn: #f0a24a;
+  --code-bg: #1f232c;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans JP", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.8;
+}
+code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.9em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--blue); }
+
+/* hero */
+header.hero {
+  background: #0b0d14;
+  color: #f2f2f2;
+  padding: 56px 16px 40px;
+  position: relative;
+  overflow: hidden;
+}
+header.hero .inner { max-width: 1080px; margin: 0 auto; position: relative; z-index: 1; }
+header.hero .kicker { color: #ff7a3d; font-weight: 700; letter-spacing: .12em; font-size: 13px; }
+header.hero h1 { font-size: clamp(34px, 7vw, 60px); margin: 4px 0 8px; letter-spacing: .02em; line-height: 1.15; }
+header.hero p { max-width: 640px; color: #c9ccd4; margin: 0; }
+header.hero .meta { margin-top: 18px; font-size: 13px; color: #8d93a0; }
+header.hero svg.stars { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+
+/* layout */
+.layout { max-width: 1080px; margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: 0; align-self: start; padding: 28px 0; max-height: 100vh; overflow-y: auto; font-size: 13px; }
+nav.toc .label { font-weight: 700; color: var(--muted); font-size: 12px; letter-spacing: .08em; margin-bottom: 6px; }
+nav.toc a { display: block; color: var(--muted); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid var(--border); }
+nav.toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+main { padding: 28px 0 80px; min-width: 0; }
+section { margin-bottom: 56px; }
+h2 { font-size: 24px; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--text); }
+h2 .num { color: var(--accent); font-family: "JetBrains Mono", monospace; margin-right: 10px; }
+h3 { font-size: 18px; margin: 28px 0 10px; }
+h4 { font-size: 15px; margin: 20px 0 8px; color: var(--muted); }
+p { margin: 0 0 12px; }
+ul { padding-left: 1.3em; margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+
+.lead { font-size: 17px; font-weight: 500; }
+.callout { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.callout.blue { background: var(--blue-soft); border-left-color: var(--blue); }
+.callout.green { background: var(--green-soft); border-left-color: var(--green); }
+.callout strong { display: block; margin-bottom: 2px; }
+
+/* tables */
+.table-wrap { overflow-x: auto; margin: 12px 0 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); font-weight: 700; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+td.nw { white-space: nowrap; }
+
+/* cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 12px 0 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.card .t { font-weight: 700; margin-bottom: 4px; }
+.card .d { color: var(--muted); font-size: 14px; }
+
+/* chapter */
+.chapter { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 18px 0; }
+.chapter .ch-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.chapter .ch-no { font-family: "JetBrains Mono", monospace; color: var(--accent); font-weight: 600; }
+.chapter .ch-title { font-size: 20px; font-weight: 700; }
+.chapter .ch-vehicle { font-size: 13px; color: var(--muted); }
+.chapter .table-wrap { background: var(--bg); }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); margin-left: 4px; vertical-align: 1px; }
+.tag.hist { background: var(--blue-soft); color: var(--blue); }
+.tag.prop { background: var(--accent-soft); color: var(--accent); }
+
+/* dialogue */
+.dialog { background: #0b0d14; color: #e7e8ec; border-radius: 10px; padding: 16px 18px; font-size: 14px; margin: 12px 0; border: 3px solid #3b4252; }
+.dialog p { margin: 0 0 6px; }
+.dialog .sp { color: #ffb86b; font-weight: 700; }
+.dialog .stage { color: #8d93a0; font-style: italic; }
+.dialog .next { color: #69c97c; }
+
+/* keys */
+kbd { font-family: "JetBrains Mono", monospace; font-size: 12px; border: 1px solid var(--border); border-bottom-width: 3px; border-radius: 5px; padding: 1px 7px; background: var(--surface); white-space: nowrap; }
+
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; }
+.fig { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0 16px; }
+.fig svg { width: 100%; height: auto; display: block; }
+.fig .cap { font-size: 13px; color: var(--muted); margin-top: 8px; }
+svg .ink { fill: var(--text); }
+svg .muted { fill: var(--muted); }
+svg .stroke { stroke: var(--text); }
+svg .box { fill: var(--surface-2); stroke: var(--border); }
+svg .acc { fill: var(--accent); }
+svg .acc-s { stroke: var(--accent); }
+svg .blue-s { stroke: var(--blue); }
+svg .blue { fill: var(--blue); }
+svg .green-s { stroke: var(--green); }
+svg .green { fill: var(--green); }
+
+footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+.theme-btn { position: absolute; top: 16px; right: 16px; z-index: 2; background: transparent; color: #c9ccd4; border: 1px solid #3b4252; border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  nav.toc { position: static; max-height: none; padding: 20px 0 0; }
+  nav.toc .links { display: flex; flex-wrap: wrap; gap: 6px; }
+  nav.toc a { border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; }
+  body { font-size: 14px; }
+  .chapter { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="stars" aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 400 200" id="stars"></svg>
+  <button class="theme-btn" id="themeBtn" type="button">テーマ切替</button>
+  <div class="inner">
+    <div class="kicker">GAME DESIGN DOCUMENT v0.2</div>
+    <h1>StarX</h1>
+    <p>失敗しながら、ロケットを「扱える機械」に育てていく。<br>会社経営の ADV と、ロケット操縦のアクションを組み合わせた Pyxel ゲームの企画書。</p>
+    <div class="meta">実在の宇宙企業へのオマージュ作品です。社名・機体名・人物はすべて架空です。</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="目次">
+    <div class="label">CONTENTS</div>
+    <div class="links">
+      <a href="#concept">1. コンセプト</a>
+      <a href="#loop">2. ゲームループ</a>
+      <a href="#resources">3. リソース</a>
+      <a href="#adv">4. ADVパート</a>
+      <a href="#growth">5. 難易度と開発</a>
+      <a href="#act">6. ACTパート</a>
+      <a href="#campaign">7. キャンペーン</a>
+      <a href="#economy">8. 経済バランス</a>
+      <a href="#scenario">9. シナリオ</a>
+      <a href="#tech">10. 技術設計</a>
+      <a href="#milestones">11. マイルストーン</a>
+      <a href="#open">12. 未決事項</a>
+    </div>
+  </nav>
+
+<main>
+
+<!-- 1 -->
+<section id="concept">
+  <h2><span class="num">01</span>コンセプト</h2>
+  <p class="lead">プレイヤーは新興宇宙企業 StarX の CEO 兼リモートパイロット。資金が尽きる前に試験を成功させ、次の開発へ進む。</p>
+  <ul>
+    <li>初期の機体は自動制御ソフトが未完成で、<strong>人間が遠隔で直接操縦するしかない</strong>。これが「人が操縦する」ことの設定上の理由になる。</li>
+    <li>開発に資金を投じるほど機体が成熟し、<strong>ピーキーな操縦感がだんだん素直になる</strong>。</li>
+    <li>一方で、ステージが進むほど<strong>要求される精度は厳しくなる</strong>。開発を怠ると追いつけない。</li>
+    <li>失敗すると機体と資金を失う。ただし失敗からも<strong>テレメトリ(データ)</strong>が手に入り、開発が安くなる。</li>
+    <li>資金が尽きたら倒産で GAME OVER。</li>
+  </ul>
+  <div class="cards">
+    <div class="card"><div class="t">ピーキー → 素直</div><div class="d">研究が物理パラメータを直接書き換える</div></div>
+    <div class="card"><div class="t">爆発も前進</div><div class="d">失敗でもテレメトリを獲得。「計画外の急速分解」の演出</div></div>
+    <div class="card"><div class="t">ギリギリの資金繰り</div><div class="d">毎月の固定費。あと1回失敗したら倒産、の緊張感</div></div>
+    <div class="card"><div class="t">技術の段階的進歩</div><div class="d">軌道到達 → 着陸 → 再使用 → 超大型機 → 箸キャッチ</div></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="loop">
+  <h2><span class="num">02</span>ゲームループ</h2>
+  <div class="fig">
+    <svg viewBox="0 0 720 250" role="img" aria-label="ADVパートとACTパートを往復するゲームループ">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ink"/></marker>
+      </defs>
+      <rect x="20" y="30" width="250" height="150" rx="12" class="box"/>
+      <text x="145" y="62" text-anchor="middle" class="ink" font-weight="700" font-size="17">ADVパート</text>
+      <text x="145" y="84" text-anchor="middle" class="muted" font-size="13">会社経営 / 1ターン = 1ヶ月</text>
+      <text x="145" y="114" text-anchor="middle" class="ink" font-size="13">開発・製造・宣伝</text>
+      <text x="145" y="134" text-anchor="middle" class="ink" font-size="13">営業・資金調達・採用</text>
+      <text x="145" y="160" text-anchor="middle" class="muted" font-size="12">行動回数 (AP) を消費</text>
+
+      <rect x="450" y="30" width="250" height="150" rx="12" class="box"/>
+      <text x="575" y="62" text-anchor="middle" class="ink" font-weight="700" font-size="17">ACTパート</text>
+      <text x="575" y="84" text-anchor="middle" class="muted" font-size="13">ロケット操縦ミッション</text>
+      <text x="575" y="114" text-anchor="middle" class="ink" font-size="13">上昇 → 分離 → 放出</text>
+      <text x="575" y="134" text-anchor="middle" class="ink" font-size="13">帰還 → 着陸</text>
+      <text x="575" y="160" text-anchor="middle" class="muted" font-size="12">ウェイポイントの窓を通す</text>
+
+      <path d="M270,75 C340,40 380,40 450,75" fill="none" class="stroke" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="360" y="38" text-anchor="middle" class="ink" font-size="13">「打ち上げ」を選ぶ</text>
+      <path d="M450,140 C380,175 340,175 270,140" fill="none" class="stroke" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="360" y="192" text-anchor="middle" class="ink" font-size="13">リザルト</text>
+      <text x="360" y="210" text-anchor="middle" class="muted" font-size="12">報酬 / 損失 / テレメトリ / 評判</text>
+      <text x="145" y="226" text-anchor="middle" class="acc" font-size="13" font-weight="700">資金 &lt; 0 → 倒産</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="resources">
+  <h2><span class="num">03</span>リソース</h2>
+  <div class="table-wrap"><table>
+    <tr><th>リソース</th><th>内容</th><th>増える</th><th>減る</th></tr>
+    <tr><td class="nw"><strong>資金 (M$)</strong></td><td>百万ドル単位。0 未満で倒産</td><td>契約報酬・投資・自社サービス収入</td><td>固定費(毎月)・開発・製造・失敗損失</td></tr>
+    <tr><td class="nw"><strong>評判</strong></td><td>0〜100。投資額・受注率・イベントに影響</td><td>成功・宣伝・派手な配信</td><td>失敗・炎上(派手な爆発はバズって微増もある)</td></tr>
+    <tr><td class="nw"><strong>テレメトリ</strong></td><td>試験で得るデータ。開発費の割引に使う</td><td>飛行するたび。遠くまで行った失敗ほど多い</td><td>開発で消費</td></tr>
+    <tr><td class="nw"><strong>月</strong></td><td>1ターン = 1ヶ月。契約には期限がある</td><td>―</td><td>行動・開発期間</td></tr>
+    <tr><td class="nw"><strong>AP</strong></td><td>1ヶ月の行動回数。初期 3、最大 5</td><td>採用</td><td>行動</td></tr>
+    <tr><td class="nw"><strong>機体在庫</strong></td><td>製造済み・回収済みの機体</td><td>製造・着陸成功(再使用)</td><td>失敗・使い捨て</td></tr>
+  </table></div>
+  <div class="callout green"><strong>再使用が最大の経済効果</strong>着陸に成功した機体は、次回は整備費だけで飛ばせる(新造費の 20〜30%)。「着陸成功 = 会社の利益率が上がる」をはっきり体感させる。</div>
+</section>
+
+<!-- 4 -->
+<section id="adv">
+  <h2><span class="num">04</span>ADVパート(会社経営)</h2>
+  <h3>画面構成(256×256)</h3>
+<pre>┌──────────────────────────────┐
+│ 2026/03  資金 84M$  評判 42  TLM 120 │ ← ステータスバー
+├──────────────────────────────┤
+│   [立ち絵]   オフィス / 工場の背景    │
+├──────────────────────────────┤
+│ マヤ「タンクの溶接、また漏れたわ」   │ ← 会話ウィンドウ
+├──────────────────────────────┤
+│ ▶開発 製造 宣伝 営業 調達 採用 打上 │ ← コマンド
+└──────────────────────────────┘</pre>
+  <h3>コマンド</h3>
+  <div class="table-wrap"><table>
+    <tr><th>コマンド</th><th>AP</th><th>効果</th></tr>
+    <tr><td class="nw"><strong>開発</strong></td><td>1</td><td>研究を選ぶ。資金とテレメトリを払い、N ヶ月後に完了</td></tr>
+    <tr><td class="nw"><strong>製造</strong></td><td>1</td><td>機体を建造する(数ヶ月かかる)。在庫がないと打ち上げできない</td></tr>
+    <tr><td class="nw"><strong>点検</strong></td><td>1</td><td>次の打ち上げの故障イベントの発生率を下げる</td></tr>
+    <tr><td class="nw"><strong>宣伝</strong></td><td>1</td><td>評判を上げる。「CEO の SNS 投稿」はバズか炎上のギャンブル枠</td></tr>
+    <tr><td class="nw"><strong>営業</strong></td><td>1</td><td>顧客を訪問して契約を探す。評判が高いほど良い契約が出る</td></tr>
+    <tr><td class="nw"><strong>資金調達</strong></td><td>1</td><td>投資家にピッチする。評判と実績で調達額が決まる。持株が薄まる</td></tr>
+    <tr><td class="nw"><strong>採用</strong></td><td>1</td><td>開発速度と AP が上がるが、固定費も上がる</td></tr>
+    <tr><td class="nw"><strong>打ち上げ</strong></td><td>全部</td><td>試験ミッションか受注ミッションを選び、ACT パートへ</td></tr>
+    <tr><td class="nw"><strong>待機</strong></td><td>0</td><td>次の月へ(開発と製造だけ進む)</td></tr>
+  </table></div>
+  <h3>月次処理</h3>
+  <ol>
+    <li>固定費を差し引く(初期 3 M$/月。社員数に比例)</li>
+    <li>開発と製造の進捗を進める</li>
+    <li>自社サービス収入(衛星通信網「StarNet」開始後)</li>
+    <li>ランダムイベント(規制当局の審査、天候、競合、事故など)</li>
+    <li>資金が 0 未満なら倒産判定</li>
+  </ol>
+  <div class="callout"><strong>救済イベント「最後の1機」</strong>初めて資金が 1 回分の打ち上げ費用を下回ったとき、1度だけ発生する。この1回を成功させると大型契約(宇宙機関の補給便契約)が入る。Chapter 1 のステージ 1-4 に組み込む。</div>
+</section>
+
+<!-- 5 -->
+<section id="growth">
+  <h2><span class="num">05</span>難易度と開発</h2>
+  <h3>設計原則</h3>
+  <p class="lead">要求はステージごとに厳しくなり、機体は開発で扱いやすくなる。この2本の曲線の差がゲームの難易度になる。</p>
+  <div class="fig">
+    <svg viewBox="0 0 640 260" role="img" aria-label="要求精度は上がり、ピーキーさは開発で下がる">
+      <line x1="60" y1="220" x2="610" y2="220" class="stroke" stroke-width="1.5"/>
+      <line x1="60" y1="220" x2="60" y2="20" class="stroke" stroke-width="1.5"/>
+      <text x="600" y="244" text-anchor="end" class="muted" font-size="12">ステージの進行 →</text>
+      <text x="50" y="30" text-anchor="end" class="muted" font-size="12">難</text>
+      <text x="50" y="220" text-anchor="end" class="muted" font-size="12">易</text>
+      <path d="M60,190 C200,170 380,90 600,40" fill="none" class="acc-s" stroke-width="3"/>
+      <text x="470" y="48" class="acc" font-size="13" font-weight="700">要求精度(WP の許容幅)</text>
+      <path d="M60,50 C140,60 170,120 250,130 C300,136 320,90 360,95 C420,100 460,170 600,180" fill="none" class="blue-s" stroke-width="3" stroke-dasharray="7 5"/>
+      <text x="420" y="200" class="blue" font-size="13" font-weight="700">機体のピーキーさ(開発で下がる)</text>
+      <text x="322" y="80" text-anchor="middle" class="muted" font-size="11">新しい機体でリセット</text>
+    </svg>
+    <div class="cap">新しい機体(Eagle 9、超大型機)に移ると、ピーキーさは一度上がる。</div>
+  </div>
+  <ul>
+    <li><strong>WP の許容幅(高度・速度・時刻・放出姿勢・角速度)はステージごとの固定値</strong>にする。研究では緩めない。</li>
+    <li>研究で良くなるのは<strong>機体の扱いやすさだけ</strong>(姿勢制御の感度、スラスターの応答、ダンピング、スロットル応答、自動姿勢保持など)。</li>
+    <li>開発をさぼると、厳しくなる要求に機体が追いつかない。資金を開発に回す動機になる。</li>
+    <li>次の機体に引き継げる研究(制御ソフト、計器)と、引き継げない研究(エンジン、構造)を分ける。</li>
+  </ul>
+  <h4>ステージごとの要求の例(Chapter 1)</h4>
+  <div class="table-wrap"><table>
+    <tr><th>ステージ</th><th>高度</th><th>速度</th><th>放出姿勢</th><th>角速度</th><th>放出の時間制限</th></tr>
+    <tr><td>1-3</td><td>±30 km</td><td>±150 m/s</td><td>±20°</td><td>±3°/s</td><td>30 秒</td></tr>
+    <tr><td>1-4</td><td>±10 km</td><td>±60 m/s</td><td>±10°</td><td>±1.5°/s</td><td>20 秒</td></tr>
+    <tr><td>1-5</td><td>±5 km</td><td>±30 m/s</td><td>±5°</td><td>±0.5°/s</td><td>15 秒</td></tr>
+  </table></div>
+
+  <h3>操縦パラメータ(初期 → 最大強化)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>パラメータ</th><th>初期(ピーキー)</th><th>最大</th><th>研究</th></tr>
+    <tr><td>姿勢制御</td><td>角加速度方式・ほぼ減衰なし(回り出すと止まらない)</td><td>強い角速度ダンピング</td><td>RCS 改良 / ジンバル制御</td></tr>
+    <tr><td>スラスター出力</td><td>強すぎる一定出力(ちょんと押しても回りすぎる)</td><td>押す長さに比例した微調整</td><td>RCS 可変推力</td></tr>
+    <tr><td>スラスター応答</td><td>噴射の開始・停止に遅れ</td><td>即時</td><td>RCS バルブ改良</td></tr>
+    <tr><td>RCS 燃料</td><td>少ない</td><td>余裕あり</td><td>RCS タンク</td></tr>
+    <tr><td>推進剤の揺れ</td><td>姿勢が振動する</td><td>ほぼなし</td><td>バッフル</td></tr>
+    <tr><td>自動姿勢保持 (SAS)</td><td>なし</td><td>キーを離すと姿勢を保持</td><td>飛行制御ソフト v1〜v3</td></tr>
+    <tr><td>スロットル応答遅れ</td><td>1.0 秒</td><td>0.1 秒</td><td>エンジン制御</td></tr>
+    <tr><td>最低スロットル</td><td>70%(ホバリング不可)</td><td>40%</td><td>ディープスロットル</td></tr>
+    <tr><td>再点火回数</td><td>1 回</td><td>4 回</td><td>点火系</td></tr>
+    <tr><td>燃料</td><td>少ない</td><td>余裕あり</td><td>タンク軽量化</td></tr>
+    <tr><td>着陸脚</td><td>2 m/s・5° まで耐える</td><td>6 m/s・12° まで耐える</td><td>着陸脚 Mk1〜Mk3</td></tr>
+    <tr><td>大気中の安定</td><td>風で流される</td><td>グリッドフィンで安定</td><td>グリッドフィン</td></tr>
+    <tr><td>HUD</td><td>数値だけ</td><td>グラフ・誘導マーカー</td><td>計器 v1〜v3</td></tr>
+  </table></div>
+  <div class="callout blue"><strong>最低スロットル 70% の罠</strong>燃料が減って機体が軽くなると、最低出力でも浮き上がってしまいホバリングできない。ぎりぎりで逆噴射して着地速度をゼロにする「ホバースラム」が必要になる。実物と同じ仕組みで、着陸の緊張感を生む。</div>
+
+  <h3>研究ツリー(案)</h3>
+<pre>[エンジン] 再点火 ─ ディープスロットル ─ 高推力エンジン(超大型機用)
+[制御]     RCS 改良 ─ 可変推力 RCS ─ 飛行制御ソフト v1 ─ v2 ─ v3 ─ 自動着陸アシスト
+[構造]     バッフル ─ 着陸脚 Mk1 ─ Mk2 ─ Mk3 / タンク軽量化 ─ ステンレス機体
+[大気]     グリッドフィン ─ 耐熱シールド ─ 耐熱タイル改良
+[計器]     HUD v1(数値)─ v2(上昇プロファイル)─ v3(誘導計算機)
+[地上設備] 洋上回収 ─ 台船 ─ 発射塔アーム(箸キャッチ)─ 軌道上燃料補給</pre>
+</section>
+
+<!-- 6 -->
+<section id="act">
+  <h2><span class="num">06</span>ACTパート(ロケット操縦)</h2>
+  <p>既存のプロトタイプ <code>rocket_thrast_control.py</code> の物理(推力・重力・姿勢・着地判定・パーティクル)を土台に拡張する。</p>
+
+  <h3>操作</h3>
+  <div class="table-wrap"><table>
+    <tr><th>キー</th><th>動作</th></tr>
+    <tr><td><kbd>Space</kbd></td><td>メインエンジン噴射(押している間)</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>スロットル</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>姿勢(スラスター / ジンバル)</td></tr>
+    <tr><td><kbd>Z</kbd></td><td>段分離 / ペイロード放出</td></tr>
+    <tr><td><kbd>X</kbd></td><td>着陸脚 / グリッドフィン展開</td></tr>
+    <tr><td><kbd>C</kbd></td><td>箸キャッチ(タイミングでアームを閉じる)</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td>操縦する機体の切り替え(Eagle Heavy)</td></tr>
+  </table></div>
+  <p>ゲームパッドにも対応する。</p>
+
+  <h3>物理モデル: 平らな地面 + 遠心力近似</h3>
+  <p>丸い惑星は作らず、横スクロールの X/Y 空間のままで軌道の感覚を出す。</p>
+<pre>実効重力 = g × (1 − 水平速度² / 軌道速度²)</pre>
+  <ul>
+    <li>水平速度が軌道速度に達すると重力が 0 になる(= 軌道に乗った状態)。</li>
+    <li>近地点・遠地点は、高度と速度から近似的に計算して HUD に出す。</li>
+    <li>高度で背景色が変わる(青空 → 紺 → 宇宙 + 星)。惑星を小さくし、時間を早送りしてテンポを保つ。</li>
+  </ul>
+
+  <h3>ウェイポイント (WP)</h3>
+  <p>操作は <kbd>←</kbd><kbd>→</kbd>(姿勢)と <kbd>↑</kbd><kbd>↓</kbd>(スロットル)だけで、次の窓を<strong>すべて同時に</strong>満たすと通過になる。</p>
+  <div class="table-wrap"><table>
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr><td>到達時刻</td><td>T+xx 〜 T+yy 秒(早すぎても遅すぎても不可)</td></tr>
+    <tr><td>高度</td><td>h_min 〜 h_max</td></tr>
+    <tr><td>水平速度</td><td>vx_min 〜 vx_max</td></tr>
+    <tr><td>垂直速度</td><td>vy_min 〜 vy_max</td></tr>
+  </table></div>
+  <ul>
+    <li>窓を外したまま時刻の上限を過ぎると、その WP は未通過(ランクが下がる)。</li>
+    <li>必須の WP(分離・放出)を外すとミッション失敗。</li>
+    <li><strong>燃料切れはその時点で失敗</strong>(弾道落下の演出)。</li>
+  </ul>
+  <h4>WP の例(Eagle 1)</h4>
+  <div class="table-wrap"><table>
+    <tr><th>WP</th><th>高度</th><th>水平速度</th><th>垂直速度</th></tr>
+    <tr><td>WP1 最大動圧通過</td><td>10〜14 km</td><td>〜0.3 km/s</td><td>+0.4〜0.6 km/s</td></tr>
+    <tr><td>WP2 1段エンジン停止</td><td>60〜80 km</td><td>1.8〜2.2 km/s</td><td>+1.0〜1.4 km/s</td></tr>
+    <tr><td>WP3 軌道投入</td><td>620〜640 km</td><td>軌道速度以上</td><td>±0.02 km/s</td></tr>
+  </table></div>
+
+  <h3>段分離(ブースター分離)の条件</h3>
+  <div class="table-wrap"><table>
+    <tr><th>項目</th><th>条件</th></tr>
+    <tr><td>高度・速度</td><td>分離 WP の窓の中</td></tr>
+    <tr><td>エンジン停止</td><td>スロットル 0 にしてから、残った推力が消えるまで(t_tail)待つ。早すぎると再衝突で爆発</td></tr>
+    <tr><td>角速度</td><td>±ω_sep 以内</td></tr>
+    <tr><td>操作</td><td><kbd>Z</kbd></td></tr>
+  </table></div>
+
+  <h3>衛星放出の条件</h3>
+  <div class="table-wrap"><table>
+    <tr><th>項目</th><th>条件</th></tr>
+    <tr><td>軌道</td><td>近地点・遠地点が目標の範囲内(= 位置と速度の窓)</td></tr>
+    <tr><td>放出時の姿勢</td><td>指定の方向から ±θ_tol 以内</td></tr>
+    <tr><td>角速度</td><td>±ω_tol 以内。回転が残っていると投入失敗</td></tr>
+    <tr><td>時間制限</td><td>投入燃焼の終了から T_align 秒以内に放出</td></tr>
+    <tr><td>操作</td><td><kbd>←</kbd><kbd>→</kbd> でスラスターを噴いて回し、反対に噴いて止める → <kbd>Z</kbd></td></tr>
+  </table></div>
+  <ul>
+    <li>スラスターは角加速度方式。回し始めたら、反対側に噴いて止めないと回り続ける。</li>
+    <li>RCS 燃料は別ゲージ。止め損ねて何度も噴くと足りなくなる。</li>
+  </ul>
+
+  <h3>HUD の段階(研究で解禁)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>段階</th><th>表示</th></tr>
+    <tr><td>初期</td><td>数値だけ(現在値 / 次の WP の窓 / 残り時間 / 燃料 / 角度 / 角速度)</td></tr>
+    <tr><td>上昇プロファイル</td><td>水平速度 × 垂直速度のグラフに、窓(四角)と現在地(点)を描く</td></tr>
+    <tr><td>誘導計算機</td><td>推奨の姿勢角とスロットルをマーカーで表示</td></tr>
+    <tr><td>自動上昇</td><td>上昇は自動。分離・放出・着陸だけ手動</td></tr>
+  </table></div>
+
+  <h3>着陸・評価・失敗</h3>
+  <ul>
+    <li><strong>着地成功</strong>: 速度・傾きが着陸脚の限界以内、かつ着地点がパッド / 台船の上。</li>
+    <li><strong>ランク S/A/B/C</strong>: WP の通過数、誤差、残燃料、所要時間で算出。評判ボーナスに反映。</li>
+    <li><strong>失敗の種類</strong>: 硬着陸 / 転倒 / 燃料切れ / 台船を外して海没 / 空中分解 / 再衝突。到達したフェーズに応じてテレメトリを獲得。</li>
+    <li><strong>環境</strong>: 横風、台船の揺れ、大気密度、再突入時の加熱。</li>
+  </ul>
+</section>
+
+<!-- 7 -->
+<section id="campaign">
+  <h2><span class="num">07</span>キャンペーン</h2>
+  <p>史実の打ち上げを下敷きにし、実際の失敗の原因を「プレイヤーが操作や経営判断で乗り越えられる課題」に置き換える。<span class="tag hist">史実</span> は元になった出来事があるステージ、<span class="tag prop">提案</span> は創作。</p>
+
+  <div class="chapter">
+    <div class="ch-head"><span class="ch-no">CHAPTER 1</span><span class="ch-title">軌道へ</span><span class="ch-vehicle">小型ロケット Eagle 1(元ネタ: Falcon 1, 2006–2009)</span></div>
+    <p>小さな島の射場から、3回失敗して「最後の1機」で軌道に届き、最初の商業衛星を放出するまで。</p>
+    <div class="table-wrap"><table>
+      <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法</th></tr>
+      <tr><td class="nw">1-1 初飛行<span class="tag hist">史実</span></td><td>高度 10 km を突破 (WP1)</td><td>上昇中の火災警告(燃料漏れ)</td><td>ADV で点検すると発生率が下がる。発生したら推力を絞って耐える</td></tr>
+      <tr><td class="nw">1-2 宇宙へ<span class="tag hist">史実</span></td><td>高度 100 km に到達</td><td>2段目の推進剤の揺れによる姿勢振動</td><td><kbd>←</kbd><kbd>→</kbd> を逆向きに当てて打ち消す。研究「バッフル」で軽くなる</td></tr>
+      <tr><td class="nw">1-3 相乗り便<span class="tag hist">史実</span></td><td>小型衛星4種を軌道に投入</td><td>段分離時に残った推力で再衝突</td><td>エンジン停止後 t_tail を待ってから分離</td></tr>
+      <tr><td class="nw">1-4 最後の1機<span class="tag hist">史実</span></td><td>ダミー衛星を 620〜640 km に投入</td><td>救済イベント。失敗すると倒産</td><td>ギミックなしの純粋な軌道投入</td></tr>
+      <tr><td class="nw">1-5 最初の顧客<span class="tag hist">史実</span></td><td>観測衛星を約 680 km の円軌道に投入</td><td>近地点・遠地点・姿勢・角速度の窓が狭い</td><td>成功すると Chapter 2 へ</td></tr>
+    </table></div>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-head"><span class="ch-no">CHAPTER 2</span><span class="ch-title">戻ってくるロケット</span><span class="ch-vehicle">中型ロケット Eagle 9 / Eagle Heavy(元ネタ: Falcon 9 / Falcon Heavy, 2010–2018)</span></div>
+    <p>大型化した Eagle 9 で補給便と商業衛星を飛ばしながら、1段目の回収に挑む。着陸が成功すると再使用で打ち上げ単価が下がり、会社の経営が一気に楽になる。最後は Eagle 1 をたばねた Eagle Heavy。</p>
+    <div class="table-wrap"><table>
+      <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
+      <tr><td class="nw">2-1 Eagle 9 初飛行<span class="tag hist">史実</span></td><td>試験カプセルを軌道に投入</td><td>9基エンジンの新機体で操縦性がピーキーに戻る</td><td>Chapter 1 の制御ソフト研究は引き継げる</td></tr>
+      <tr><td class="nw">2-2 補給便<span class="tag hist">史実</span></td><td>補給カプセルを宇宙ステーションの接近窓に投入</td><td>位置・速度・時刻の窓がとても狭い(ランデブー)</td><td>打ち上げ時刻も窓(遅れると失敗)</td></tr>
+      <tr><td class="nw">2-3 跳ねるバッタ<span class="tag hist">史実</span></td><td>試験機 Hopper で 10 m → 100 m → 横移動 → 着地</td><td>最低スロットル 70% でホバリング不可</td><td>ホバースラムを覚えるチュートリアル</td></tr>
+      <tr><td class="nw">2-4 海面に立つ<span class="tag hist">史実</span></td><td>1段目を海面の上で速度 0 にする(洋上ソフト着水)</td><td>再突入燃焼 → 着陸燃焼の2回点火</td><td>研究「再点火」「グリッドフィン」が必要</td></tr>
+      <tr><td class="nw">2-5 台船の試練<span class="tag hist">史実</span></td><td>1段目を洋上の台船に着地</td><td>台船の揺れ・横風・狭い甲板</td><td>史実どおり、最初は失敗しやすい調整</td></tr>
+      <tr><td class="nw">2-6 帰ってきた<span class="tag hist">史実</span></td><td>通信衛星 11 機を順番に放出 → 1段目は発射場に戻って着地</td><td>複数放出(再点火)+ 帰還の燃料配分</td><td>1段の燃料を残しすぎると上昇が足りない</td></tr>
+      <tr><td class="nw">2-7 海の上の小さな島<span class="tag hist">史実</span></td><td>補給便 + 台船着地の両方を成功</td><td>2-2 と 2-5 の複合</td><td>成功すると「再使用」が解禁</td></tr>
+      <tr><td class="nw">2-8 高い軌道へ<span class="tag hist">史実</span></td><td>静止衛星を楕円軌道に投入</td><td>1段の燃料が少なく、再突入が高速</td><td>台船は遠く、着陸燃焼の余裕がない</td></tr>
+      <tr><td class="nw">2-9 二度目の空<span class="tag hist">史実</span></td><td>回収した機体で打ち上げる</td><td>整備度が低いと故障イベントが起きやすい</td><td>ADV の点検と整備費のトレードオフ</td></tr>
+      <tr><td class="nw">2-10 三本の柱<span class="tag hist">史実</span></td><td>Eagle Heavy 初飛行。社長の愛車(赤いオープンカー)を宇宙へ</td><td>サイドブースター2本の同時着地 + センターコアの台船着地</td><td>下の「二機同時操縦」を参照</td></tr>
+    </table></div>
+    <h4>二機同時操縦(2-10)</h4>
+    <ul>
+      <li>サイドブースター2本は<strong>ミラー操作</strong>: 1つの入力が左右対称に両機に伝わる。</li>
+      <li>ただし横風や分離時のずれで2機の状態は少しずつ離れていく。<kbd>Tab</kbd> で片方だけを操縦している間、もう片方は自動で姿勢を保持するだけ(降下は続く)。</li>
+      <li>2本が着地した後、カメラは台船へ向かうセンターコアに切り替わる。</li>
+    </ul>
+    <h4>この章の ADV イベント</h4>
+    <ul>
+      <li><span class="tag hist">史実</span> 飛行中の空中分解(部品の強度不足)/ 燃料充填中の射点爆発 → 点検と品質管理の重要性</li>
+      <li>再使用が解禁されると、機体在庫と整備度の管理が加わる</li>
+      <li>衛星通信網 StarNet の構想が始まり、月次収入の柱になる</li>
+    </ul>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-head"><span class="ch-no">CHAPTER 3</span><span class="ch-title">巨人</span><span class="ch-vehicle">超大型機 Mega Booster + X-Ship(元ネタ: Starship, 2023–)</span></div>
+    <p>ステンレスの超大型機。操縦性はまたピーキーに戻る。「爆発しても前に進めば成功」の試験を重ねる。</p>
+    <div class="table-wrap"><table>
+      <tr><th>#</th><th>目標</th><th>成功条件</th></tr>
+      <tr><td class="nw">3-1 巨人の初飛行<span class="tag hist">史実</span></td><td>段分離まで到達</td><td>分離できれば成功(その後の爆発は問題にしない)</td></tr>
+      <tr><td class="nw">3-2 二つの着水<span class="tag hist">史実</span></td><td>ブースターとシップの両方を指定海域に着水させる</td><td>着水地点に落とせれば成功(着水後の爆発は問題にしない)</td></tr>
+      <tr><td class="nw">3-3 箸でつかめ<span class="tag hist">史実</span></td><td>ブースターを発射塔のアームでキャッチ</td><td>アームの間でホバリング → <kbd>C</kbd> でキャッチ</td></tr>
+      <tr><td class="nw">3-4 腹から落ちる<span class="tag hist">史実</span></td><td>シップの再突入(腹ばいで降下 → 直前に反転 → 着水)</td><td>耐熱ゲージを残して着水</td></tr>
+      <tr><td class="nw">3-5 両方つかめ<span class="tag prop">提案</span></td><td>シップもアームでキャッチ</td><td>―</td></tr>
+      <tr><td class="nw">終章<span class="tag prop">提案</span></td><td>軌道上の燃料補給 → 月 → 火星</td><td>エンディングへ</td></tr>
+    </table></div>
+  </div>
+
+  <p>各章には「試験ミッション(自社の費用で飛ぶ)」と「受注ミッション(報酬が出る)」の両方を用意する。資金が苦しいときは受注で稼ぐ、という判断を入れる。</p>
+
+  <h3>軌道とペイロードによるステージの差</h3>
+  <div class="table-wrap"><table>
+    <tr><th>軸</th><th>ゲームでの表現</th></tr>
+    <tr><td>軌道の高さと形</td><td>低い円軌道 → 高い円軌道 → 楕円軌道。再点火がないうちは1回の燃焼で直接投入</td></tr>
+    <tr><td>軌道傾斜角</td><td>地球の自転でもらえる初速に置き換える。赤道で東向き +0.46 km/s、極軌道 0、逆行はマイナス</td></tr>
+    <tr><td>ペイロード質量</td><td>重いほど燃料の余裕がなくなる</td></tr>
+    <tr><td>ペイロードの性格</td><td>加速度制限(精密観測衛星)/ 複数放出(相乗り)/ 放出後の展開(ソーラーセイル)/ 打ち上げ期限(軍)/ 指定地点の上空で放出(通信衛星)</td></tr>
+    <tr><td>顧客</td><td>大学は安いが寛容、軍は高額だが期限に厳しい、商業は精度しだいで次の受注</td></tr>
+  </table></div>
+</section>
+
+<!-- 8 -->
+<section id="economy">
+  <h2><span class="num">08</span>経済バランス(叩き台)</h2>
+  <div class="table-wrap"><table>
+    <tr><th>項目</th><th>値</th></tr>
+    <tr><td>初期資金</td><td>100 M$</td></tr>
+    <tr><td>固定費</td><td>3 M$/月(採用ごとに +0.5)</td></tr>
+    <tr><td>Eagle 1 製造</td><td>7 M$(使い捨て)</td></tr>
+    <tr><td>Hopper 製造 / 整備</td><td>5 / 1 M$</td></tr>
+    <tr><td>Eagle 9 新造 / 再使用整備</td><td>50 / 12 M$</td></tr>
+    <tr><td>Eagle Heavy 新造</td><td>90 M$</td></tr>
+    <tr><td>Mega Booster + X-Ship 新造</td><td>120 M$</td></tr>
+    <tr><td>衛星打ち上げ受注</td><td>小型 5〜10 M$ / 中型 60〜90 M$</td></tr>
+    <tr><td>補給便大型契約(救済イベント)</td><td>400 M$(分割で入金)</td></tr>
+    <tr><td>StarNet 収入</td><td>衛星 1 回放出ごとに +2 M$/月(積み上がる)</td></tr>
+  </table></div>
+</section>
+
+<!-- 9 -->
+<section id="scenario">
+  <h2><span class="num">09</span>シナリオ</h2>
+  <h3>登場人物(すべて架空)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>名前</th><th>役職</th><th>性格・役割</th></tr>
+    <tr><td class="nw"><strong>あなた</strong></td><td>CEO 兼リモートパイロット</td><td>名前を入力できる。無口な主人公</td></tr>
+    <tr><td class="nw"><strong>マヤ・ホシノ</strong></td><td>チーフエンジニア</td><td>冷静なデータ主義者。口癖は「失敗はデータよ」。開発の担当</td></tr>
+    <tr><td class="nw"><strong>ケン・ドウジマ</strong></td><td>広報 / 配信の司会</td><td>ハイテンション。爆発しても「最高の映像だ!」。宣伝の担当</td></tr>
+    <tr><td class="nw"><strong>サラ・カネダ</strong></td><td>CFO</td><td>資金の番人で、毎月の固定費に胃を痛める。資金調達と倒産警告の担当</td></tr>
+    <tr><td class="nw"><strong>グレイ</strong></td><td>宇宙機関の調達官</td><td>懐疑的だが公正。大型契約の鍵を握る</td></tr>
+    <tr><td class="nw"><strong>オールドスペース社</strong></td><td>老舗の競合</td><td>使い捨てロケットで高価格。StarX を笑っている</td></tr>
+  </table></div>
+
+  <h3>プロローグ</h3>
+  <div class="dialog">
+    <p class="stage">(倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC)</p>
+    <p><span class="sp">サラ</span>「資本金は 100M$。それが全部。いい?」</p>
+    <p><span class="sp">マヤ</span>「軌道に届く小さなロケットを作る。いずれは、着陸して戻ってくるロケットを」</p>
+    <p><span class="sp">ケン</span>「つまり、爆発シーンは撮り放題ってことだね!」</p>
+    <p><span class="sp">マヤ</span>「……自動制御はまだない。だから最初は、あなたが操縦する」</p>
+    <p class="next">▶ チュートリアル: Eagle 1 のシミュレーターで WP1 を通過する</p>
+  </div>
+
+  <h3>Chapter 1「軌道へ」</h3>
+  <ul>
+    <li>1-1 から 1-3 は史実どおり失敗しやすい調整。失敗のたびにマヤが原因を分析し、対策の研究が開発メニューに並ぶ。</li>
+    <li>1-3 の失敗後、救済イベント「最後の1機」が発生する。</li>
+  </ul>
+  <div class="dialog">
+    <p><span class="sp">サラ</span>「残っているのは、あと1機分の資金だけ。……次で決めて」</p>
+    <p><span class="sp">マヤ</span>「分離のタイミングは直した。あとは、あなたの手よ」</p>
+  </div>
+  <ul>
+    <li>1-4 に成功すると、宇宙機関のグレイから補給便の大型契約の連絡が入る。</li>
+  </ul>
+
+  <h3>Chapter 2「戻ってくるロケット」</h3>
+  <ul>
+    <li>2-3 の Hopper で、マヤがホバースラムを教える。</li>
+  </ul>
+  <div class="dialog">
+    <p><span class="sp">マヤ</span>「燃料が減って軽くなると、最低出力でも浮き上がるの。浮き続けることはできない。止まる瞬間を“狙う”のよ」</p>
+  </div>
+  <ul>
+    <li>台船の名前はクルーがつけたジョーク(例: 「説明書を読め号」「まだ好きだよ号」)。</li>
+    <li>2-7 に成功したときのケン「海の上に……立ってる!!」 → 評判が大きく上がる。</li>
+    <li>2-10 の Eagle Heavy では、宇宙を漂う社長の愛車の映像でケンが泣く。</li>
+  </ul>
+
+  <h3>Chapter 3「巨人」</h3>
+  <div class="dialog">
+    <p><span class="sp">ケン</span>「分離した! 分離したぞ! ……そして爆発した! でも成功だ!!」</p>
+    <p><span class="sp">マヤ</span>「海に還すまでが試験です」</p>
+  </div>
+  <ul>
+    <li>3-3 の箸キャッチは、管制室が沈黙 → アームが閉じる → 歓声。ゲームでいちばん盛り上がる瞬間にする。</li>
+  </ul>
+
+  <h3>エンディング</h3>
+  <div class="table-wrap"><table>
+    <tr><th>条件</th><th>エンディング</th></tr>
+    <tr><td>Chapter 3 クリア</td><td><strong>「次は、赤い星へ」</strong> 火星行きの発表会。スタッフロールに失敗した機体の一覧が流れる</td></tr>
+    <tr><td>倒産</td><td><strong>「夢の跡」</strong> 工場の競売。「データは残った」の一言で終わる</td></tr>
+    <tr><td>評判と資金が高水準でクリア</td><td><strong>真エンド</strong> 軌道上の燃料補給と月面着陸を予告</td></tr>
+    <tr><td>途中で身売りを選択</td><td><strong>「オールドスペースの子会社」</strong> 安定はするが、ロケットはもう着陸しない</td></tr>
+  </table></div>
+</section>
+
+<!-- 10 -->
+<section id="tech">
+  <h2><span class="num">10</span>技術設計(Pyxel)</h2>
+<pre>starx/
+├─ main.py              # エントリ。シーン管理
+├─ scenes/
+│   ├─ title.py
+│   ├─ office.py        # ADVパート
+│   ├─ mission.py       # ACTパート
+│   ├─ result.py
+│   └─ ending.py
+├─ core/
+│   ├─ vehicle.py       # 物理(プロトタイプの App から分離して部品化)
+│   ├─ particles.py
+│   ├─ camera.py
+│   └─ hud.py
+├─ data/
+│   ├─ vehicles.py      # 機体スペック
+│   ├─ tech_tree.py     # 研究 → パラメータ補正
+│   ├─ missions.py      # ステージ定義(WP・許容幅・報酬)
+│   └─ scenario.py      # 会話スクリプト
+├─ assets/
+│   ├─ starx.pyxres     # 立ち絵・背景・効果音
+│   └─ font/            # 日本語 BDF フォント
+└─ docs/index.html      # この企画書</pre>
+  <ul>
+    <li><strong>日本語表示</strong>: <code>pyxel.text</code> の標準フォントは ASCII のみ。<code>pyxel.Font</code> で BDF の日本語フォントを読み込む(ライセンスを確認する)。</li>
+    <li><strong>物理の分離</strong>: プロトタイプの <code>App</code> に入っている物理を <code>Vehicle</code> クラスに移し、研究の結果でパラメータを上書きする。</li>
+    <li><strong>回転方式の変更</strong>: プロトタイプは空中で角度を直接変える方式。ピーキーさを出すため、角速度 + 角加速度 + ダンピングに変える。</li>
+    <li><strong>Web 公開</strong>: 複数ファイル構成になるので <code>pyxel package</code> で <code>.pyxapp</code> にまとめ、Pyxel Web Launcher の <code>play=</code> で遊べるようにする。</li>
+    <li><strong>セーブ</strong>: ローカル版は JSON ファイル。Web 版は後で検討。</li>
+  </ul>
+</section>
+
+<!-- 11 -->
+<section id="milestones">
+  <h2><span class="num">11</span>開発マイルストーン</h2>
+  <div class="table-wrap"><table>
+    <tr><th>#</th><th>内容</th><th>完了の目安</th></tr>
+    <tr><td>M1</td><td>物理を Vehicle に分離・パラメータ化・縦スクロールカメラ・遠心力近似</td><td>高度数百 km まで飛べる</td></tr>
+    <tr><td>M2</td><td>WP・段分離・衛星放出の判定 + リザルト(ステージ 1-4 相当)</td><td>1 ステージを通しで遊べる</td></tr>
+    <tr><td>M3</td><td>ADV の最小構成(月ターン・資金・開発 3 種・倒産)</td><td>ADV ↔ ACT のループが回る</td></tr>
+    <tr><td>M4</td><td>日本語フォント・会話ウィンドウ・プロローグ</td><td>ストーリーが読める</td></tr>
+    <tr><td>M5</td><td>Chapter 1 全ステージ</td><td>―</td></tr>
+    <tr><td>M6</td><td>Chapter 2(着陸・台船・再使用・Heavy)</td><td>―</td></tr>
+    <tr><td>M7</td><td>Chapter 3(超大型機・着水・箸キャッチ・再突入)</td><td>―</td></tr>
+    <tr><td>M8</td><td>演出・サウンド・バランス調整・Web 公開</td><td>―</td></tr>
+  </table></div>
+</section>
+
+<!-- 12 -->
+<section id="open">
+  <h2><span class="num">12</span>未決事項</h2>
+  <ul>
+    <li>リポジトリ名(現在は <code>space_ship</code>。<code>starx</code> にリネームするか)</li>
+    <li>WP の許容幅・時間制限の具体的な数値(プロトタイプで遊びながら詰める)</li>
+    <li>上昇フェーズをどこまで手動にするか(研究「自動上昇」の解禁タイミング)</li>
+    <li>ADV の立ち絵をドットで描くか、テキスト中心にするか</li>
+    <li>難易度選択(初期資金の多さ)を付けるか</li>
+  </ul>
+  <h3>参考</h3>
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/Falcon_1">Falcon 1 - Wikipedia</a>(Chapter 1 の史実)</li>
+    <li><a href="https://github.com/kitao/pyxel">Pyxel</a></li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<footer>StarX Game Design Document · <a href="https://github.com/airpocket-soundman/space_ship">GitHub</a></footer>
+
+<script>
+(function () {
+  // 星空
+  var svg = document.getElementById('stars');
+  var s = '';
+  var seed = 7;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  for (var i = 0; i < 140; i++) {
+    var r = rnd() < 0.9 ? 0.4 : 0.9;
+    s += '<circle cx="' + (rnd() * 400).toFixed(1) + '" cy="' + (rnd() * 200).toFixed(1) + '" r="' + r + '" fill="#fff" opacity="' + (0.3 + rnd() * 0.6).toFixed(2) + '"/>';
+  }
+  svg.innerHTML = s;
+
+  // テーマ切替
+  var root = document.documentElement;
+  try { var t = localStorage.getItem('starx-theme'); if (t) root.setAttribute('data-theme', t); } catch (e) {}
+  document.getElementById('themeBtn').addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('starx-theme', next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
