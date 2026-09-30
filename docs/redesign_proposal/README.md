@@ -13,6 +13,12 @@
 | `characters_720_sheet.png` / `<人物ID>_720.png`（12枚） | 720画面用の旧128×128 px人物PNG | 前段階の技術試作として保存 |
 | `office_screen_720.png` / `launch_screen_720.png` | 720×720 px の会社・打ち上げ画面案 | 正方形画面の構図とUI配置の基準 |
 | `starship_v3_detail.png` / `rocket_silhouette_study_v3.png` | 2026年のStarship V3を参照した修正案 | 耐熱タイル側とステンレス側、フラップ、機体の太さを検討 |
+| `starship_family_sheet_720.png` / `falcon_family_sheet_720.png` | 今回の新しい機体一覧、各720×720 px | 形状と構成の比較。背景付きの確認図 |
+| `starship_ship_720.png` / `super_heavy_booster_720.png` / `starship_stack_720.png` | Starship上段、Super Heavy、結合機の個別透過PNG | 720画面向け。上段はフラップ、ブースターは格子状フィン |
+| `falcon9_720.png` / `falcon9_booster_720.png` / `falconheavy_720.png` | Falcon 9完成機・一段ブースター、Falcon Heavy完成機 | 720画面向けの個別透過PNG |
+| `falconheavy_side_booster_720.png` / `falconheavy_centre_booster_720.png` | Falcon Heavy左右用・中央用ブースター | 720画面向けの個別透過PNG |
+| 上記8機種の`_360.png`版 | `_720.png`を最近傍法で縦横1/2に縮小した透過PNG | 360×360・320×240画面向け。細部は採用時に再調整可能 |
+| `generate_rockets.py` | 今回のロケット個別PNG・一覧図の再生成ソース | Pillowが必要。ゲーム本体の描画コードとは独立 |
 | `_contact_sheet.png` | 新しい全12人の一覧 | 絵柄・色・人物の識別性をまとめて確認 |
 | `<人物ID>.png`（12枚） | 64×64 px、Pyxel標準16色、RGB、不透明 | 低解像度向け初期ラフ。既存の人物IDに対応 |
 | `rocket_silhouette_study.png` / `office_screen_proposal.png` / `launch_screen_proposal.png` | 初期の640×480案 | 旧案との比較 |
@@ -27,6 +33,24 @@
 - **タイトル**：変更対象外です。
 
 ## ロケット形状の根拠と使い分け
+
+### 新しい個別素材（現行提案）
+
+全て背景透過のPNGです。`_720`は720×720画面での使用を想定した元絵で、機体の長さに応じてキャンバスの縦横は異なります。`_360`は縦横半分です。いずれも炎と背景を含みません。ゲームの描画コードを変えずに比較できる追加素材で、既存のロケット画像や旧案は残しています。`starship_family_sheet_720.png`と`falcon_family_sheet_720.png`は720×720の確認図です。
+
+| 機体 | 見分ける形 |
+| --- | --- |
+| Starship上段 | 太いステンレス船体と片側の黒い耐熱タイル。上部の小さな前部フラップと下部の幅広い後部フラップ。底面の6基のRaptorを簡略表示 |
+| Super Heavy | Starshipと同径で上段より長い銀色の円筒。上端のホットステージ部と格子状フィン。V3は周方向に3枚あるうち、側面で見える2枚を描画。着陸脚は付けない |
+| Starship＋Super Heavy | 上記二つをホットステージ付近で結合した全機。上段フラップとブースター格子状フィンが異なる高さにある |
+| Falcon 9 | 細い白い一段と二段、黒い段間、胴体より広い単一のペイロードフェアリング。一段には格子状フィンと格納された着陸脚 |
+| Falcon Heavy | 中央一段＋上段＋一つのフェアリングに、左右二本の先端が丸いサイドブースターを結合。サイドブースターは完成機のフェアリングではない |
+
+機体ごとの形と寸法は[SpaceX公式Starshipページ](https://new.spacex.com/vehicles/starship)、[Starship V3更新情報](https://new.spacex.com/updates)、[Falcon 9](https://new.spacex.com/vehicles/falcon-9)、[Falcon Heavy](https://new.spacex.com/vehicles/falcon-heavy)、[2025年Falconユーザーガイド](https://www.spacex.com/assets/media/falcon-users-guide-2025-05-09.pdf)で確認しました。Starship上段52m・Super Heavy 72m・直径はいずれも9mです。Falcon 9とFalcon Heavyは高さ70mです。ピクセル図はゲームでの読みやすさを優先した側面模式図で、寸法図ではありません。特にブースターのエンジン群は実数（Super Heavy 33基、Falcon系コア9基）を細部まで描き分けず、見えるベルを代表表示しています。
+
+個別素材の再生成：`python art/redesign_proposal/generate_rockets.py`。
+
+### 保存している旧案
 
 - **Eagle 1**：物語の初期機体。小型で細い二段式、単発エンジン、段間の黒い帯、白い円筒の左側ハイライトと右側影。現状の細い白棒から、読める機体へ発展させる案です。SpaceXの初期小型機 Falcon 1 の立ち位置を参考にした架空機で、実機のコピーではありません。
 - **再使用型**：Falcon 9 に着想。細長い二段構成、1段上端付近のグリッドフィン、下部の着陸脚、白い胴体と黒い段間。脚とフィンは初期Eagle 1には付けず、技術の進歩を視覚化します。SpaceXの[公式Falcon 9解説](https://new.spacex.com/vehicles/falcon-9)と[機体図を含む公式ユーザーガイド](https://www.spacex.com/assets/media/falcon-users-guide-2025-05-09.pdf)を参照しました。
