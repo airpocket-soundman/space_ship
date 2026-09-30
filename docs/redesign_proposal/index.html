@@ -33,6 +33,10 @@
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
   .cards article { padding:12px; border:1px solid var(--line); background:var(--panel); }
   .cards strong { color:var(--gold); }
+  .portrait-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:14px; }
+  .portrait-grid article { padding:10px; border:1px solid var(--line); background:var(--panel); text-align:center; }
+  .portrait-grid img { width:128px; height:128px; max-width:100%; image-rendering:pixelated; display:block; margin:0 auto 5px; }
+  .portrait-grid strong { display:block; color:var(--gold); }
   .note { padding:12px 15px; border-left:3px solid var(--gold); background:var(--panel); }
   footer { padding:22px; border-top:1px solid var(--line); color:var(--muted); text-align:center; }
 </style>
@@ -48,15 +52,24 @@
   <section id="characters">
     <h2>キャラクター</h2>
     <p class="lead">現行の顔デザインです。全員正面向きで、90年代の洋画系アドベンチャーゲームに近い素朴なドット絵へ変えました。ディーロンはイーロン・マスクの似顔絵を思わせる顔立ちにし、ディーロンAIにも同じ顔を反映しています。</p>
-    <figure class="frame"><img src="character_faces_concept_720_v7.png" width="1448" height="1086" alt="ディーロンと青いディーロンAIが同じ顔立ちになった12人のドット絵顔案"><figcaption>720版の人物造形の基準シート。既存の個別PNGへ直接差し替える完成素材ではありません。</figcaption></figure>
-    <h3>720画面用の個別ドット絵試作</h3>
-    <p>128×128 pxの個別画像は実際の会話枠に合わせた技術試作です。顔の完成形は上のデザインシートを基準に調整していきます。</p>
-    <figure class="frame"><img src="characters_720_sheet.png" width="912" height="352" loading="lazy" alt="720画面向け128ピクセル人物PNGの一覧"><figcaption>128×128 px個別PNGの一覧。</figcaption></figure>
-    <div class="cards">
-      <article><strong>創業チーム</strong><br><a href="dylon_720.png">ディーロン</a> / <a href="maya_720.png">マヤ</a> / <a href="ken_720.png">ケン</a> / <a href="sara_720.png">サラ</a></article>
-      <article><strong>AI・機械</strong><br><a href="noah_720.png">ノア</a> / <a href="dylon_ai_720.png">ディーロンAI</a> / <a href="bolt_720.png">ボルト</a></article>
-      <article><strong>その他の登場人物</strong><br><a href="grey_720.png">グレイ</a> / <a href="doc_hughes_720.png">ドク・ヒューズ</a> / <a href="hashimoto_720.png">ハシモト</a> / <a href="mimi_720.png">ミミ</a> / <a href="gen_720.png">ゲンさん</a></article>
+    <figure class="frame"><img src="character_faces_concept_720_v7.png" width="1448" height="1086" alt="ディーロンと青いディーロンAIが同じ顔立ちになった12人のドット絵顔案"><figcaption>12人の顔デザインの基準シート。ここから各キャラのPNGを作りました。</figcaption></figure>
+    <h3>各キャラの個別PNG</h3>
+    <p>128×128 pxは720×720・640×480画面用、64×64 pxは360×360・320×240画面用です。128版を先に制作し、64版はその絵から仕上げました。各画像は不透明PNGで、Pyxel標準16色に合わせています。</p>
+    <div class="portrait-grid">
+      <article><img src="dylon_128.png" width="128" height="128" loading="lazy" alt="ディーロンの128ピクセル立ち絵"><strong>ディーロン</strong><a href="dylon_128.png">128 px</a> / <a href="dylon_64.png">64 px</a></article>
+      <article><img src="maya_128.png" width="128" height="128" loading="lazy" alt="マヤの128ピクセル立ち絵"><strong>マヤ</strong><a href="maya_128.png">128 px</a> / <a href="maya_64.png">64 px</a></article>
+      <article><img src="ken_128.png" width="128" height="128" loading="lazy" alt="ケンの128ピクセル立ち絵"><strong>ケン</strong><a href="ken_128.png">128 px</a> / <a href="ken_64.png">64 px</a></article>
+      <article><img src="sara_128.png" width="128" height="128" loading="lazy" alt="サラの128ピクセル立ち絵"><strong>サラ</strong><a href="sara_128.png">128 px</a> / <a href="sara_64.png">64 px</a></article>
+      <article><img src="noah_128.png" width="128" height="128" loading="lazy" alt="ノアの128ピクセル立ち絵"><strong>ノア</strong><a href="noah_128.png">128 px</a> / <a href="noah_64.png">64 px</a></article>
+      <article><img src="dylon_ai_128.png" width="128" height="128" loading="lazy" alt="ディーロンAIの128ピクセル立ち絵"><strong>ディーロンAI</strong><a href="dylon_ai_128.png">128 px</a> / <a href="dylon_ai_64.png">64 px</a></article>
+      <article><img src="grey_128.png" width="128" height="128" loading="lazy" alt="グレイの128ピクセル立ち絵"><strong>グレイ</strong><a href="grey_128.png">128 px</a> / <a href="grey_64.png">64 px</a></article>
+      <article><img src="doc_hughes_128.png" width="128" height="128" loading="lazy" alt="ドク・ヒューズの128ピクセル立ち絵"><strong>ドク・ヒューズ</strong><a href="doc_hughes_128.png">128 px</a> / <a href="doc_hughes_64.png">64 px</a></article>
+      <article><img src="bolt_128.png" width="128" height="128" loading="lazy" alt="ボルトの128ピクセル立ち絵"><strong>ボルト</strong><a href="bolt_128.png">128 px</a> / <a href="bolt_64.png">64 px</a></article>
+      <article><img src="hashimoto_128.png" width="128" height="128" loading="lazy" alt="ハシモトの128ピクセル立ち絵"><strong>ハシモト</strong><a href="hashimoto_128.png">128 px</a> / <a href="hashimoto_64.png">64 px</a></article>
+      <article><img src="mimi_128.png" width="128" height="128" loading="lazy" alt="ミミの128ピクセル立ち絵"><strong>ミミ</strong><a href="mimi_128.png">128 px</a> / <a href="mimi_64.png">64 px</a></article>
+      <article><img src="gen_128.png" width="128" height="128" loading="lazy" alt="ゲンさんの128ピクセル立ち絵"><strong>ゲンさん</strong><a href="gen_128.png">128 px</a> / <a href="gen_64.png">64 px</a></article>
     </div>
+    <p>一覧表示：<a href="portraits_128_sheet.png">128 px版</a> / <a href="portraits_64_sheet.png">64 px版</a>。以前の<a href="characters_720_sheet.png">個別ドット絵試作</a>も比較用に保存しています。</p>
   </section>
   <section id="screens">
     <h2>ゲーム画面の提案</h2>
