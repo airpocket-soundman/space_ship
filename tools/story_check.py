@@ -7,7 +7,8 @@ python tools/story_check.py --auto       自動で最後まで進める(製造 �
 python tools/story_check.py --step       セリフを 1 行ずつ Enter で送る
 
 会社のコマンドと、飛行のあとの会話はゲーム本体と同じ処理(game/story.py)を使う。
-飛行(ACT パート)は「成功 / 失敗(理由を選ぶ)」を選ぶだけで済ませる。
+飛行(ACT パート)は「成功 / 失敗」を選ぶだけで、すぐ会社(ADV パート)に戻る。
+失敗の理由は、そのステージの FAILS の先頭のもの(失敗したときのマヤの一言がそれで決まる)。
 """
 
 import sys
@@ -22,7 +23,7 @@ from game.missions import MISSIONS, ORDER  # noqa: E402
 from game.script import NAMES  # noqa: E402
 from game.state import CRAFTS, GameState  # noqa: E402
 
-# 飛行の結果として選べる失敗の理由: (理由, 機体を失うか)。理由の文言は missions.py / docking.py と同じ
+# 失敗したときの理由: (理由, 機体を失うか)。先頭のものを使う。文言は missions.py / docking.py と同じ
 FAILS = {
     "ascent": [("火災でエンジンが爆発", True), ("迎角が大きすぎて空中分解", True),
                ("姿勢を失ったため飛行中断(自爆)", True), ("燃料切れ", True)],
@@ -155,22 +156,15 @@ class Checker:
         st = self.st
         m = MISSIONS[st.stage]
         print(f"== 飛行: {tr(m.title)} — {tr(m.goal)} ==")
-        opts = [f"成功(ランク {r})" for r in "SABC"]
-        fails = FAILS[m.kind]
-        opts += [f"失敗: {tr(reason)}" for reason, _ in fails]
-        if m.gimmick == "anomaly":
-            opts.append("失敗: " + tr("機体は分解。カプセルは脱出して無事"))
-        pick = self.choose("結果", opts, auto_pick=0)
-        landing = m.kind in ("landing", "recover")
-        if pick < 4:
-            run = Run(m, "success", rank="SABC"[pick])
-        elif pick < 4 + len(fails):
-            reason, lost = fails[pick - 4]
-            # 回収系で、分離より後の失敗なら荷物は届いている
-            delivered = landing and not reason.startswith("分離")
-            run = Run(m, "fail", reason, lost, delivered=delivered)
+        # 成功か失敗かだけを選び、すぐ会社に戻る。失敗の理由は、そのステージでよくあるものにする
+        if self.choose("結果", ["成功", "失敗"], auto_pick=0) == 0:
+            run = Run(m, "success")
         else:
-            run = Run(m, "fail", "機体は分解。カプセルは脱出して無事", saved=True)
+            reason, lost = FAILS[m.kind][0]
+            # 回収系で、分離より後の失敗なら荷物は届いている
+            delivered = m.kind in ("landing", "recover") and not reason.startswith("分離")
+            run = Run(m, "fail", reason, lost, delivered=delivered)
+            print(f"  (失敗の理由: {tr(reason)})")
         summary = st.record_flight(run)
         name = CRAFTS[m.craft][0]
         craft = ("機体は無事" if summary["kept"] else "1段目を回収" if summary["recovered"] else f"{name} -1")
