@@ -160,6 +160,21 @@ svg .blue { fill: var(--blue); }
 svg .green-s { stroke: var(--green); }
 svg .green { fill: var(--green); }
 
+.mock { display: flex; gap: 12px; margin: 12px 0 16px; align-items: stretch; }
+.mock-screen { width: 100%; max-width: 360px; aspect-ratio: 1 / 1; background: #0b0d14; color: #e7e8ec; border: 3px solid #3b4252; border-radius: 6px; display: flex; flex-direction: column; font-size: 12px; }
+.mock-screen > div { padding: 6px 10px; border-bottom: 1px solid #3b4252; }
+.mock-screen > div:last-child { border-bottom: none; }
+.mock-screen .m-bar { color: #ffb86b; font-size: 11px; }
+.mock-screen .m-bg { flex: 1; display: flex; align-items: center; justify-content: center; color: #8d93a0; background: #1c6fb81f; }
+.mock-screen .m-msg { min-height: 44px; }
+.mock-screen .m-msg .sp { color: #ffb86b; font-weight: 700; }
+.mock-screen .m-cmd { color: #69c97c; font-size: 11px; }
+.mock-notes { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); padding: 3px 0; }
+.mock-notes > div { padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.mock-notes > div:first-child { padding-top: 5px; }
+.mock-notes .grow { flex: 1; display: flex; align-items: center; }
+@media (max-width: 480px) { .mock-notes { display: none; } }
+
 footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: center; color: var(--muted); font-size: 13px; }
 
 .theme-btn { position: absolute; top: 16px; right: 16px; z-index: 2; background: transparent; color: #c9ccd4; border: 1px solid #3b4252; border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
@@ -278,15 +293,20 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 <section id="adv">
   <h2><span class="num">04</span>ADVパート(会社経営)</h2>
   <h3>画面構成(256×256)</h3>
-<pre>┌──────────────────────────────┐
-│ 2026/03  資金 84M$  評判 42  TLM 120 │ ← ステータスバー
-├──────────────────────────────┤
-│   [立ち絵]   オフィス / 工場の背景    │
-├──────────────────────────────┤
-│ マヤ「タンクの溶接、また漏れたわ」   │ ← 会話ウィンドウ
-├──────────────────────────────┤
-│ ▶開発 製造 宣伝 営業 調達 採用 打上 │ ← コマンド
-└──────────────────────────────┘</pre>
+<div class="mock">
+    <div class="mock-screen">
+      <div class="m-bar mono">2026/03　資金 84M$　評判 42　TLM 120</div>
+      <div class="m-bg">[立ち絵]　オフィス / 工場の背景</div>
+      <div class="m-msg"><span class="sp">マヤ</span>「タンクの溶接、また漏れたわ」</div>
+      <div class="m-cmd">▶開発　製造　点検　宣伝　営業　調達　採用　打上</div>
+    </div>
+    <div class="mock-notes">
+      <div>ステータスバー</div>
+      <div class="grow">背景・立ち絵</div>
+      <div>会話ウィンドウ</div>
+      <div>コマンド</div>
+    </div>
+  </div>
   <h3>コマンド</h3>
   <div class="table-wrap"><table>
     <tr><th>コマンド</th><th>AP</th><th>効果</th></tr>
