@@ -446,7 +446,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h3>操縦パラメータ(初期 → 最大強化)</h3>
   <div class="table-wrap"><table>
     <tr><th>パラメータ</th><th>初期(ピーキー)</th><th>最大</th><th>研究</th></tr>
-    <tr><td>姿勢制御</td><td>角加速度方式・ほぼ減衰なし(回り出すと止まらない)</td><td>強い角速度ダンピング</td><td>RCS 改良 / ジンバル制御</td></tr>
+    <tr><td>姿勢制御</td><td>角加速度方式・ほぼ減衰なし(回り出すと止まらない)</td><td>強い角速度ダンピング</td><td>RCS 改良 / ジンバル制御</td></tr><tr><td>ジンバルの偏向角</td><td>±3°(噴射中でも回しにくい)</td><td>±8°</td><td>ジンバル機構</td></tr><tr><td>ジンバル応答</td><td>ノズルが動くまで 0.5 秒遅れる</td><td>ほぼ即時</td><td>油圧アクチュエータ改良</td></tr><tr><td>横流れの補正</td><td>回すと横に流れる</td><td>偏向による横流れを自動で打ち消す</td><td>飛行制御ソフト v2</td></tr>
     <tr><td>スラスター出力</td><td>強すぎる一定出力(ちょんと押しても回りすぎる)</td><td>押す長さに比例した微調整</td><td>RCS 可変推力</td></tr>
     <tr><td>スラスター応答</td><td>噴射の開始・停止に遅れ</td><td>即時</td><td>RCS バルブ改良</td></tr>
     <tr><td>RCS 燃料</td><td>少ない</td><td>余裕あり</td><td>RCS タンク</td></tr>
@@ -481,13 +481,27 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><th>キー</th><th>動作</th></tr>
     <tr><td><kbd>Space</kbd></td><td>メインエンジン噴射(押している間)</td></tr>
     <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>スロットル</td></tr>
-    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>姿勢(スラスター / ジンバル)</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>姿勢。エンジン噴射中はジンバル(推力偏向ノズル)、停止中はスラスター(RCS)、大気中の降下ではグリッドフィンが効く(下の表)</td></tr>
     <tr><td><kbd>Z</kbd></td><td>段分離 / ペイロード放出</td></tr>
     <tr><td><kbd>X</kbd></td><td>着陸脚 / グリッドフィン展開</td></tr>
     <tr><td><kbd>C</kbd></td><td>箸キャッチ(タイミングでアームを閉じる)</td></tr>
     <tr><td><kbd>Tab</kbd></td><td>操縦する機体の切り替え(Eagle Heavy)</td></tr>
   </table></div>
   <p>ゲームパッドにも対応する。</p>
+
+  <h3>姿勢制御の仕組み(フェーズで効き方が変わる)</h3>
+  <p>同じ <kbd>←</kbd><kbd>→</kbd> でも、そのとき効いている装置によって手応えが変わる。プロトタイプはスラスターだけで回しているが、メインエンジンの噴射中は<strong>ジンバル(推力偏向ノズル)</strong>で姿勢を変える方式にする。</p>
+  <div class="table-wrap"><table>
+    <tr><th>装置</th><th>効く場面</th><th>回転の強さ</th><th>クセ</th></tr>
+    <tr><td class="nw"><strong>ジンバル</strong></td><td>メインエンジン噴射中</td><td>強い。<code>推力 × sin(偏向角) × 重心からノズルまでの距離</code> に比例</td><td>推力の一部が横向きになるので、回すと機体が横にも流れる。<strong>スロットルを絞ると効きも弱くなる</strong>(最低出力でのホバースラム中は回しにくい)</td></tr>
+    <tr><td class="nw"><strong>スラスター (RCS)</strong></td><td>エンジン停止中(宇宙・分離後・放出前)</td><td>弱い</td><td>RCS 燃料を消費する。角加速度方式なので、止めるには反対側に噴く</td></tr>
+    <tr><td class="nw"><strong>グリッドフィン</strong></td><td>大気中をエンジン停止で降下中</td><td>速度の2乗に比例(速いほど効く)</td><td>燃料を使わない。低速・高高度ではほとんど効かない</td></tr>
+  </table></div>
+  <ul>
+    <li>ジンバルは偏向角に上限があり、ノズルが目標の角度まで動くのに時間がかかる(応答遅れ)。これもピーキーさの要素にする。</li>
+    <li>エンジン噴射中にスラスターも併用できるが、ジンバルに比べると微力。</li>
+    <li>HUD には、いま効いている装置のアイコンとジンバル角のメーターを出す。</li>
+  </ul>
 
   <h3>物理モデル: 平らな地面 + 遠心力近似</h3>
   <p>丸い惑星は作らず、横スクロールの X/Y 空間のままで軌道の感覚を出す。</p>
@@ -962,7 +976,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <ul>
     <li><strong>日本語表示</strong>: <code>pyxel.text</code> の標準フォントは ASCII のみ。<code>pyxel.Font</code> で BDF の日本語フォントを読み込む(ライセンスを確認する)。</li>
     <li><strong>物理の分離</strong>: プロトタイプの <code>App</code> に入っている物理を <code>Vehicle</code> クラスに移し、研究の結果でパラメータを上書きする。</li>
-    <li><strong>回転方式の変更</strong>: プロトタイプは空中で角度を直接変える方式。ピーキーさを出すため、角速度 + 角加速度 + ダンピングに変える。</li>
+    <li><strong>回転方式の変更</strong>: プロトタイプは空中で角度を直接変える方式。ピーキーさを出すため、角速度 + 角加速度 + ダンピングに変える。</li><li><strong>ジンバルの実装</strong>: 推力ベクトルを機体軸から偏向角だけ傾けて、並進加速度とトルクの両方に反映する。偏向角は目標値へ一次遅れで追従させる。</li>
     <li><strong>Web 公開</strong>: 複数ファイル構成になるので <code>pyxel package</code> で <code>.pyxapp</code> にまとめ、Pyxel Web Launcher の <code>play=</code> で遊べるようにする。</li>
     <li><strong>セーブ</strong>: ローカル版は JSON ファイル。Web 版は後で検討。</li>
   </ul>
