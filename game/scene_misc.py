@@ -6,6 +6,7 @@ import random
 import pyxel
 
 from . import ui
+from .title_earth import EarthView
 
 
 class TitleScene:
@@ -13,7 +14,6 @@ class TitleScene:
 
     MENU = ["NEW GAME", "CONTINUE", "OPTIONS", "CREDITS"]
     LOGO_Y = 100
-    GLARE = (320, 212)  # 地球の縁で朝日が昇る位置
 
     def __init__(self, app):
         self.app = app
@@ -22,12 +22,14 @@ class TitleScene:
         self.popup = None
         self.bg = pyxel.Image(320, 240)
         self.bg.load(0, 0, str(ui.ASSETS / "title_bg.png"))
+        self.earth = EarthView()
         rng = random.Random(5)
         self.twinkles = [(rng.uniform(20, 620), rng.uniform(10, 190), rng.random()) for _ in range(9)]
 
     # ---- 更新 ----
     def update(self):
         self.frame += 1
+        self.earth.update()
         if self.popup:
             if ui.confirm() or ui.cancel():
                 self.popup = None
@@ -61,14 +63,14 @@ class TitleScene:
         pyxel.cls(ui.BLACK)
         pyxel.blt(160, 120, self.bg, 0, 0, 320, 240, None, 0, 2)
         self.draw_twinkles()
+        self.earth.draw()
         self.draw_trajectory()
         self.draw_station()
-        self.draw_glare()
         self.draw_logo()
         self.draw_menu()
-        ui.big_text(470, 422, "TO THE MOON,", 2, ui.WHITE)
-        ui.big_text(470, 438, "TO MARS,", 2, ui.WHITE)
-        ui.big_text(470, 454, "AND BEYOND.", 2, ui.WHITE)
+        ui.big_text(470, 422, "TO THE MOON,", 2, ui.WHITE, shadow=ui.BLACK)
+        ui.big_text(470, 438, "TO MARS,", 2, ui.WHITE, shadow=ui.BLACK)
+        ui.big_text(470, 454, "AND BEYOND.", 2, ui.WHITE, shadow=ui.BLACK)
         if self.popup:
             self.draw_popup()
 
@@ -122,27 +124,6 @@ class TitleScene:
         pyxel.rect(x - 3, y - 3, 6, 6, ui.WHITE)
         pyxel.pset(x + 2, y - 2, ui.RED)
 
-    def draw_glare(self):
-        gx, gy = self.GLARE
-        pulse = 0.5 + 0.5 * math.sin(self.frame / 30)
-        # 地平線に沿って広がる光
-        for rx, ry, col, a in ((150, 22, ui.CYAN, 0.3), (100, 14, ui.LBLUE, 0.45), (55, 8, ui.WHITE, 0.7)):
-            pyxel.dither(a)
-            pyxel.elli(gx - rx, gy - ry, rx * 2, ry * 2, col)
-        pyxel.dither(1.0)
-        pyxel.rect(gx - 200, gy - 1, 400, 2, ui.LBLUE)
-        pyxel.rect(gx - 120, gy - 1, 240, 2, ui.WHITE)
-        # 光芒
-        r = 26 + 8 * pulse
-        for ang in range(0, 360, 45):
-            a = math.radians(ang + self.frame * 0.2)
-            length = r * (1.6 if ang % 90 == 0 else 0.9)
-            pyxel.line(gx, gy, gx + math.cos(a) * length, gy + math.sin(a) * length * 0.8, ui.LBLUE)
-        pyxel.line(gx - r * 2.2, gy, gx + r * 2.2, gy, ui.WHITE)
-        pyxel.line(gx, gy - r * 1.4, gx, gy + r * 0.8, ui.WHITE)
-        pyxel.circ(gx, gy, 7 + pulse * 2, ui.YELLOW)
-        pyxel.circ(gx, gy, 4 + pulse, ui.WHITE)
-
     # ---- ロゴ ----
     def draw_logo(self):
         h, w, t, gap = 48, 70, 11, 14
@@ -159,7 +140,7 @@ class TitleScene:
             x += w + gap
         sub = "FLY IT YOURSELF"
         sw = ui.big_text_width(sub, 2, spacing=4)
-        ui.big_text((ui.W - sw) // 2, y + h + 22, sub, 2, ui.WHITE, spacing=4)
+        ui.big_text((ui.W - sw) // 2, y + h + 22, sub, 2, ui.WHITE, shadow=ui.BLACK, spacing=4)
 
     @staticmethod
     def quad(p0, p1, p2, p3, col):

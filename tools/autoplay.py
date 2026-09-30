@@ -81,6 +81,13 @@ class Bot:
             if self.t == 40:
                 self.shot_once("01_title")
             if QUICK and self.t == 50:
+                import game.title_earth as te
+                sc.earth.theta += 0.5
+                self.shot_once("01b_title_day")
+            if QUICK and self.t == 58:
+                sc.earth.theta += 1.3
+                self.shot_once("01c_title_night")
+            if QUICK and self.t == 70:
                 pyxel.quit()
             if self.t == 60:
                 self.tap(pyxel.KEY_SPACE)

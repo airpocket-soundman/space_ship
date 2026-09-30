@@ -11,7 +11,8 @@ from .state import GameState
 
 
 class App:
-    def __init__(self, hook=None):
+    def __init__(self, hook=None, screen="640x480"):
+        ui.set_screen(screen)
         pyxel.init(ui.W, ui.H, title="StarX", fps=60, quit_key=pyxel.KEY_ESCAPE)
         ui.load_fonts()
         self.portraits = Portraits()

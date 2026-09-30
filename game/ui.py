@@ -7,7 +7,25 @@ import pyxel
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
 
-W, H = 640, 480
+# 画面サイズ。どれもネイティブ解像度で描く(拡大して流用しない)。
+SCREENS = {
+    "640x480": (640, 480),
+    "720x720": (720, 720),  # RGB20SX など正方形の画面
+    "360x360": (360, 360),  # 720x720 に 2 倍で出す小さい画面
+}
+SCREEN = "640x480"
+W, H = SCREENS[SCREEN]
+SMALL = False  # 360x360 のときは文字や立ち絵を小さくする
+
+
+def set_screen(name):
+    """pyxel.init より前に呼ぶ。"""
+    global SCREEN, W, H, SMALL
+    if name not in SCREENS:
+        raise ValueError(f"画面サイズは {' / '.join(SCREENS)} のどれか: {name}")
+    SCREEN = name
+    W, H = SCREENS[name]
+    SMALL = W < 480
 
 # Pyxel 標準パレットの番号
 BLACK, NAVY, PURPLE, TEAL, BROWN, DBLUE, LBLUE, WHITE = range(8)
