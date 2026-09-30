@@ -74,7 +74,7 @@ class DockScene:
         else:
             self.parts.update(run.x, run.y, 400.0, 0.0)
             self.end_timer += 1
-            if self.end_timer > 60 and ui.confirm() or self.end_timer > 240:
+            if self.end_timer > 60 and ui.confirm():  # 「SPACE で続ける」を出しているので、押すまで待つ
                 self.app.finish_mission(run)
                 return
         for kind, text in run.events:

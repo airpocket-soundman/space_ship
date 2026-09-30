@@ -130,7 +130,7 @@ class MissionScene:
             self.end_timer += 1
             if run.result == "success" and not self.exploded and self.m.kind in ("ascent", "orbit"):
                 v.step(1 / 60, 0, 0)
-            if self.end_timer > 60 and ui.confirm() or self.end_timer > 240:
+            if self.end_timer > 60 and ui.confirm():  # 「SPACE で続ける」を出しているので、押すまで待つ
                 if self.cold_open:
                     self.app.after_cold_open()
                 else:
