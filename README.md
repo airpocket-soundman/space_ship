@@ -7,11 +7,12 @@ Pyxel 製のロケット経営×操縦ゲーム。
 
 ## ブラウザで遊ぶ
 
-[企画書ページ](https://airpocket-soundman.github.io/space_ship/)の冒頭のリンクから、[Pyxel Web Launcher](https://kitao.github.io/pyxel/wasm/launcher/) でこのリポジトリの main ブランチをそのまま動かせます。
+[企画書ページ](https://airpocket-soundman.github.io/space_ship/)の冒頭のリンクから、[Pyxel Web Launcher](https://kitao.github.io/pyxel/wasm/launcher/) でこのリポジトリの main ブランチにある `web/starx.pyxapp` を動かせます。
 画面サイズと言語は URL の `screen` / `lang` で選びます(`main.py` が読む)。
+`web/starx.pyxapp` はゲーム一式を 1 ファイルにまとめたもので、main に push すると GitHub Actions が作り直します(手元では `python tools/build_pyxapp.py`)。
 
 ```
-https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&packages=numpy&gamepad=enabled&screen=720x720&lang=en
+https://kitao.github.io/pyxel/wasm/launcher/?play=airpocket-soundman/space_ship/main/web/starx&packages=numpy&gamepad=enabled&screen=720x720&lang=en
 ```
 
 ## 遊び方(ローカル)

@@ -2,7 +2,7 @@
 
 - assets/title_bg.png   320x240(2倍表示)の星・月・火星。地球は game/title_earth.py が毎フレーム描く
 - assets/title_bg_sq.png 360x360 の同じ背景(720x720 では2倍、360x360 では等倍で表示)
-- assets/earth_tex.png  地表マップ。横は軌道方向 90°ぶん(左右がつながる)、縦は軌道からの横方向 0〜24°
+- assets/earth_tex.png  地表マップ。横は軌道方向 90°ぶん(左右がつながる)、縦は軌道からの横方向 -24〜+24°
     色が地表の種類を表す: DBLUE=海 / TEAL=陸 / BROWN=砂漠 / GRAY=薄い雲 / WHITE=厚い雲 / YELLOW=都市のある陸
 """
 

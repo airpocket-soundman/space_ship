@@ -1,7 +1,7 @@
 """タイトル画面の地球: スターリンク衛星の軌道から見た眺め。
 
-高度 550 km・周期約 95.6 分の軌道を回る衛星に、進行方向の横(軌道面の外側)を向いた
-カメラを載せた想定で、地球を透視投影で描く。
+高度 550 km・周期約 95.6 分の軌道を回る衛星に、進行方向の前を向いた
+カメラを載せた想定で、地球を透視投影で描く。地表は地平線の奥から手前へ流れてくる。
 太陽は宇宙空間に固定し、衛星が進むにつれて地表と昼夜の境界線が流れていく。
 
 画面の各ピクセルが地球のどこを見ているか(軌道座標の角度)は最初に一度だけ計算し、
@@ -21,11 +21,11 @@ ALTITUDE = 550.0  # km
 PERIOD = 95.6 * 60  # s
 TIME_SCALE = 12.0  # 実時間の何倍で軌道を進めるか(1 で実時間)
 FOV = math.radians(100)  # 横方向の画角
-SUN_BETA = math.radians(55)  # 太陽の軌道面からの角度
+SUN_BETA = math.radians(12)  # 太陽の軌道面からの角度(小さいほど進行方向の正面から昇る)
 ATMOS = 170.0  # 大気の光を描く高さ [km]
 
 TEX_SPAN = math.radians(90)  # 地表マップの横が表す角度
-TEX_BETA = math.radians(24)  # 地表マップの縦が表す角度
+TEX_BETA = math.radians(24)  # 地表マップの縦が表す角度(軌道の左右 ±24°)
 
 BLACK, NAVY, PURPLE, TEAL, BROWN, DBLUE, LBLUE, WHITE = range(8)
 RED, ORANGE, YELLOW, LIME, CYAN, GRAY, PINK, PEACH = range(8, 16)
@@ -135,10 +135,10 @@ class EarthView:
         dip = math.acos(R_EARTH / r_cam)
         pitch = dip + math.atan((H / 2 - self.horizon_y) / f_len)
         cp, sp = math.cos(pitch), math.sin(pitch)
-        # 軌道座標: x = 進行方向、y = 軌道面の外側(カメラの向き)、z = 地心から衛星の方向
-        fwd = np.array([0.0, cp, -sp])
-        up = np.array([0.0, sp, cp])
-        right = np.array([1.0, 0.0, 0.0])
+        # 軌道座標: x = 進行方向(カメラの向き)、y = 軌道面の外側(画面の左)、z = 地心から衛星の方向
+        fwd = np.array([cp, 0.0, -sp])
+        up = np.array([sp, 0.0, cp])
+        right = np.array([0.0, -1.0, 0.0])
         self.cam = np.array([0.0, 0.0, r_cam])
         self.f_len, self.fwd, self.up, self.right = f_len, fwd, up, right
 
@@ -160,7 +160,7 @@ class EarthView:
         self.h_alpha = np.arctan2(ph[:, 0], ph[:, 2])
         beta = np.arcsin(np.clip(ph[:, 1], -1, 1))
         self.h_cb, self.h_sb = np.cos(beta), np.sin(beta)
-        self.h_v = np.clip((beta / TEX_BETA * self.th).astype(int), 0, self.th - 1)
+        self.h_v = np.clip(((beta / TEX_BETA + 1) / 2 * self.th).astype(int), 0, self.th - 1)
         mu = -(ph * d[hit]).sum(axis=1)  # 見下ろす角度(地平線付近で 0)
         self.h_haze = np.clip((0.35 - mu) / 0.1, 0, 3).astype(int)
         self.h_bayer = bayer[hit]
