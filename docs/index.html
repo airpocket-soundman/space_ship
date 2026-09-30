@@ -198,7 +198,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <div class="kicker">GAME DESIGN DOCUMENT v0.3</div>
     <h1>StarX</h1>
     <p>失敗しながら、ロケットを「扱える機械」に育てていく。<br>会社経営の ADV と、ロケット操縦のアクションを組み合わせた Pyxel ゲームの企画書。</p>
-    <div class="meta">実在の宇宙企業へのオマージュ作品です。社名・機体名・人物はすべて架空です。</div>
+    <div class="meta">実在の宇宙企業と人物へのオマージュ(パロディ)作品です。社名・機体名・人物名は架空のもじりです。</div>
   </div>
 </header>
 
@@ -227,9 +227,9 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 <!-- 1 -->
 <section id="concept">
   <h2><span class="num">01</span>コンセプト</h2>
-  <p class="lead">プレイヤーは新興宇宙企業 StarX の CEO 兼リモートパイロット。資金が尽きる前に試験を成功させ、次の開発へ進む。</p>
+  <p class="lead">プレイヤーは新興宇宙企業 StarX の CEO、ディーロン・マスク。技術も自動操縦も大好きだが、夢は宇宙船のパイロット。だから操縦桿だけは誰にも渡さない。資金が尽きる前に試験を成功させ、次の開発へ進む。</p>
   <ul>
-    <li>初期の機体は自動制御ソフトが未完成で、<strong>人間が遠隔で直接操縦するしかない</strong>。これが「人が操縦する」ことの設定上の理由になる。</li>
+    <li>人が操縦する理由は<strong>CEO の夢</strong>。自動操縦は作れるし、技術 AI も「代わりに飛ばします」と言ってくる。それでもディーロンは「俺の邪魔はさせない」と自分で操縦する。</li><li>研究は自動化のためではなく、<strong>パイロットが飛ばしやすい機体</strong>にするためのもの(ディーロンの要求: 「飛ばしやすい機体を作れ。飛ばすのは俺だ」)。</li><li>決まりきったルーチン便だけは AI に任せる(ADV で自動処理)。初挑戦・試験・難しい便はディーロンが自ら飛ぶ。</li>
     <li>開発に資金を投じるほど機体が成熟し、<strong>ピーキーな操縦感がだんだん素直になる</strong>。</li>
     <li>一方で、ステージが進むほど<strong>要求される精度は厳しくなる</strong>。開発を怠ると追いつけない。</li>
     <li>失敗すると機体と資金を失う。ただし失敗からも<strong>テレメトリ(データ)</strong>が手に入り、開発が安くなる。</li>
@@ -397,7 +397,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <li>回収した1段目は機体ごとに<strong>飛行回数・整備度・次に飛べるまでの日数</strong>を持つ。</li>
     <li>ADV のコマンドの重心が「製造」から「整備」へ移る。製造業から運輸業への変化をコマンドで体感させる。</li>
     <li>回転率(整備にかかる日数)は研究で短くなる。同じ機体の最多飛行回数は称号として記録する。</li>
-    <li>整備を削ると安く早く飛ばせるが、故障イベントの確率が上がる。</li>
+    <li>整備を削ると安く早く飛ばせるが、故障イベントの確率が上がる。</li><li>一度クリアした種類の便は<strong>ルーチン便</strong>として AI のノアに任せられる。ACT パートを省略して ADV 内で結果だけ出る(成功率は研究レベルしだい)。打ち上げ回数が増える後半でも、ディーロンが飛ぶのは大事な便だけになる。</li>
   </ul>
 
   <h3>需要の上限と StarNet</h3>
@@ -464,7 +464,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
 
   <h3>研究ツリー(案)</h3>
 <pre>[エンジン] 再点火 ─ ディープスロットル ─ 高推力エンジン(超大型機用)
-[制御]     RCS 改良 ─ 可変推力 RCS ─ 飛行制御ソフト v1 ─ v2 ─ v3 ─ 自動着陸アシスト
+[制御]     RCS 改良 ─ 可変推力 RCS ─ 飛行制御ソフト v1 ─ v2 ─ v3 ─ フライ・バイ・ワイヤ(入力補正)
 [構造]     バッフル ─ 着陸脚 Mk1 ─ Mk2 ─ Mk3 / タンク軽量化 ─ ステンレス機体
 [大気]     グリッドフィン ─ 耐熱シールド ─ 耐熱タイル改良
 [計器]     HUD v1(数値)─ v2(上昇プロファイル)─ v3(誘導計算機)
@@ -549,7 +549,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td>初期</td><td>数値だけ(現在値 / 次の WP の窓 / 残り時間 / 燃料 / 角度 / 角速度)</td></tr>
     <tr><td>上昇プロファイル</td><td>水平速度 × 垂直速度のグラフに、窓(四角)と現在地(点)を描く</td></tr>
     <tr><td>誘導計算機</td><td>推奨の姿勢角とスロットルをマーカーで表示</td></tr>
-    <tr><td>自動上昇</td><td>上昇は自動。分離・放出・着陸だけ手動</td></tr>
+    <tr><td>パイロット支援</td><td>入力の補正と警告。操縦するのはあくまでディーロン</td></tr>
   </table></div>
 
   <h3>着陸・評価・失敗</h3>
@@ -690,7 +690,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h3>登場人物(すべて架空)</h3>
   <div class="table-wrap"><table>
     <tr><th>名前</th><th>役職</th><th>性格・役割</th></tr>
-    <tr><td class="nw"><strong>あなた</strong></td><td>CEO 兼リモートパイロット</td><td>名前を入力できる。無口な主人公</td></tr>
+    <tr><td class="nw"><strong>ディーロン・マスク</strong></td><td>CEO(プレイヤー)</td><td>技術オタクで自動操縦も大好き。でも夢は宇宙船のパイロットで、操縦桿は誰にも渡さない。口癖は「俺が飛ばす」</td></tr><tr><td class="nw"><strong>ノア</strong></td><td>技術 AI</td><td>飛行制御と経営分析を担う AI。事あるごとに「私が操縦したほうが成功率は高いです」と提案し、毎回却下される。ルーチン便の担当</td></tr>
     <tr><td class="nw"><strong>マヤ・ホシノ</strong></td><td>チーフエンジニア</td><td>冷静なデータ主義者。口癖は「失敗はデータよ」。開発の担当</td></tr>
     <tr><td class="nw"><strong>ケン・ドウジマ</strong></td><td>広報 / 配信の司会</td><td>ハイテンション。爆発しても「最高の映像だ!」。宣伝の担当</td></tr>
     <tr><td class="nw"><strong>サラ・カネダ</strong></td><td>CFO</td><td>資金の番人で、毎月の固定費に胃を痛める。資金調達と倒産警告の担当</td></tr>
@@ -704,7 +704,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <p><span class="sp">サラ</span>「資本金は 100M$。それが全部。いい?」</p>
     <p><span class="sp">マヤ</span>「軌道に届く小さなロケットを作る。いずれは、着陸して戻ってくるロケットを」</p>
     <p><span class="sp">ケン</span>「つまり、爆発シーンは撮り放題ってことだね!」</p>
-    <p><span class="sp">マヤ</span>「……自動制御はまだない。だから最初は、あなたが操縦する」</p>
+    <p><span class="sp">ノア</span>「飛行制御は私が担当できます。成功率の試算は——」</p><p><span class="sp">ディーロン</span>「却下。俺が飛ばす。宇宙船のパイロットになるのが夢なんだ」</p><p><span class="sp">マヤ</span>「……はいはい。じゃあせめて、飛ばしやすい機体を作るわね」</p>
     <p class="next">▶ チュートリアル: Eagle 1 のシミュレーターで WP1 を通過する</p>
   </div>
 
@@ -715,7 +715,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </ul>
   <div class="dialog">
     <p><span class="sp">サラ</span>「残っているのは、あと1機分の資金だけ。……次で決めて」</p>
-    <p><span class="sp">マヤ</span>「分離のタイミングは直した。あとは、あなたの手よ」</p>
+    <p><span class="sp">ノア</span>「最後の1機です。今回だけは私に——」</p><p><span class="sp">ディーロン</span>「最後の1機だからこそ、俺が飛ばす」</p><p><span class="sp">マヤ</span>「分離のタイミングは直した。あとは、あなたの手よ」</p>
   </div>
   <ul>
     <li>1-2 の後、グレイが工場を訪ねてくる。宇宙機関の育成プログラムに選ばれる。</li>
@@ -762,7 +762,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </div>
   <ul>
     <li>2-11 の StarNet 初展開で、加入者の数字が毎月増えていく画面を見せる。フライホイールが回り始める瞬間。</li>
-    <li>2-13 の有人輸送は、脱出キーの判断を含む緊張感の高いステージにする。成功すると「人も運べる会社」になる。</li>
+    <li>2-13 の有人輸送は、脱出キーの判断を含む緊張感の高いステージにする。成功すると「人も運べる会社」になる。</li><li>ディーロンは「俺が乗る」と言い張るが、宇宙機関のグレイに却下される。「あなたは地上で操縦してください」。夢はまだ遠い。</li>
   </ul>
 
   <h3>Chapter 3「巨人」</h3>
@@ -783,7 +783,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h3>エンディング</h3>
   <div class="table-wrap"><table>
     <tr><th>条件</th><th>エンディング</th></tr>
-    <tr><td>Chapter 3 クリア</td><td><strong>「次は、赤い星へ」</strong> 火星行きの発表会。スタッフロールに失敗した機体の一覧が流れる</td></tr>
+    <tr><td>Chapter 3 クリア</td><td><strong>「次は、赤い星へ」</strong> 火星行きの発表会。最初のパイロット席に座るのはディーロン本人。スタッフロールに失敗した機体の一覧が流れる</td></tr>
     <tr><td>倒産</td><td><strong>「夢の跡」</strong> 工場の競売。「データは残った」の一言で終わる</td></tr>
     <tr><td>評判と資金が高水準でクリア</td><td><strong>真エンド</strong> 軌道上の燃料補給と月面着陸を予告</td></tr>
     <tr><td>途中で身売りを選択</td><td><strong>「オールドスペースの子会社」</strong> 安定はするが、ロケットはもう着陸しない</td></tr>
@@ -845,7 +845,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h2><span class="num">13</span>未決事項</h2>
   <ul>
     <li>WP の許容幅・時間制限の具体的な数値(プロトタイプで遊びながら詰める)</li>
-    <li>上昇フェーズをどこまで手動にするか(研究「自動上昇」の解禁タイミング)</li>
+    <li>ルーチン便を AI に任せる条件(どの時点から、どの便を任せられるか)</li>
     <li>ADV の立ち絵をドットで描くか、テキスト中心にするか</li>
     <li>難易度選択(初期資金の多さ)を付けるか</li>
   </ul>
