@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+from .i18n import trf
+
 
 @dataclass
 class GameState:
@@ -31,13 +33,14 @@ class GameState:
         return (self.year - 1) * 12 + self.month
 
     def date_str(self):
-        return f"創業{self.year}年目 {self.month}月"
+        return trf("創業{year}年目 {month}月", year=self.year, month=self.month)
 
     def next_month(self):
         """月を進める。発生した出来事の会話行を返す。"""
         lines = []
         self.funds -= self.fixed_cost
-        lines.append(("sara", f"今月の固定費 {self.fixed_cost:.1f}M$ を払ったわ。残りは {self.funds:.1f}M$。"))
+        lines.append(("sara", trf("今月の固定費 {cost:.1f}M$ を払ったわ。残りは {funds:.1f}M$。",
+                                  cost=self.fixed_cost, funds=self.funds)))
         done = 0
         remain = []
         for m in self.building:
@@ -48,7 +51,7 @@ class GameState:
         self.building = remain
         if done:
             self.rockets += done
-            lines.append(("maya", f"Eagle 1 が{done}機、完成したわ。いつでも飛ばせる。"))
+            lines.append(("maya", trf("Eagle 1 が{n}機、完成したわ。いつでも飛ばせる。", n=done)))
         self.month += 1
         if self.month > 12:
             self.month = 1

@@ -1,6 +1,6 @@
 """ゲームを自動操作してスクリーンショットを撮る(動作確認用)。
 
-python tools/autoplay.py  → tools/shots/*.png
+python tools/autoplay.py [640x480|720x720|360x360|320x240] [ja|en] [--quick]  → tools/shots/<画面サイズ>[_en]/*.png
 タイトル → プロローグ → 点検 → 打上 → Ch1-1 を自動操縦 → リザルト → 工場 まで進める。
 """
 
@@ -14,13 +14,16 @@ sys.path.insert(0, str(ROOT))
 import pyxel  # noqa: E402
 from PIL import Image  # noqa: E402
 
+from game import i18n, ui  # noqa: E402
 from game.app import App  # noqa: E402
 from game.scene_misc import ResultScene, TitleScene  # noqa: E402
 from game.scene_mission import MissionScene  # noqa: E402
 from game.scene_office import OfficeScene  # noqa: E402
 
-OUT = ROOT / "tools" / "shots"
-OUT.mkdir(exist_ok=True)
+SCREEN = next((a for a in sys.argv[1:] if a in ui.SCREENS), "640x480")
+LANG = next((a for a in sys.argv[1:] if a in i18n.LANGS), "ja")
+OUT = ROOT / "tools" / "shots" / (SCREEN + ("" if LANG == "ja" else f"_{LANG}"))
+OUT.mkdir(parents=True, exist_ok=True)
 QUICK = "--quick" in sys.argv
 
 
@@ -161,4 +164,4 @@ class Bot:
 
 
 if __name__ == "__main__":
-    App(hook=Bot()).run()
+    App(hook=Bot(), screen=SCREEN, lang=LANG).run()

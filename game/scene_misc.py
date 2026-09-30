@@ -6,6 +6,7 @@ import random
 import pyxel
 
 from . import ui
+from .i18n import trf
 from .title_earth import EarthView
 
 
@@ -13,18 +14,33 @@ class TitleScene:
     """タイトル画面: 夜明けの地球とロゴ、メニュー。"""
 
     MENU = ["NEW GAME", "CONTINUE", "OPTIONS", "CREDITS"]
-    LOGO_Y = 100
+
+    # 画面サイズごとの配置。背景と地球は bg_w x bg_h で描いて bg_scale 倍で表示する
+    LAYOUTS = {
+        "640x480": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=2, horizon=105,
+                        logo_y=100, logo=1.0, menu_y=336, menu=3, menu_row=26, tag=2),
+        "720x720": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=2, horizon=150,
+                        logo_y=130, logo=1.0, menu_y=440, menu=3, menu_row=30, tag=2),
+        "360x360": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=1, horizon=150,
+                        logo_y=52, logo=0.5, menu_y=218, menu=2, menu_row=18, tag=1),
+        "320x240": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=1, horizon=105,
+                        logo_y=50, logo=0.5, menu_y=162, menu=2, menu_row=16, tag=1),
+    }
 
     def __init__(self, app):
         self.app = app
         self.frame = 0
         self.sel = 0
         self.popup = None
-        self.bg = pyxel.Image(320, 240)
-        self.bg.load(0, 0, str(ui.ASSETS / "title_bg.png"))
-        self.earth = EarthView()
+        L = self.lay = self.LAYOUTS[ui.SCREEN]
+        self.bg = pyxel.Image(L["bg_w"], L["bg_h"])
+        self.bg.load(0, 0, str(ui.ASSETS / L["bg"]))
+        self.earth = EarthView(L["bg_w"], L["bg_h"], L["bg_scale"], L["horizon"])
+        self.horizon = L["horizon"] * L["bg_scale"]  # 画面中央での地平線の高さ
+        self.ky = self.horizon / 210  # 縦の倍率(640x480 が 1)
         rng = random.Random(5)
-        self.twinkles = [(rng.uniform(20, 620), rng.uniform(10, 190), rng.random()) for _ in range(9)]
+        self.twinkles = [(rng.uniform(20, ui.W - 20), rng.uniform(10, self.horizon - 20), rng.random())
+                         for _ in range(9)]
 
     # ---- 更新 ----
     def update(self):
@@ -61,16 +77,16 @@ class TitleScene:
     # ---- 描画 ----
     def draw(self):
         pyxel.cls(ui.BLACK)
-        pyxel.blt(160, 120, self.bg, 0, 0, 320, 240, None, 0, 2)
+        L = self.lay
+        w, h, sc = L["bg_w"], L["bg_h"], L["bg_scale"]
+        pyxel.blt(w * (sc - 1) / 2, h * (sc - 1) / 2, self.bg, 0, 0, w, h, None, 0, sc)
         self.draw_twinkles()
         self.earth.draw()
         self.draw_trajectory()
         self.draw_station()
         self.draw_logo()
         self.draw_menu()
-        ui.big_text(470, 422, "TO THE MOON,", 2, ui.WHITE, shadow=ui.BLACK)
-        ui.big_text(470, 438, "TO MARS,", 2, ui.WHITE, shadow=ui.BLACK)
-        ui.big_text(470, 454, "AND BEYOND.", 2, ui.WHITE, shadow=ui.BLACK)
+        self.draw_tagline()
         if self.popup:
             self.draw_popup()
 
@@ -88,9 +104,11 @@ class TitleScene:
         period = 600
         t = (self.frame % period) / period
 
+        kx, ky = ui.W / 640, self.ky
+
         def pos(u):
-            x = 70 + 560 * u
-            y = 250 - 210 * math.sin(u * math.pi / 2) ** 0.7
+            x = (70 + 560 * u) * kx
+            y = self.horizon + (40 - 210 * math.sin(u * math.pi / 2) ** 0.7) * ky
             return x, y
 
         end = min(1.0, t * 1.4)
@@ -113,9 +131,16 @@ class TitleScene:
             pyxel.line(x, y - 4, x, y + 4, ui.WHITE)
 
     def draw_station(self):
-        x = 560 - (self.frame * 0.05) % 700
-        y = 262 + math.sin(self.frame / 90) * 2
+        kx = ui.W / 640
+        x = 560 * kx - (self.frame * 0.05) % (ui.W + 60)
+        y = self.horizon + 52 * self.ky + math.sin(self.frame / 90) * 2
         if x < -40:
+            return
+        if ui.SMALL:  # 半分の大きさ
+            pyxel.rect(x - 7, y, 14, 1, ui.GRAY)
+            for dx in (-7, -4, 4, 7):
+                pyxel.rect(x + dx - 1, y - 4, 2, 9, ui.DBLUE)
+            pyxel.rect(x - 1, y - 1, 3, 3, ui.WHITE)
             return
         pyxel.rect(x - 14, y - 1, 28, 2, ui.GRAY)
         for dx in (-13, -8, 8, 13):
@@ -124,23 +149,35 @@ class TitleScene:
         pyxel.rect(x - 3, y - 3, 6, 6, ui.WHITE)
         pyxel.pset(x + 2, y - 2, ui.RED)
 
+    def draw_tagline(self):
+        ts = self.lay["tag"]
+        lines = ["TO THE MOON,", "TO MARS,", "AND BEYOND."]
+        m = 12 if ui.SMALL else 28
+        x = ui.W - ui.big_text_width(lines[0], ts) - m
+        y = ui.H - 12 - 7 * ts - 8 * ts * (len(lines) - 1)
+        for i, line in enumerate(lines):
+            ui.big_text(x, y + i * 8 * ts, line, ts, ui.WHITE, shadow=ui.BLACK)
+
     # ---- ロゴ ----
     def draw_logo(self):
-        h, w, t, gap = 48, 70, 11, 14
+        k = self.lay["logo"]
+        h, w, t, gap, space = round(48 * k), round(70 * k), round(11 * k), round(14 * k), round(30 * k)
+        sh = max(1, round(3 * k))  # 影のずれ
         word = ["S", "T", "A", "R", " ", "X"]
-        total = sum(30 if ch == " " else w for ch in word) + gap * (len(word) - 1)
+        total = sum(space if ch == " " else w for ch in word) + gap * (len(word) - 1)
         x = (ui.W - total) // 2
-        y = self.LOGO_Y
+        y = self.lay["logo_y"]
         for ch in word:
             if ch == " ":
-                x += 30 + gap
+                x += space + gap
                 continue
-            self.draw_letter(ch, x + 3, y + 3, w, h, t, ui.NAVY)
+            self.draw_letter(ch, x + sh, y + sh, w, h, t, ui.NAVY)
             self.draw_letter(ch, x, y, w, h, t, ui.WHITE)
             x += w + gap
         sub = "FLY IT YOURSELF"
-        sw = ui.big_text_width(sub, 2, spacing=4)
-        ui.big_text((ui.W - sw) // 2, y + h + 22, sub, 2, ui.WHITE, shadow=ui.BLACK, spacing=4)
+        ss = 1 if ui.SMALL else 2
+        sw = ui.big_text_width(sub, ss, spacing=4)
+        ui.big_text((ui.W - sw) // 2, y + h + round(22 * k), sub, ss, ui.WHITE, shadow=ui.BLACK, spacing=4)
 
     @staticmethod
     def quad(p0, p1, p2, p3, col):
@@ -164,7 +201,7 @@ class TitleScene:
             self.quad((ax - s / 2, y), (ax + s / 2, y), (x + s, y + h), (x, y + h), col)
             self.quad((ax - s / 2, y), (ax + s / 2, y), (x + w, y + h), (x + w - s, y + h), col)
         elif ch == "R":
-            bw = w - 6
+            bw = w - round(w * 6 / 70)
             pyxel.rect(x, y, t, h, col)
             pyxel.rect(x, y, bw, t, col)
             pyxel.rect(x + bw - t, y, t, (h + t) // 2, col)
@@ -178,25 +215,30 @@ class TitleScene:
 
     # ---- メニュー ----
     def draw_menu(self):
-        x, y0 = 262, 336
+        ms, row = self.lay["menu"], self.lay["menu_row"]
+        k = ms / 3  # 640x480 のときが 1
+        x, y0 = ui.W // 2 - round(58 * k), self.lay["menu_y"]
         pyxel.dither(0.6)
-        pyxel.rect(x - 44, y0 - 16, 230, 26 * len(self.MENU) + 22, ui.BLACK)
+        pyxel.rect(x - 44 * k, y0 - 16 * k, 230 * k, row * len(self.MENU) + 22 * k, ui.BLACK)
         pyxel.dither(1.0)
         for i, item in enumerate(self.MENU):
-            y = y0 + i * 26
+            y = y0 + i * row
             disabled = item in ("CONTINUE", "OPTIONS")
             col = ui.WHITE if i == self.sel else (ui.GRAY if disabled else ui.LBLUE)
-            ui.big_text(x, y, item, 3, col, shadow=ui.BLACK if i == self.sel else None)
+            ui.big_text(x, y, item, ms, col, shadow=ui.BLACK if i == self.sel else None)
             if i == self.sel and self.frame // 20 % 3:
-                pyxel.tri(x - 26, y, x - 26, y + 20, x - 12, y + 10, ui.WHITE)
+                pyxel.tri(x - 26 * k, y, x - 26 * k, y + 20 * k, x - 12 * k, y + 10 * k, ui.WHITE)
 
     def draw_popup(self):
         lines = self.popup
-        h = 30 + len(lines) * 18
+        small = ui.SMALL
+        fs, lh = (10, 14) if small else (12, 18)
+        mx = 10 if small else 120 * ui.W // 640
+        h = 30 + len(lines) * lh
         y = (ui.H - h) // 2
-        ui.window(120, y, ui.W - 240, h)
+        ui.window(mx, y, ui.W - mx * 2, h)
         for i, line in enumerate(lines):
-            ui.text(140, y + 16 + i * 18, line, ui.WHITE)
+            ui.text(mx + (10 if small else 20), y + 16 + i * lh, line, ui.WHITE, size=fs)
 
 
 class ResultScene:
@@ -213,43 +255,65 @@ class ResultScene:
 
     def draw(self):
         pyxel.cls(ui.NAVY)
+        if ui.TINY:
+            # 320x240: 行間をさらに詰める
+            ox, oy, fs, lh = 0, 0, 10, 12
+            win = (4, 4, ui.W - 8, ui.H - 8)
+            ys = dict(title=10, status=26, reason=40, wp=56, rows=70, gap=4, sec=16, sec_row=13, prompt=ui.H - 22)
+            cols = dict(head=12, label=18, win=70, val=214, mark=262, alt=120)
+        elif ui.SMALL:
+            # 360x360: 10px の文字で詰めて並べる
+            ox, oy, fs, lh = 0, 0, 10, 14
+            win = (6, 6, ui.W - 12, ui.H - 12)
+            ys = dict(title=14, status=32, reason=48, wp=70, rows=86, gap=6, sec=20, sec_row=16, prompt=ui.H - 26)
+            cols = dict(head=14, label=22, win=78, val=250, mark=300, alt=140)
+        else:
+            # 640x480 の配置。大きい画面では中央に置く
+            ox, oy, fs, lh = (ui.W - 640) // 2, (ui.H - 480) // 2, 12, 18
+            win = (60, 40, 520, 400)
+            ys = dict(title=60, status=86, reason=106, wp=136, rows=158, gap=10, sec=30, sec_row=22, prompt=416)
+            cols = dict(head=100, label=120, win=230, val=430, mark=500, alt=260)
+        cx = ui.W // 2
         run = self.run
         ok = run.result == "success"
-        ui.window(60, 40, ui.W - 120, ui.H - 80, fill=ui.BLACK, border=ui.LIME if ok else ui.RED)
-        ui.text_center(ui.W // 2, 60, "飛行結果", ui.WHITE)
-        ui.text_center(ui.W // 2, 86, "ミッション成功" if ok else "ミッション失敗", ui.LIME if ok else ui.RED)
+        wx, wy, ww, wh = win
+        ui.window(ox + wx, oy + wy, ww, wh, fill=ui.BLACK, border=ui.LIME if ok else ui.RED)
+        ui.text_center(cx, oy + ys["title"], "飛行結果", ui.WHITE)
+        ui.text_center(cx, oy + ys["status"], "ミッション成功" if ok else "ミッション失敗", ui.LIME if ok else ui.RED)
         if not ok:
-            ui.text_center(ui.W // 2, 106, run.fail_reason, ui.WHITE)
-        y = 136
+            ui.text_center(cx, oy + ys["reason"], run.fail_reason, ui.WHITE, size=fs)
+        y = oy + ys["wp"]
         wp = run.m.waypoint
-        ui.text(100, y, f"{wp.name}(高度 {wp.altitude / 1000:.0f} km 通過時)", ui.YELLOW)
-        y += 22
-        for key, win in wp.windows.items():
-            ui.text(120, y, win.label, ui.GRAY)
-            ui.text(230, y, f"窓 {win.lo:+.0f} ~ {win.hi:+.0f} {win.unit}", ui.WHITE)
+        ui.text(ox + cols["head"], y, trf("{name}(高度 {alt:.0f} km 通過時)", name=wp.name, alt=wp.altitude / 1000),
+                ui.YELLOW, size=fs)
+        y = oy + ys["rows"]
+        for key, w in wp.windows.items():
+            ui.text(ox + cols["label"], y, w.label, ui.GRAY, size=fs)
+            ui.text(ox + cols["win"], y, trf("窓 {lo:+.0f} ~ {hi:+.0f} {unit}", lo=w.lo, hi=w.hi, unit=w.unit),
+                    ui.WHITE, size=fs)
             if run.wp_values:
                 val = run.wp_values[key]
-                good = win.ok(val)
-                ui.text(430, y, f"{val:+.1f}", ui.LIME if good else ui.RED)
-                ui.text(500, y, "○" if good else "×", ui.LIME if good else ui.RED)
+                good = w.ok(val)
+                ui.text(ox + cols["val"], y, f"{val:+.1f}", ui.LIME if good else ui.RED, size=fs)
+                ui.text(ox + cols["mark"], y, "○" if good else "×", ui.LIME if good else ui.RED, size=fs)
             else:
-                ui.text(430, y, "---", ui.GRAY)
-            y += 18
-        y += 10
-        ui.text(100, y, f"ランク {run.rank()}", ui.YELLOW)
-        ui.text(260, y, f"最高高度 {run.max_alt / 1000:.2f} km", ui.WHITE)
-        y += 30
+                ui.text(ox + cols["val"], y, "---", ui.GRAY, size=fs)
+            y += lh
+        y += ys["gap"]
+        ui.text(ox + cols["head"], y, trf("ランク {rank}", rank=run.rank()), ui.YELLOW, size=fs)
+        ui.text(ox + cols["alt"], y, trf("最高高度 {alt:.2f} km", alt=run.max_alt / 1000), ui.WHITE, size=fs)
+        y += ys["sec"]
         s = self.s
-        ui.text(100, y, "会社への影響", ui.YELLOW)
-        y += 22
-        ui.text(120, y, f"テレメトリ +{s['tlm']}", ui.CYAN)
-        y += 18
+        ui.text(ox + cols["head"], y, "会社への影響", ui.YELLOW, size=fs)
+        y += ys["sec_row"]
+        ui.text(ox + cols["label"], y, trf("テレメトリ +{tlm}", tlm=s["tlm"]), ui.CYAN, size=fs)
+        y += lh
         rep = s["rep"]
-        ui.text(120, y, f"評判 {rep:+d}", ui.LIME if rep >= 0 else ui.RED)
-        y += 18
-        ui.text(120, y, "機体 -1(Eagle 1 は使い捨て)", ui.WHITE)
+        ui.text(ox + cols["label"], y, trf("評判 {rep:+d}", rep=rep), ui.LIME if rep >= 0 else ui.RED, size=fs)
+        y += lh
+        ui.text(ox + cols["label"], y, "機体 -1(Eagle 1 は使い捨て)", ui.WHITE, size=fs)
         if self.frame // 20 % 2:
-            ui.text_center(ui.W // 2, ui.H - 64, "SPACE で工場へ戻る", ui.WHITE)
+            ui.text_center(cx, oy + ys["prompt"], "SPACE で工場へ戻る", ui.WHITE)
 
 
 class GameOverScene:
@@ -267,8 +331,13 @@ class GameOverScene:
         pyxel.cls(ui.BLACK)
         if self.dlg.active:
             speaker, _ = self.dlg.current
-            ui.window(40, 300, ui.W - 80, 100)
-            for i, line in enumerate(ui.wrap(self.dlg.visible_text(), ui.W - 120)[:4]):
-                ui.text(60, 320 + i * ui.LINE_H, line, ui.WHITE)
+            m = 8 if ui.SMALL else 40
+            pad = 10 if ui.SMALL else 20
+            h = 88 if ui.SMALL else 100
+            y = ui.H - (100 if ui.SMALL else 180)
+            ui.window(m, y, ui.W - m * 2, h)
+            for i, line in enumerate(ui.wrap(self.dlg.visible_text(), ui.W - (m + pad) * 2)[:4]):
+                ui.text(m + pad, y + pad + i * ui.LINE_H, line, ui.WHITE)
             if speaker:
-                self.app.portraits.draw(speaker, 60, 150)
+                ps = self.app.portraits.size()
+                self.app.portraits.draw(speaker, m + pad, y - ps - (14 if ui.SMALL else 22))

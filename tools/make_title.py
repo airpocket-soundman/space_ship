@@ -1,6 +1,7 @@
 """タイトル画面の素材を生成する。
 
 - assets/title_bg.png   320x240(2倍表示)の星・月・火星。地球は game/title_earth.py が毎フレーム描く
+- assets/title_bg_sq.png 360x360 の同じ背景(720x720 では2倍、360x360 では等倍で表示)
 - assets/earth_tex.png  地表マップ。横は軌道方向 90°ぶん(左右がつながる)、縦は軌道からの横方向 0〜24°
     色が地表の種類を表す: DBLUE=海 / TEAL=陸 / BROWN=砂漠 / GRAY=薄い雲 / WHITE=厚い雲 / YELLOW=都市のある陸
 """
@@ -83,32 +84,39 @@ def make_texture():
     return mat
 
 
-def main():
-    root = Path(__file__).resolve().parent.parent
-    ys, xs = np.mgrid[0:H, 0:W].astype(float)
+def make_bg(w, h, rng, n_stars, moon, mars):
+    """星・月・火星の背景。moon / mars は (x, y, 半径)。"""
+    ys, xs = np.mgrid[0:h, 0:w].astype(float)
     bx = BAYER[ys.astype(int) % 4, xs.astype(int) % 4]
-    img = np.full((H, W), BLACK, dtype=int)
+    img = np.full((h, w), BLACK, dtype=int)
 
     # 星
-    n = 260
-    sx, sy = rng.integers(0, W, n), rng.integers(0, H, n)
-    img[sy, sx] = rng.choice([GRAY, WHITE, LBLUE, DBLUE], n, p=[0.35, 0.25, 0.15, 0.25])
+    sx, sy = rng.integers(0, w, n_stars), rng.integers(0, h, n_stars)
+    img[sy, sx] = rng.choice([GRAY, WHITE, LBLUE, DBLUE], n_stars, p=[0.35, 0.25, 0.15, 0.25])
 
     # 月
-    mx, my, mr = 34, 28, 13
-    moon = np.hypot(xs - mx, ys - my) <= mr
+    mx, my, mr = moon
+    m = np.hypot(xs - mx, ys - my) <= mr
     s = 0.75 - ((xs - mx) * 0.5 + (ys - my) * 0.4) / mr * 0.5 + (fbm(xs / 4, ys / 4, 5, 3) - 0.5) * 0.9
-    img[moon] = ramp([NAVY, DBLUE, GRAY, WHITE], s, bx)[moon]
+    img[m] = ramp([NAVY, DBLUE, GRAY, WHITE], s, bx)[m]
 
     # 火星
-    fx, fy, fr = 297, 50, 13
-    mars = np.hypot(xs - fx, ys - fy) <= fr
+    fx, fy, fr = mars
+    m = np.hypot(xs - fx, ys - fy) <= fr
     s = 0.8 - ((xs - fx) * 0.6 + (ys - fy) * 0.3) / fr * 0.5 + (fbm(xs / 5, ys / 5, 9, 3) - 0.5) * 0.8
-    img[mars] = ramp([PURPLE, BROWN, ORANGE, PEACH], s, bx)[mars]
+    img[m] = ramp([PURPLE, BROWN, ORANGE, PEACH], s, bx)[m]
+    return img
 
+
+def main():
+    root = Path(__file__).resolve().parent.parent
     rgb = np.array([[(c >> 16) & 255, (c >> 8) & 255, c & 255] for c in PALETTE], dtype=np.uint8)
+    img = make_bg(W, H, rng, 260, (34, 28, 13), (297, 50, 13))
     Image.fromarray(rgb[img]).save(root / "assets" / "title_bg.png")
     Image.fromarray(rgb[make_texture()]).save(root / "assets" / "earth_tex.png")
+    # 正方形の画面(720x720 / 360x360)用。星の密度は 320x240 と同じ
+    img = make_bg(360, 360, np.random.default_rng(12), 440, (34, 28, 13), (337, 50, 13))
+    Image.fromarray(rgb[img]).save(root / "assets" / "title_bg_sq.png")
 
 
 if __name__ == "__main__":

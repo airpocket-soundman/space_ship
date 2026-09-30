@@ -3,6 +3,7 @@
 import math
 from dataclasses import dataclass
 
+from .i18n import trf
 from .physics import EAGLE1, Vehicle
 
 
@@ -152,7 +153,7 @@ class MissionRun:
                 "ang": math.degrees(v.theta),
             }
             self.result = "success"
-            self.emit("good", f"{wp.name} 通過! 高度 10 km を突破")
+            self.emit("good", trf("{name} 通過! 高度 {alt:.0f} km を突破", name=wp.name, alt=wp.altitude / 1000))
 
     def fail(self, reason):
         self.result = "fail"

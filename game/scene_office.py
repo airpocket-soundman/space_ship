@@ -5,14 +5,29 @@ import math
 import pyxel
 
 from . import script, ui
+from .i18n import trf
 from .missions import MISSIONS
 from .portraits import NAMES
 
-STATUS_H = 28
-VIEW_BOTTOM = 318
-MSG_Y = 330
-MSG_H = 92
-CMD_Y = 432
+
+
+class Layout:
+    """画面サイズごとの配置(640x480 のときが元の数値)。"""
+
+    def __init__(self):
+        small, tall, tiny = ui.SMALL, ui.H > 480, ui.TINY
+        self.status_h = 30 if small else 28  # 小さい画面では2段
+        self.cmd_h = 28 if tiny else 32 if small else 40 if tall else 36
+        self.cmd_y = ui.H - self.cmd_h - (4 if tiny else 6 if small else 16 if tall else 12)
+        self.msg_lines = 3 if tiny else 4 if small else 6 if tall else 5
+        self.msg_h = 26 + self.msg_lines * ui.LINE_H - (4 if small else 12 if tall else 14)
+        self.msg_y = self.cmd_y - self.msg_h - (6 if tiny else 8 if small else 10)
+        self.view_bottom = self.msg_y - (8 if tiny else 12)
+        self.margin = 6 if small else 16
+        # 格納庫の絵の倍率(640x480 が 1)。縦が足りない画面では縦に合わせて縮め、横は中央に寄せる
+        view_h = self.view_bottom - self.status_h - 1
+        self.k = min(ui.W / 640, view_h / 289)
+        self.ox = (ui.W - 640 * self.k) / 2
 
 
 class Command:
@@ -29,12 +44,13 @@ class OfficeScene:
         self.app = app
         self.st = app.state
         self.dlg = ui.Dialogue()
+        self.lay = Layout()
         self.sel = 0
         self.frame = 0
         self.commands = [
             Command("dev", "開発", 1, "研究で機体を扱いやすくする(準備中)", self.cmd_dev),
-            Command("build", "製造", 1, f"Eagle 1 を製造する({self.st.ROCKET_COST:.0f}M$・{self.st.ROCKET_MONTHS}ヶ月)", self.cmd_build),
-            Command("inspect", "点検", 1, f"次の打ち上げの故障を起きにくくする({self.st.INSPECT_COST}M$)", self.cmd_inspect),
+            Command("build", "製造", 1, trf("Eagle 1 を製造する({cost:.0f}M$・{months}ヶ月)", cost=self.st.ROCKET_COST, months=self.st.ROCKET_MONTHS), self.cmd_build),
+            Command("inspect", "点検", 1, trf("次の打ち上げの故障を起きにくくする({cost}M$)", cost=self.st.INSPECT_COST), self.cmd_inspect),
             Command("pr", "宣伝", 1, "ケンに配信を頼んで評判を上げる。CEO の SNS は当たり外れあり", self.cmd_pr),
             Command("sales", "営業", 1, "顧客を探す", self.cmd_sales),
             Command("fund", "調達", 1, "投資家にピッチして資金を集める(3ヶ月に1回)", self.cmd_fund),
@@ -71,7 +87,7 @@ class OfficeScene:
             return
         st.funds -= st.ROCKET_COST
         st.building.append(st.ROCKET_MONTHS)
-        self.say([("maya", f"Eagle 1 の製造を始めたわ。{st.ROCKET_MONTHS}ヶ月後に完成する。")])
+        self.say([("maya", trf("Eagle 1 の製造を始めたわ。{months}ヶ月後に完成する。", months=st.ROCKET_MONTHS))])
 
     def cmd_inspect(self):
         st = self.st
@@ -99,7 +115,7 @@ class OfficeScene:
         else:
             gain = pyxel.rndi(2, 4)
             self.st.reputation += gain
-            self.say([("ken", f"工場見学の配信をしたよ! 評判が {gain} 上がった。")])
+            self.say([("ken", trf("工場見学の配信をしたよ! 評判が {gain} 上がった。", gain=gain))])
 
     def cmd_sales(self):
         if not self.use_ap(1):
@@ -117,7 +133,7 @@ class OfficeScene:
         amount = round(3 + st.reputation * 0.4 + (10 if "1-1" in st.cleared else 0), 1)
         st.funds += amount
         self.say([("dylon", "(投資家に)俺たちは、戻ってくるロケットで宇宙を安くする。"),
-                  ("sara", f"{amount}M$ 集まったわ。")])
+                  ("sara", trf("{amount}M$ 集まったわ。", amount=amount))])
 
     def cmd_hire(self):
         st = self.st
@@ -130,7 +146,7 @@ class OfficeScene:
         st.fixed_cost += 0.5
         st.staff += 1
         self.say([("maya", "腕のいい溶接工を一人採用したわ。来月から AP が 1 増える。"),
-                  ("sara", f"固定費は月 {st.fixed_cost:.1f}M$ になったわよ。")])
+                  ("sara", trf("固定費は月 {cost:.1f}M$ になったわよ。", cost=st.fixed_cost))])
 
     def cmd_launch(self):
         st = self.st
@@ -170,115 +186,154 @@ class OfficeScene:
         self.draw_status()
         speaker = self.dlg.current[0] if self.dlg.active else ""
         if speaker:
-            self.app.portraits.draw(speaker, 24, VIEW_BOTTOM - 136)
+            ps = self.app.portraits.size()
+            m = 8 if ui.SMALL else 24
+            self.app.portraits.draw(speaker, m, self.lay.view_bottom - ps - m // 3)
         self.draw_message(speaker)
         self.draw_commands()
 
     def draw_status(self):
         st = self.st
-        pyxel.rect(0, 0, ui.W, STATUS_H, ui.NAVY)
-        pyxel.line(0, STATUS_H, ui.W, STATUS_H, ui.DBLUE)
-        ui.text(12, 8, st.date_str(), ui.WHITE)
+        h = self.lay.status_h
+        pyxel.rect(0, 0, ui.W, h, ui.NAVY)
+        pyxel.line(0, h, ui.W, h, ui.DBLUE)
         col = ui.RED if st.funds < 10 else ui.YELLOW
-        ui.text(150, 8, f"資金 {st.funds:6.1f}M$", col)
-        ui.text(290, 8, f"評判 {st.reputation}", ui.LIME)
-        ui.text(370, 8, f"TLM {st.tlm}", ui.CYAN)
-        ui.text(450, 8, f"AP {st.ap}/{st.ap_max}", ui.WHITE)
-        build = f" 製造中{len(st.building)}" if st.building else ""
-        ui.text(530, 8, f"機体 {st.rockets}{build}", ui.WHITE, size=10)
+        build = trf(" 製造中{n}", n=len(st.building)) if st.building else ""
+        funds = trf("資金 {funds:6.1f}M$", funds=st.funds)
+        rep = trf("評判 {rep}", rep=st.reputation)
+        rockets = trf("機体 {n}{build}", n=st.rockets, build=build)
+        if ui.SMALL:  # 2段に分ける
+            c1, c2 = ui.W // 3, ui.W * 2 // 3
+            ui.text(6, 3, st.date_str(), ui.WHITE, size=10)
+            ui.text(c1, 3, funds, col, size=10)
+            ui.text(c2, 3, f"AP {st.ap}/{st.ap_max}", ui.WHITE, size=10)
+            ui.text(6, 16, rep, ui.LIME, size=10)
+            ui.text(c1, 16, f"TLM {st.tlm}", ui.CYAN, size=10)
+            ui.text(c2, 16, rockets, ui.WHITE, size=10)
+            return
+        k = ui.W / 640
+        ui.text(12, 8, st.date_str(), ui.WHITE)
+        ui.text(150 * k, 8, funds, col)
+        ui.text(290 * k, 8, rep, ui.LIME)
+        ui.text(370 * k, 8, f"TLM {st.tlm}", ui.CYAN)
+        ui.text(450 * k, 8, f"AP {st.ap}/{st.ap_max}", ui.WHITE)
+        ui.text(530 * k, 8, rockets, ui.WHITE, size=10)
 
     def draw_hangar(self):
-        top, bottom = STATUS_H + 1, VIEW_BOTTOM
+        """格納庫。640x480 のときの絵を倍率 k で拡大・縮小し、床を基準に置く。"""
+        k, ox = self.lay.k, self.lay.ox
+        top, bottom = self.lay.status_h + 1, self.lay.view_bottom
+        floor = bottom - 70 * k
         # 壁
         pyxel.rect(0, top, ui.W, bottom - top, ui.NAVY)
-        for x in range(0, ui.W, 40):
-            pyxel.line(x, top, x, bottom - 70, ui.BLACK)
-        # 開いた格納庫の扉と空
-        pyxel.rect(360, top + 16, 250, 200, ui.CYAN)
-        pyxel.rect(360, top + 150, 250, 66, ui.DBLUE)
-        pyxel.circ(560, top + 60, 16, ui.YELLOW)
-        for i, (cx, cy) in enumerate(((400, top + 50), (470, top + 80))):
-            pyxel.elli(cx + int(math.sin((self.frame + i * 90) / 120) * 6), cy, 50, 14, ui.WHITE)
-        pyxel.rectb(358, top + 14, 254, 204, ui.GRAY)
-        for y in range(top + 16, top + 216, 20):
-            pyxel.line(360, y, 364, y, ui.GRAY)
+        for x in range(0, ui.W, round(40 * k)):
+            pyxel.line(x, top, x, floor, ui.BLACK)
+        # 開いた格納庫の扉と空(縦に余裕がある画面では扉を高くする)
+        dx, dw = ox + 360 * k, 250 * k
+        dtop = max(top + 16 * k, floor - 203 * k - (floor - top) * 0.25)
+        dh = floor - 3 - dtop
+        pyxel.rect(dx, dtop, dw, dh, ui.CYAN)
+        pyxel.rect(dx, floor - 69 * k, dw, 66 * k, ui.DBLUE)
+        pyxel.circ(ox + 560 * k, dtop + 44 * k, 16 * k, ui.YELLOW)
+        for i, (cx, cy) in enumerate(((400, 34), (470, 64))):
+            pyxel.elli(ox + (cx + int(math.sin((self.frame + i * 90) / 120) * 6)) * k, dtop + cy * k, 50 * k, 14 * k, ui.WHITE)
+        pyxel.rectb(dx - 2, dtop - 2, dw + 4, dh + 4, ui.GRAY)
+        for y in range(int(dtop), int(dtop + dh), round(20 * k)):
+            pyxel.line(dx, y, dx + 4 * k, y, ui.GRAY)
         # 床
-        pyxel.rect(0, bottom - 70, ui.W, 70, ui.GRAY)
-        pyxel.line(0, bottom - 70, ui.W, bottom - 70, ui.WHITE)
-        for x in range(-200, ui.W, 60):
-            pyxel.line(x, bottom, x + 120, bottom - 70, ui.DBLUE)
+        pyxel.rect(0, floor, ui.W, bottom - floor, ui.GRAY)
+        pyxel.line(0, floor, ui.W, floor, ui.WHITE)
+        for x in range(round(-200 * k), ui.W, round(60 * k)):
+            pyxel.line(x, bottom, x + 120 * k, floor, ui.DBLUE)
         # ホワイトボード
-        pyxel.rect(160, top + 30, 150, 90, ui.WHITE)
-        pyxel.rectb(160, top + 30, 150, 90, ui.GRAY)
-        ui.text(170, top + 36, "EAGLE 1", ui.DBLUE)
-        pyxel.circb(235, top + 90, 22, ui.RED)
-        pyxel.circ(235, top + 90, 6, ui.DBLUE)
-        pyxel.line(170, top + 58, 250, top + 58, ui.BLACK)
-        ui.text(260, top + 64, "10km!", ui.RED, size=10)
+        by = floor - 189 * k
+        pyxel.rect(ox + 160 * k, by, 150 * k, 90 * k, ui.WHITE)
+        pyxel.rectb(ox + 160 * k, by, 150 * k, 90 * k, ui.GRAY)
+        ui.text(ox + 170 * k, by + 6 * k, "EAGLE 1", ui.DBLUE, size=10 if ui.SMALL else 12)
+        pyxel.circb(ox + 235 * k, by + 60 * k, 22 * k, ui.RED)
+        pyxel.circ(ox + 235 * k, by + 60 * k, 6 * k, ui.DBLUE)
+        pyxel.line(ox + 170 * k, by + 28 * k, ox + 250 * k, by + 28 * k, ui.BLACK)
+        if not ui.TINY:  # 320x240 ではボードが小さくて入らない
+            ui.text(ox + 260 * k, by + 34 * k, "10km!", ui.RED, size=10)
         # 机とノートPC
-        pyxel.rect(40, bottom - 110, 120, 10, ui.BROWN)
-        pyxel.rect(48, bottom - 100, 6, 40, ui.BROWN)
-        pyxel.rect(146, bottom - 100, 6, 40, ui.BROWN)
-        pyxel.rect(80, bottom - 128, 40, 18, ui.GRAY)
-        pyxel.rect(82, bottom - 126, 36, 14, ui.TEAL if self.frame // 30 % 2 else ui.LIME)
+        pyxel.rect(ox + 40 * k, floor - 40 * k, 120 * k, 10 * k, ui.BROWN)
+        pyxel.rect(ox + 48 * k, floor - 30 * k, 6 * k, 40 * k, ui.BROWN)
+        pyxel.rect(ox + 146 * k, floor - 30 * k, 6 * k, 40 * k, ui.BROWN)
+        pyxel.rect(ox + 80 * k, floor - 58 * k, 40 * k, 18 * k, ui.GRAY)
+        pyxel.rect(ox + 82 * k, floor - 56 * k, 36 * k, 14 * k, ui.TEAL if self.frame // 30 % 2 else ui.LIME)
         # Eagle 1(機体があれば格納庫に立っている)
         if self.st.rockets > 0 or self.st.building:
-            self.draw_rocket_in_hangar(470, bottom - 70, built=self.st.rockets > 0)
+            self.draw_rocket_in_hangar(ox + 470 * k, floor, k, built=self.st.rockets > 0)
 
-    def draw_rocket_in_hangar(self, cx, base, built=True):
-        h = 190
+    def draw_rocket_in_hangar(self, cx, base, k, built=True):
+        h = 190 * k
         top = base - h
+        hw = 9 * k
         body = ui.WHITE if built else ui.GRAY
-        pyxel.rect(cx - 9, top + 22, 18, h - 22, body)
-        pyxel.tri(cx - 9, top + 22, cx + 8, top + 22, cx, top, body)
-        pyxel.rect(cx - 9, top + 70, 18, 6, ui.BLACK)
-        pyxel.rect(cx + 4, top + 22, 5, h - 22, ui.GRAY if built else ui.DBLUE)
-        ui.text(cx - 3, top + 90, "S", ui.DBLUE, size=10)
-        ui.text(cx - 3, top + 102, "T", ui.DBLUE, size=10)
-        ui.text(cx - 3, top + 114, "A", ui.DBLUE, size=10)
-        ui.text(cx - 3, top + 126, "R", ui.DBLUE, size=10)
-        ui.text(cx - 3, top + 138, "X", ui.DBLUE, size=10)
-        pyxel.tri(cx - 7, base, cx + 6, base, cx, base - 12, ui.BLACK)
+        pyxel.rect(cx - hw, top + 22 * k, hw * 2, h - 22 * k, body)
+        pyxel.tri(cx - hw, top + 22 * k, cx + hw - 1, top + 22 * k, cx, top, body)
+        pyxel.rect(cx - hw, top + 70 * k, hw * 2, 6 * k, ui.BLACK)
+        pyxel.rect(cx + 4 * k, top + 22 * k, 5 * k, h - 22 * k, ui.GRAY if built else ui.DBLUE)
+        if not ui.SMALL:  # 360x360 では機体が細くて文字が入らない
+            for i, ch in enumerate("STARX"):
+                ui.text(cx - 3, top + (90 + i * 12) * k, ch, ui.DBLUE, size=10)
+        pyxel.tri(cx - 7 * k, base, cx + 6 * k, base, cx, base - 12 * k, ui.BLACK)
         # 足場
-        for x in (cx - 30, cx + 30):
-            pyxel.line(x, top + 30, x, base, ui.YELLOW)
-        for y in range(top + 40, base, 30):
-            pyxel.line(cx - 30, y, cx + 30, y, ui.YELLOW)
+        for x in (cx - 30 * k, cx + 30 * k):
+            pyxel.line(x, top + 30 * k, x, base, ui.YELLOW)
+        y = top + 40 * k
+        while y < base:
+            pyxel.line(cx - 30 * k, y, cx + 30 * k, y, ui.YELLOW)
+            y += 30 * k
         if not built:
             ui.text_center(cx, top - 16, "製造中", ui.YELLOW, border=ui.BLACK)
 
     def draw_message(self, speaker):
-        ui.window(16, MSG_Y, ui.W - 32, MSG_H)
+        lay = self.lay
+        m, y0, h = lay.margin, lay.msg_y, lay.msg_h
+        pad = 10 if ui.SMALL else 16
+        tw = ui.W - (m + pad) * 2
+        ui.window(m, y0, ui.W - m * 2, h)
         if self.dlg.active:
             if speaker:
                 name = NAMES.get(speaker, speaker)
-                pyxel.rect(170, MSG_Y - 14, ui.text_width(name) + 16, 18, ui.DBLUE)
-                pyxel.rectb(170, MSG_Y - 14, ui.text_width(name) + 16, 18, ui.WHITE)
-                ui.text(178, MSG_Y - 11, name, ui.YELLOW)
-            lines = ui.wrap(self.dlg.visible_text(), ui.W - 64)
-            for i, line in enumerate(lines[:5]):
-                ui.text(32, MSG_Y + 12 + i * ui.LINE_H, line, ui.WHITE)
+                nx = m + self.app.portraits.size() + (16 if ui.SMALL else 26)
+                pyxel.rect(nx, y0 - 14, ui.text_width(name) + 16, 18, ui.DBLUE)
+                pyxel.rectb(nx, y0 - 14, ui.text_width(name) + 16, 18, ui.WHITE)
+                ui.text(nx + 8, y0 - 11, name, ui.YELLOW)
+            lines = ui.wrap(self.dlg.visible_text(), tw)
+            for i, line in enumerate(lines[:lay.msg_lines]):
+                ui.text(m + pad, y0 + 12 + i * ui.LINE_H, line, ui.WHITE)
             if self.dlg.waiting() and self.frame // 15 % 2:
-                pyxel.tri(ui.W - 40, MSG_Y + MSG_H - 16, ui.W - 30, MSG_Y + MSG_H - 16, ui.W - 35, MSG_Y + MSG_H - 10, ui.WHITE)
+                ax, ay = ui.W - m - 24, y0 + h - 16
+                pyxel.tri(ax, ay, ax + 10, ay, ax + 5, ay + 6, ui.WHITE)
         else:
             cmd = self.commands[self.sel]
-            ui.text(32, MSG_Y + 12, f"【{cmd.label}】", ui.YELLOW)
-            for i, line in enumerate(ui.wrap(cmd.desc, ui.W - 64)[:3]):
-                ui.text(32, MSG_Y + 32 + i * ui.LINE_H, line, ui.WHITE)
-            ui.text(32, MSG_Y + MSG_H - 20, "←→ 選択 / SPACE・Z 決定", ui.GRAY, size=10)
+            ui.text(m + pad, y0 + 12, trf("【{label}】", label=ui.tr(cmd.label)), ui.YELLOW)
+            dy = 10 if ui.SMALL else 16
+            # 320x240 は操作説明を省いて、説明文に 2 行使う
+            n = lay.msg_lines - (1 if ui.TINY else 2)
+            for i, line in enumerate(ui.wrap(cmd.desc, tw)[:n]):
+                ui.text(m + pad, y0 + dy + (i + 1) * ui.LINE_H, line, ui.WHITE)
+            if not ui.TINY:
+                ui.text(m + pad, y0 + h - (16 if ui.SMALL else 20), "←→ 選択 / SPACE・Z 決定", ui.GRAY, size=10)
 
     def draw_commands(self):
+        lay = self.lay
         n = len(self.commands)
-        bw, gap = 64, 4
+        gap = 2 if ui.SMALL else 4
+        bw = int(min(64 * ui.W / 640, (ui.W - lay.margin * 2 - (n - 1) * gap) / n))
         x0 = (ui.W - (n * bw + (n - 1) * gap)) // 2
+        y, bh = lay.cmd_y, lay.cmd_h
         for i, cmd in enumerate(self.commands):
             x = x0 + i * (bw + gap)
             selected = i == self.sel and not self.dlg.active
             usable = cmd.ap == 0 or self.st.ap >= cmd.ap
             fill = ui.DBLUE if selected else ui.NAVY
-            pyxel.rect(x, CMD_Y, bw, 36, fill)
-            pyxel.rectb(x, CMD_Y, bw, 36, ui.YELLOW if selected else ui.DBLUE)
+            pyxel.rect(x, y, bw, bh, fill)
+            pyxel.rectb(x, y, bw, bh, ui.YELLOW if selected else ui.DBLUE)
             col = ui.WHITE if usable else ui.GRAY
-            ui.text_center(x + bw // 2, CMD_Y + 6, cmd.label, col)
+            fs = 12 if ui.text_width(cmd.label) <= bw - 4 else 10  # 英語の長い名前は小さい字で
+            ui.text_center(x + bw // 2, y + bh // 2 - (12 if fs == 12 else 11), cmd.label, col, size=fs)
             ap = f"AP{cmd.ap}" if cmd.ap else "-"
-            ui.text_center(x + bw // 2, CMD_Y + 22, ap, ui.GRAY, size=10)
+            ui.text_center(x + bw // 2, y + bh // 2 + (2 if ui.TINY else 4), ap, ui.GRAY, size=10)

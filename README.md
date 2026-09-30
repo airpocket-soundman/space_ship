@@ -5,12 +5,32 @@ Pyxel 製のロケット経営×操縦ゲーム。
 
 企画書: https://airpocket-soundman.github.io/space_ship/
 
+## ブラウザで遊ぶ
+
+[企画書ページ](https://airpocket-soundman.github.io/space_ship/)の冒頭のリンクから、[Pyxel Web Launcher](https://kitao.github.io/pyxel/wasm/launcher/) でこのリポジトリの main ブランチをそのまま動かせます。
+画面サイズと言語は URL の `screen` / `lang` で選びます(`main.py` が読む)。
+
+```
+https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&packages=numpy&gamepad=enabled&screen=720x720&lang=en
+```
+
 ## 遊び方(ローカル)
 
 ```
 pip install pyxel
 python main.py
 ```
+
+画面サイズは 4 種類あり、どれもその解像度で直接描いています(拡大ではない)。
+
+```
+python main.py 640x480   # 既定
+python main.py 720x720   # RGB20SX など正方形の画面
+python main.py 360x360   # 720x720 の画面に 2 倍で出す用(文字・立ち絵が小さめ)
+python main.py 320x240   # 640x480 の画面に 2 倍で出す用
+```
+
+`en` を付けると英語版になります(例: `python main.py 720x720 en`)。
 
 現在のデモは Chapter 1-1「初飛行」まで遊べます。
 
@@ -39,10 +59,12 @@ python main.py
 | `game/state.py` | 会社の状態 |
 | `game/script.py` | 会話スクリプト |
 | `game/portraits.py` | 立ち絵の読み込み |
+| `game/i18n.py` / `game/lang_en.py` | 言語の切り替えと英語の訳(日本語の文言がキー) |
 | `assets/portraits/` | 立ち絵 PNG |
 | `assets/fonts/` | 日本語フォント(umplus) |
 | `tools/sim_check.py` | Ch1-1 のバランスをヘッドレスで確認 |
-| `tools/autoplay.py` | 自動操作でスクリーンショットを撮る |
+| `tools/autoplay.py` | 自動操作でスクリーンショットを撮る(`python tools/autoplay.py 720x720 en` で画面サイズ・言語を指定) |
+| `tools/check_i18n.py` | 英語の訳が抜けている文言を探す |
 | `tools/make_portraits.py` | 仮の立ち絵を生成 |
 | `prototype/` | 元になったプロトタイプ |
 
@@ -50,7 +72,7 @@ python main.py
 
 `assets/portraits/<id>.png` を置き換えると、そのまま会話画面に反映されます。
 
-- サイズ: **128×128 px**(等倍表示)。64×64 でも可(2倍に拡大して表示)。
+- サイズ: **128×128 px** か **64×64 px**。表示枠は 128×128(360x360 の画面では 64×64)で、枠に合わせて拡大・縮小する。
 - 形式: PNG。背景込みの四角い絵(透過なし)。
 - 色: Pyxel 標準の 16 色に合わせる。それ以外の色は読み込み時に近い色へ置き換わる。
 

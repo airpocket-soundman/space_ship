@@ -87,6 +87,14 @@ header.hero h1 { font-size: clamp(34px, 7vw, 60px); margin: 4px 0 8px; letter-sp
 header.hero p { max-width: 640px; color: #c9ccd4; margin: 0; }
 header.hero .meta { margin-top: 18px; font-size: 13px; color: #8d93a0; }
 header.hero svg.stars { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+header.hero .play { margin-top: 26px; padding: 16px 18px; border: 1px solid #2c3242; border-radius: 10px; background: rgba(20, 24, 36, .85); max-width: 640px; }
+header.hero .play-title { font-weight: 700; letter-spacing: .12em; font-size: 13px; color: #ff7a3d; }
+header.hero .play-note { font-size: 12px; color: #8d93a0; margin: 2px 0 10px; }
+header.hero .play-grid { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); gap: 8px; align-items: center; }
+header.hero .play-grid .lang { font-size: 13px; color: #c9ccd4; padding-right: 4px; }
+header.hero .play-grid a { display: block; text-align: center; padding: 7px 4px; border-radius: 6px; background: #ff7a3d; color: #0b0d14; font-weight: 700; font-size: 13px; text-decoration: none; font-family: "JetBrains Mono", ui-monospace, monospace; }
+header.hero .play-grid a:hover { background: #ffa06f; }
+@media (max-width: 480px) { header.hero .play-grid a { font-size: 11px; padding: 7px 2px; } }
 
 /* layout */
 .layout { max-width: 1080px; margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; }
@@ -207,6 +215,22 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <h1>StarX</h1>
     <p>失敗しながら、ロケットを「扱える機械」に育てていく。<br>会社経営の ADV と、ロケット操縦のアクションを組み合わせた Pyxel ゲームの企画書。</p>
     <div class="meta">実在の宇宙企業と人物へのオマージュ(パロディ)作品です。社名・機体名・人物名は架空のもじりです。</div>
+    <div class="play" id="play">
+    <div class="play-title">PLAY IN BROWSER</div>
+    <div class="play-note">Pyxel Web Launcher でこのリポジトリの最新版をそのまま動かします。起動後に画面をクリック。720×720 は RGB20SX など正方形の画面向け。</div>
+    <div class="play-grid">
+      <span class="lang">日本語</span>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=640x480&amp;lang=ja" target="_blank" rel="noopener">640×480</a>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=720x720&amp;lang=ja" target="_blank" rel="noopener">720×720</a>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=360x360&amp;lang=ja" target="_blank" rel="noopener">360×360</a>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=320x240&amp;lang=ja" target="_blank" rel="noopener">320×240</a>
+      <span class="lang">English</span>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=640x480&amp;lang=en" target="_blank" rel="noopener">640×480</a>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=720x720&amp;lang=en" target="_blank" rel="noopener">720×720</a>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=360x360&amp;lang=en" target="_blank" rel="noopener">360×360</a>
+      <a href="https://kitao.github.io/pyxel/wasm/launcher/?run=airpocket-soundman/space_ship/main/main&amp;packages=numpy&amp;gamepad=enabled&amp;screen=320x240&amp;lang=en" target="_blank" rel="noopener">320×240</a>
+    </div>
+    </div>
   </div>
 </header>
 

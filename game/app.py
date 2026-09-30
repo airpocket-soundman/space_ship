@@ -2,7 +2,7 @@
 
 import pyxel
 
-from . import script, ui
+from . import i18n, script, ui
 from .portraits import Portraits
 from .scene_misc import GameOverScene, ResultScene, TitleScene
 from .scene_mission import MissionScene
@@ -11,8 +11,9 @@ from .state import GameState
 
 
 class App:
-    def __init__(self, hook=None, screen="640x480"):
+    def __init__(self, hook=None, screen="640x480", lang="ja"):
         ui.set_screen(screen)
+        i18n.set_lang(lang)
         pyxel.init(ui.W, ui.H, title="StarX", fps=60, quit_key=pyxel.KEY_ESCAPE)
         ui.load_fonts()
         self.portraits = Portraits()

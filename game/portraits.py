@@ -1,7 +1,7 @@
 """立ち絵の読み込みと表示。
 
-assets/portraits/<id>.png を読み込んで 128x128 の枠に表示する。
-PNG は 128x128(等倍表示)か 64x64(2倍表示)を想定。
+assets/portraits/<id>.png を読み込んで 128x128 の枠(360x360 の画面では 64x64)に表示する。
+PNG は 128x128 か 64x64 を想定し、枠に合わせて拡大・縮小する。
 ファイルがなければ名前入りの仮枠を出す。
 """
 
@@ -11,7 +11,7 @@ import pyxel
 
 from . import ui
 
-SIZE = 128
+MAX_PNG = 128  # 読み込める PNG の最大サイズ
 BANK = 2
 SLOTS = [(0, 0), (128, 0), (0, 128), (128, 128)]
 
@@ -52,7 +52,7 @@ class Portraits:
             self.loaded[cid] = None
             return None
         w, h = png_size(path)
-        if w > SIZE or h > SIZE:
+        if w > MAX_PNG or h > MAX_PNG:
             self.loaded[cid] = None
             return None
         if len(self.order) >= len(SLOTS):
@@ -66,14 +66,21 @@ class Portraits:
         self.order.append(cid)
         return self.loaded[cid]
 
+    @staticmethod
+    def size():
+        """表示する枠の大きさ。"""
+        return 64 if ui.SMALL else 128
+
     def draw(self, cid, x, y, dim=False):
+        SIZE = self.size()
         pyxel.rect(x - 2, y - 2, SIZE + 4, SIZE + 4, ui.BLACK)
         info = self._load(cid)
         if info is None:
             pyxel.rect(x, y, SIZE, SIZE, ui.DBLUE)
-            pyxel.circ(x + 64, y + 50, 26, ui.NAVY)
-            pyxel.elli(x + 24, y + 80, 80, 60, ui.NAVY)
-            ui.text_center(x + 64, y + 110, NAMES.get(cid, cid), ui.WHITE)
+            k = SIZE / 128
+            pyxel.circ(x + 64 * k, y + 50 * k, 26 * k, ui.NAVY)
+            pyxel.elli(x + 24 * k, y + 80 * k, 80 * k, 60 * k, ui.NAVY)
+            ui.text_center(x + SIZE // 2, y + SIZE - 18, NAMES.get(cid, cid), ui.WHITE, size=10 if ui.SMALL else 12)
         else:
             (u, v), w, h = info
             scale = SIZE / max(w, h)

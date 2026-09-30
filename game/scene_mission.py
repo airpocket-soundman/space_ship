@@ -6,12 +6,9 @@ import random
 import pyxel
 
 from . import ui
+from .i18n import tr, trf
 from .missions import MissionRun
 
-VIEW_W = 448
-PANEL_X = 452
-ANCHOR_X, ANCHOR_Y = 224, 300
-PPM = 2.0  # 1 m あたりのピクセル数
 ROCKET_W = 4.5  # 見やすさのため実寸(1.7 m)より太く描く
 SUBSTEPS = 2
 COUNTDOWN = 5.0
@@ -30,6 +27,14 @@ class Particle:
 class MissionScene:
     def __init__(self, app, mdef):
         self.app = app
+        # 画面サイズごとの配置: 左が飛行画面、右が計器パネル
+        panel_w = 144 if ui.SMALL else 196 if ui.W > 640 else 188
+        self.panel_x = ui.W - panel_w
+        self.view_w = self.panel_x - 4
+        self.anchor_x = self.view_w // 2
+        self.anchor_y = ui.H * 5 // 8  # 機体を置く高さ
+        self.ppm = 1.0 if ui.TINY else 1.5 if ui.SMALL else 2.0  # 1 m あたりのピクセル数
+        self.fs = 10 if ui.SMALL else 12  # 飛行画面に出すメッセージの文字
         self.m = mdef
         self.run = MissionRun(mdef, inspected=app.state.inspected)
         self.v = self.run.v
@@ -45,12 +50,12 @@ class MissionScene:
         rng = random.Random(7)
         self.clouds = [(rng.uniform(-600, 600), rng.uniform(1200, 4200), rng.uniform(60, 180), rng.uniform(14, 30))
                        for _ in range(40)]
-        self.stars = [(rng.uniform(0, VIEW_W), rng.uniform(0, ui.H), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
+        self.stars = [(rng.uniform(0, self.view_w), rng.uniform(0, ui.H), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
                       for _ in range(160)]
         self.say("射場クリア。カウントダウン開始", ui.WHITE)
 
     def say(self, text, col=ui.WHITE, frames=180):
-        self.messages.append([text, col, frames])
+        self.messages.append([tr(text), col, frames])
         self.messages = self.messages[-3:]
 
     # ---- 更新 ----
@@ -186,14 +191,14 @@ class MissionScene:
 
     # ---- 座標変換 ----
     def sx(self, wx):
-        return ANCHOR_X + (wx - self.cam_x) * PPM
+        return self.anchor_x + (wx - self.cam_x) * self.ppm
 
     def sy(self, wy):
-        return ANCHOR_Y - (wy - self.cam_y) * PPM
+        return self.anchor_y - (wy - self.cam_y) * self.ppm
 
     # ---- 描画 ----
     def draw(self):
-        pyxel.clip(0, 0, VIEW_W, ui.H)
+        pyxel.clip(0, 0, self.view_w, ui.H)
         self.draw_sky()
         self.draw_clouds()
         self.draw_ground()
@@ -223,11 +228,11 @@ class MissionScene:
 
     def draw_sky(self):
         for y in range(0, ui.H, 2):
-            base, nxt, t = self.sky_color(self.cam_y + (ANCHOR_Y - y) / PPM)
-            pyxel.rect(0, y, VIEW_W, 2, base)
+            base, nxt, t = self.sky_color(self.cam_y + (self.anchor_y - y) / self.ppm)
+            pyxel.rect(0, y, self.view_w, 2, base)
             if t > 0:
                 pyxel.dither(t)
-                pyxel.rect(0, y, VIEW_W, 2, nxt)
+                pyxel.rect(0, y, self.view_w, 2, nxt)
                 pyxel.dither(1.0)
         alt = self.cam_y
         if alt > 8000:
@@ -239,20 +244,20 @@ class MissionScene:
     def draw_clouds(self):
         for wx, wy, w, h in self.clouds:
             x, y = self.sx(wx), self.sy(wy)
-            if -w * PPM < x < VIEW_W + w * PPM and -h * PPM < y < ui.H + h * PPM:
-                pyxel.elli(x - w * PPM / 2, y - h * PPM / 2 + 6, w * PPM, h * PPM, ui.GRAY)
-                pyxel.elli(x - w * PPM / 2, y - h * PPM / 2, w * PPM, h * PPM, ui.WHITE)
+            if -w * self.ppm < x < self.view_w + w * self.ppm and -h * self.ppm < y < ui.H + h * self.ppm:
+                pyxel.elli(x - w * self.ppm / 2, y - h * self.ppm / 2 + 6, w * self.ppm, h * self.ppm, ui.GRAY)
+                pyxel.elli(x - w * self.ppm / 2, y - h * self.ppm / 2, w * self.ppm, h * self.ppm, ui.WHITE)
 
     def draw_ground(self):
         gy = self.sy(0)
         if gy > ui.H:
             return
         # 海
-        pyxel.rect(0, gy, VIEW_W, ui.H - gy, ui.DBLUE)
-        for i in range(0, 8):
+        pyxel.rect(0, gy, self.view_w, ui.H - gy, ui.DBLUE)
+        for i in range(0, int(ui.H - gy) // 14 + 1):
             y = gy + 8 + i * 14
             off = (self.frame // 2 + i * 13) % 40
-            for x in range(-40 + off, VIEW_W, 40):
+            for x in range(-40 + off, self.view_w, 40):
                 pyxel.line(x, y, x + 12, y, ui.CYAN)
         # 島
         x0, x1 = self.sx(-130), self.sx(130)
@@ -270,7 +275,7 @@ class MissionScene:
         pyxel.rect(hx, gy - 22, 40, 19, ui.GRAY)
         pyxel.rect(hx + 12, gy - 14, 16, 11, ui.NAVY)
         # 発射台とタワー
-        pyxel.rect(self.sx(-12), gy - 5, 24 * PPM, 5, ui.GRAY)
+        pyxel.rect(self.sx(-12), gy - 5, 24 * self.ppm, 5, ui.GRAY)
         tx = self.sx(5)
         top = self.sy(26)
         pyxel.line(tx, top, tx, gy - 5, ui.WHITE)
@@ -284,7 +289,7 @@ class MissionScene:
     def draw_particles(self):
         for p in self.particles:
             x, y = self.sx(p.x), self.sy(p.y)
-            if 0 <= x < VIEW_W and 0 <= y < ui.H:
+            if 0 <= x < self.view_w and 0 <= y < ui.H:
                 if p.life > 40 and p.col in (ui.WHITE, ui.GRAY):
                     pyxel.rect(x - 1, y - 1, 3, 3, p.col)
                 else:
@@ -344,8 +349,8 @@ class MissionScene:
 
     def draw_ladder(self):
         base = self.cam_y
-        lo = int((base - ANCHOR_Y / PPM - 60) // 50) * 50
-        hi = int((base + (ui.H - ANCHOR_Y) / PPM + 200) // 50) * 50
+        lo = int((base - self.anchor_y / self.ppm - 60) // 50) * 50
+        hi = int((base + (ui.H - self.anchor_y) / self.ppm + 200) // 50) * 50
         lo, hi = min(lo, hi), max(lo, hi)
         for alt in range(max(0, lo), hi + 200, 50):
             y = self.sy(alt)
@@ -359,57 +364,74 @@ class MissionScene:
         # WP1 の高さ
         wy = self.sy(self.m.waypoint.altitude)
         if 0 <= wy < ui.H:
-            for x in range(0, VIEW_W, 8):
+            for x in range(0, self.view_w, 8):
                 pyxel.line(x, wy, x + 4, wy, ui.LIME)
-            ui.text(VIEW_W - 90, wy - 14, "WP1 10.0km", ui.LIME, border=ui.BLACK)
+            ui.text(self.view_w - 90, wy - 14, "WP1 10.0km", ui.LIME, border=ui.BLACK)
 
     def draw_messages(self):
-        y = ui.H - 26 - 18 * (len(self.messages) - 1)
-        for text, col, _ in self.messages:
-            ui.text(12, y, text, col, border=ui.BLACK)
-            y += 18
-        help_text = "SPACE 点火   ↑↓ スロットル   ←→ 姿勢"
-        ui.text(VIEW_W - ui.text_width(help_text, 10) - 8, 6, help_text, ui.WHITE, size=10, border=ui.BLACK)
+        step = self.fs + 6
+        mx = 8 if ui.SMALL else 12
+        # 飛行画面の幅に収まらないメッセージは折り返す
+        lines = [(line, col) for text, col, _ in self.messages
+                 for line in ui.wrap(text, self.view_w - mx * 2, self.fs)]
+        y = ui.H - self.fs - 14 - step * (len(lines) - 1)
+        for line, col in lines:
+            ui.text(mx, y, line, col, size=self.fs, border=ui.BLACK)
+            y += step
+        help_text = "SPACE点火 ↑↓出力 ←→姿勢" if ui.SMALL else "SPACE 点火   ↑↓ スロットル   ←→ 姿勢"
+        ui.text(self.view_w - ui.text_width(help_text, 10) - 8, 6, help_text, ui.WHITE, size=10, border=ui.BLACK)
         if self.phase == "count":
-            ui.text_center(VIEW_W // 2, 120, f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
+            ui.text_center(self.view_w // 2, ui.H // 4, f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
 
     def draw_fire_border(self):
         if self.run.fire_active and self.frame // 8 % 2:
             for i in range(4):
-                pyxel.rectb(i, i, VIEW_W - 2 * i, ui.H - 2 * i, ui.RED)
-            ui.text_center(VIEW_W // 2, 60, "!! エンジン火災 !!", ui.RED, border=ui.BLACK)
+                pyxel.rectb(i, i, self.view_w - 2 * i, ui.H - 2 * i, ui.RED)
+            ui.text_center(self.view_w // 2, 60, "!! エンジン火災 !!", ui.RED, border=ui.BLACK)
 
     def draw_banner(self):
         ok = self.run.result == "success"
         title = "WP1 通過 ── ミッション成功" if ok else "ミッション失敗"
-        sub = f"ランク {self.run.rank()}" if ok else self.run.fail_reason
-        y = 180
+        sub = trf("ランク {rank}", rank=self.run.rank()) if ok else self.run.fail_reason
+        subs = ui.wrap(sub, self.view_w - 16)
+        h = 70 + 14 * len(subs)
+        y = ui.H * 3 // 8
         pyxel.dither(0.7)
-        pyxel.rect(0, y, VIEW_W, 84, ui.BLACK)
+        pyxel.rect(0, y, self.view_w, h, ui.BLACK)
         pyxel.dither(1.0)
-        ui.text_center(VIEW_W // 2, y + 14, title, ui.LIME if ok else ui.RED)
-        ui.text_center(VIEW_W // 2, y + 36, sub, ui.WHITE)
+        ui.text_center(self.view_w // 2, y + 14, title, ui.LIME if ok else ui.RED, size=10 if ui.TINY else 12)
+        for i, line in enumerate(subs):
+            ui.text_center(self.view_w // 2, y + 36 + i * 16, line, ui.WHITE)
         if self.end_timer > 60 and self.frame // 20 % 2:
-            ui.text_center(VIEW_W // 2, y + 62, "SPACE で続ける", ui.WHITE, size=10)
+            ui.text_center(self.view_w // 2, y + h - 22, "SPACE で続ける", ui.WHITE, size=10)
 
     # ---- 計器パネル ----
     def draw_panel(self):
         v = self.v
         run = self.run
-        x = PANEL_X
+        x = self.panel_x
+        small, tiny = ui.SMALL, ui.TINY
+        vx_ = 52 if small else 64  # 値の列
+        row_h = 11 if tiny else 12 if small else 13
+        bw = ui.W - x - vx_ - 10 if small else 112  # バーの長さ
         pyxel.rect(x - 4, 0, ui.W - x + 4, ui.H, ui.NAVY)
         pyxel.line(x - 4, 0, x - 4, ui.H, ui.DBLUE)
-        y = 8
-        ui.text(x + 4, y, self.m.title, ui.YELLOW)
-        y += 16
-        ui.text(x + 4, y, self.m.goal, ui.WHITE, size=10)
-        y += 20
+        if tiny:  # 320x240: 目標は WP の窓に出ているので省く
+            y = 4
+            ui.text(x + 4, y, self.m.title, ui.YELLOW, size=10)
+            y += 13
+        else:
+            y = 8
+            ui.text(x + 4, y, self.m.title, ui.YELLOW)
+            y += 16
+            ui.text(x + 4, y, self.m.goal, ui.WHITE, size=10)
+            y += 20
 
         def row(label, value, col=ui.WHITE):
             nonlocal y
             ui.text(x + 4, y, label, ui.GRAY, size=10)
-            ui.text(x + 64, y, value, col, size=10)
-            y += 13
+            ui.text(x + vx_, y, value, col, size=10)
+            y += row_h
 
         row("T+", f"{v.t:6.1f} s")
         row("高度", f"{v.y:8.0f} m")
@@ -417,17 +439,19 @@ class MissionScene:
         row("水平速度", f"{v.vx:+7.1f} m/s")
         row("動圧", f"{v.q / 1000:6.1f} kPa", ui.ORANGE if v.q > 30_000 else ui.WHITE)
         row("傾き", f"{math.degrees(v.theta):+6.1f} °")
-        row("角速度", f"{math.degrees(v.omega):+6.2f} °/s")
+        if not tiny:
+            row("角速度", f"{math.degrees(v.omega):+6.2f} °/s")
         aoa = math.degrees(v.aoa)
         row("迎角", f"{aoa:+6.1f} °", ui.RED if abs(aoa) > 8 else ui.WHITE)
-        eng = "燃焼中" if v.engine_on else ("停止" if v.t > 0 else "待機")
-        row("エンジン", f"{eng}  点火残 {v.ignitions_left}", ui.ORANGE if v.engine_on else ui.WHITE)
-        y += 4
+        eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
+        eng_tpl = "{eng} 点火残{n}" if small else "{eng}  点火残 {n}"
+        row("エンジン", trf(eng_tpl, eng=eng, n=v.ignitions_left), ui.ORANGE if v.engine_on else ui.WHITE)
+        y += 2 if tiny else 4
 
         def bar(label, frac, col, marker=None, text=None):
             nonlocal y
             ui.text(x + 4, y, label, ui.GRAY, size=10)
-            bx, bw = x + 64, 112
+            bx = x + vx_
             pyxel.rect(bx, y + 1, bw, 8, ui.BLACK)
             pyxel.rect(bx, y + 1, int(bw * max(0.0, min(1.0, frac))), 8, col)
             pyxel.rectb(bx, y + 1, bw, 8, ui.DBLUE)
@@ -436,38 +460,49 @@ class MissionScene:
                 pyxel.line(mx, y - 1, mx, y + 10, ui.WHITE)
             if text:
                 ui.text(bx + bw - ui.text_width(text, 10) - 2, y, text, ui.WHITE, size=10)
-            y += 14
+            y += row_h + 1
 
-        bar("スロットル", v.throttle, ui.ORANGE, marker=v.throttle_cmd, text=f"{v.throttle * 100:3.0f}%")
+        bar("出力" if small else "スロットル", v.throttle, ui.ORANGE, marker=v.throttle_cmd, text=f"{v.throttle * 100:3.0f}%")
         bar("推進剤", v.prop / v.p.prop_mass, ui.LIME, text=f"{v.prop / v.p.prop_mass * 100:3.0f}%")
         bar("RCS", v.rcs_fuel / v.p.rcs_fuel, ui.CYAN)
         # ジンバル
         ui.text(x + 4, y, "ジンバル", ui.GRAY, size=10)
-        bx, bw = x + 64, 112
+        bx = x + vx_
         pyxel.rect(bx, y + 1, bw, 8, ui.BLACK)
         pyxel.line(bx + bw // 2, y, bx + bw // 2, y + 10, ui.DBLUE)
         gx = bx + bw // 2 + int(v.gimbal / v.p.gimbal_max * (bw // 2 - 2))
         pyxel.rect(gx - 2, y + 1, 5, 8, ui.YELLOW)
         pyxel.rectb(bx, y + 1, bw, 8, ui.DBLUE)
-        y += 16
+        y += row_h + (1 if tiny else 3)
         if run.fire_at is not None and (run.fire_active or run.heat > 0):
             bar("温度", run.heat / 100, ui.RED, text="火災!" if run.fire_active else "")
 
-        # WP1 の窓
-        y += 4
+        # WP1 の窓(320x240 は見出しと進み具合を詰め、下の説明を省く)
+        y += 2 if tiny else 4
         wp = self.m.waypoint
-        ui.window(x, y, ui.W - x - 6, 150, fill=ui.BLACK, border=ui.LIME, shadow=False)
-        ui.text(x + 10, y + 8, f"{wp.name}  高度 {wp.altitude / 1000:.0f} km 通過時", ui.LIME, size=10)
+        ww = ui.W - x - 6
+        pad = 6 if small else 10
+        cols = (48, 104) if small else (64, 130)  # 窓 / 現在値 の列
+        n = len(wp.windows)
+        wh = 24 + row_h * n if tiny else 38 + (row_h + 1) * n + 22 if small else 150
+        ui.window(x, y, ww, wh, fill=ui.BLACK, border=ui.LIME, shadow=False)
+        head = trf("{name} 高度{alt:.0f}km 通過時" if small else "{name}  高度 {alt:.0f} km 通過時",
+                   name=wp.name, alt=wp.altitude / 1000)
+        ui.text(x + pad, y + (4 if tiny else 8), head, ui.LIME, size=10)
         prog = min(1.0, max(0.0, v.y / wp.altitude))
-        pyxel.rect(x + 10, y + 24, 160, 6, ui.NAVY)
-        pyxel.rect(x + 10, y + 24, int(160 * prog), 6, ui.LIME)
-        yy = y + 38
+        pw = ww - pad * 2 - 4 if small else 160
+        py, ph = (y + 16, 3) if tiny else (y + 24, 6)
+        pyxel.rect(x + pad, py, pw, ph, ui.NAVY)
+        pyxel.rect(x + pad, py, int(pw * prog), ph, ui.LIME)
+        yy = y + (22 if tiny else 38)
         status = run.window_status() if run.wp_values is None else \
             {k: (run.wp_values[k], w.ok(run.wp_values[k])) for k, w in wp.windows.items()}
         for key, win in wp.windows.items():
             cur, ok = status[key]
-            ui.text(x + 10, yy, win.label, ui.GRAY, size=10)
-            ui.text(x + 64, yy, f"{win.lo:+.0f}~{win.hi:+.0f}", ui.WHITE, size=10)
-            ui.text(x + 130, yy, f"{cur:+.0f}", ui.LIME if ok else ui.RED, size=10)
-            yy += 14
-        ui.text(x + 10, yy + 4, "窓に入るほどランクが上がる", ui.GRAY, size=10)
+            ui.text(x + pad, yy, tr(win.label, "window"), ui.GRAY, size=10)
+            rng = f"{win.lo:.0f}~{win.hi:.0f}" if small else f"{win.lo:+.0f}~{win.hi:+.0f}"
+            ui.text(x + cols[0], yy, rng, ui.WHITE, size=10)
+            ui.text(x + cols[1], yy, f"{cur:+.0f}", ui.LIME if ok else ui.RED, size=10)
+            yy += row_h if tiny else row_h + 1
+        if not tiny:
+            ui.text(x + pad, yy + 4, "窓に入るほどランクUP" if small else "窓に入るほどランクが上がる", ui.GRAY, size=10)

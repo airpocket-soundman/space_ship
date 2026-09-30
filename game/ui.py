@@ -2,7 +2,11 @@
 
 from pathlib import Path
 
+import re
+
 import pyxel
+
+from .i18n import tr
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
@@ -12,20 +16,23 @@ SCREENS = {
     "640x480": (640, 480),
     "720x720": (720, 720),  # RGB20SX など正方形の画面
     "360x360": (360, 360),  # 720x720 に 2 倍で出す小さい画面
+    "320x240": (320, 240),  # 640x480 に 2 倍で出す小さい画面
 }
 SCREEN = "640x480"
 W, H = SCREENS[SCREEN]
-SMALL = False  # 360x360 のときは文字や立ち絵を小さくする
+SMALL = False  # 360x360 / 320x240 のときは文字や立ち絵を小さくする
+TINY = False  # 320x240 のときはさらに縦を詰める
 
 
 def set_screen(name):
     """pyxel.init より前に呼ぶ。"""
-    global SCREEN, W, H, SMALL
+    global SCREEN, W, H, SMALL, TINY
     if name not in SCREENS:
         raise ValueError(f"画面サイズは {' / '.join(SCREENS)} のどれか: {name}")
     SCREEN = name
     W, H = SCREENS[name]
     SMALL = W < 480
+    TINY = H < 300
 
 # Pyxel 標準パレットの番号
 BLACK, NAVY, PURPLE, TEAL, BROWN, DBLUE, LBLUE, WHITE = range(8)
@@ -46,6 +53,8 @@ def font(size=12):
 
 
 def text(x, y, s, col=WHITE, size=12, border=None):
+    """文字を描く。英語のときは訳してから描く(以下の幅・折り返しも同じ)。"""
+    s = tr(s)
     f = _fonts[size]
     if border is not None:
         for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
@@ -54,25 +63,40 @@ def text(x, y, s, col=WHITE, size=12, border=None):
 
 
 def text_width(s, size=12):
-    return _fonts[size].text_width(s)
+    return _fonts[size].text_width(tr(s))
 
 
 def text_center(cx, y, s, col=WHITE, size=12, border=None):
     text(cx - text_width(s, size) // 2, y, s, col, size, border)
 
 
+# 折り返しの単位: 英数字の語(後ろの空白ごと)か、それ以外の 1 文字
+_TOKEN = re.compile(r"[!-~]+ *| +|.")
+
+
 def wrap(s, width, size=12):
-    """表示幅に収まるように折り返す(日本語は1文字単位)。"""
+    """表示幅に収まるように折り返す。日本語は 1 文字単位、英語は単語単位。"""
+    s = tr(s)
     lines = []
     for para in s.split("\n"):
         cur = ""
-        for ch in para:
-            if text_width(cur + ch, size) > width:
-                lines.append(cur)
-                cur = ch
-            else:
-                cur += ch
-        lines.append(cur)
+        for tok in _TOKEN.findall(para):
+            if text_width(cur + tok.rstrip(), size) <= width:
+                cur += tok
+                continue
+            if cur.strip():
+                lines.append(cur.rstrip())
+                cur = ""
+            tok = tok.lstrip() if not cur else tok
+            # 1 語だけで幅を超えるときは文字単位で切る
+            while text_width(tok.rstrip(), size) > width:
+                n = 1
+                while n < len(tok) and text_width(tok[:n + 1], size) <= width:
+                    n += 1
+                lines.append(tok[:n])
+                tok = tok[n:]
+            cur = tok
+        lines.append(cur.rstrip())
     return lines
 
 
@@ -121,7 +145,7 @@ class Dialogue:
         self.on_done = None
 
     def start(self, lines, on_done=None):
-        self.lines = list(lines)
+        self.lines = [(speaker, tr(body)) for speaker, body in lines]
         self.index = 0
         self.shown = 0
         self.on_done = on_done

@@ -6,7 +6,7 @@
 
 画面の各ピクセルが地球のどこを見ているか(軌道座標の角度)は最初に一度だけ計算し、
 毎フレームは「軌道上の位置の分だけ角度をずらして地表マップと光を引く」だけにしている。
-描画は 320x240 で行い、2 倍に拡大して表示する。
+描画は 320x240(640x480 の画面)か 360x360(720x720 / 360x360 の画面)で行い、画面に合わせて拡大する。
 """
 
 import math
@@ -16,13 +16,11 @@ import pyxel
 
 from . import ui
 
-W, H = 320, 240
 R_EARTH = 6371.0  # km
 ALTITUDE = 550.0  # km
 PERIOD = 95.6 * 60  # s
 TIME_SCALE = 12.0  # 実時間の何倍で軌道を進めるか(1 で実時間)
 FOV = math.radians(100)  # 横方向の画角
-HORIZON_Y = 105  # 画面中央で地平線が来る高さ(320x240 の座標)
 SUN_BETA = math.radians(55)  # 太陽の軌道面からの角度
 ATMOS = 170.0  # 大気の光を描く高さ [km]
 
@@ -35,6 +33,24 @@ BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]])
 
 MATS = [DBLUE, TEAL, BROWN, GRAY, WHITE, YELLOW]  # 地表の種類(マップの色)
 
+# 地球だけに使う追加の色。標準の 16 色の後ろ(16 番〜)に足す。ほかの画面は 0〜15 番しか使わない
+EARTH_COLORS = [
+    0x040C2C, 0x0A2470, 0x1242AE, 0x1E66DA, 0x3C8EF4,  # 海(暗→明)
+    0x0E2A12, 0x1E5A1E, 0x38902C, 0x6CBE3E, 0xA8E06C,  # 緑の陸
+    0x3A2610, 0x7C5422, 0xBC8C3A, 0xE4C270,  # 砂漠
+    0x2E3C6C, 0x8AA2CC, 0xD4E0F4,  # 雲
+    0x0A1C6A, 0x1A4CD8, 0x3094FF, 0x84D6FF, 0xE8FAFF,  # 大気の光
+    0xFFD43A, 0xFF9A1A,  # 街の明かり
+    0x6AA8F4,  # 地平線のかすみ
+]
+(O0, O1, O2, O3, O4, G0, G1, G2, G3, G4, D0, D1, D2, D3, C0, C1, C2,
+ A0, A1, A2, A3, A4, CITY, CITY2, HAZE) = range(16, 16 + len(EARTH_COLORS))
+
+
+def add_earth_colors():
+    if len(pyxel.colors) < 16 + len(EARTH_COLORS):
+        pyxel.colors.extend(EARTH_COLORS)
+
 
 def ramp(colors, v, b):
     t = min(max(v, 0.0), 0.999) * (len(colors) - 1)
@@ -45,32 +61,38 @@ def ramp(colors, v, b):
 
 
 def surface_color(mat, lq, haze, b):
-    L = lq / 15.0
-    if mat == DBLUE:
-        c = ramp([NAVY, NAVY, DBLUE, DBLUE, CYAN], L * 0.95, b)
-    elif mat == TEAL:
-        c = ramp([NAVY, TEAL, TEAL, LIME], L, b)
-    elif mat == BROWN:
-        c = ramp([NAVY, BROWN, BROWN, ORANGE], L, b)
-    elif mat == GRAY:
-        c = ramp([NAVY, DBLUE, GRAY, WHITE, WHITE], L * 0.85 + 0.12, b)
-    elif mat == WHITE:
-        c = ramp([NAVY, DBLUE, GRAY, WHITE, WHITE], L * 0.85 + 0.3, b)
-    else:  # 都市のある陸
-        c = (YELLOW if b % 3 else ORANGE) if L < 0.22 else ramp([NAVY, TEAL, TEAL, LIME], L, b)
-    # 地平線近くのかすみ
+    night = lq / 15.0 < 0.12
+    # 夜側も真っ暗にせず、海や陸の色が見える明るさを残す
+    L = 0.3 + 0.7 * lq / 15.0
+    if mat == DBLUE:  # 海
+        c = ramp([O0, O1, O2, O3, O3, O4], L, b)
+    elif mat == TEAL:  # 緑の陸
+        c = ramp([O0, G0, G1, G2, G3, G4], L, b)
+    elif mat == BROWN:  # 砂漠
+        c = ramp([O0, D0, D1, D2, D3], L, b)
+    elif mat == GRAY:  # 薄い雲
+        c = ramp([O0, C0, C1, C2, WHITE], L * 0.85 + 0.1, b)
+    elif mat == WHITE:  # 厚い雲
+        c = ramp([O1, C0, C1, C2, WHITE, WHITE], L * 0.85 + 0.2, b)
+    else:  # 都市のある陸(夜は明かりが灯る)
+        c = (CITY if b % 3 else CITY2) if night else ramp([O0, G0, G1, G2, G3, G4], L, b)
+    # 地平線近くのかすみ(昼は明るい青、夜は暗い青)
     if haze and b < haze * 4:
-        c = LBLUE if L > 0.55 else DBLUE if L > 0.25 else NAVY
+        c = A3 if L > 0.7 else HAZE if L > 0.45 else A1 if L > 0.2 else A0
     return c
 
 
 def glow_color(iq, sq, b):
-    v = (iq / 7) * (0.18 + 0.82 * (sq / 7))
-    return ramp([BLACK, NAVY, DBLUE, CYAN, LBLUE, WHITE], v, b)
+    v = (iq / 7) * (0.45 + 0.55 * (sq / 7))
+    return ramp([BLACK, A0, A1, A2, A3, A4, WHITE], v, b)
 
 
 class EarthView:
-    def __init__(self):
+    def __init__(self, w=320, h=240, scale=2, horizon_y=105):
+        """w x h で描いて scale 倍で表示する。horizon_y は画面中央で地平線が来る高さ(w x h の座標)。"""
+        self.w, self.h, self.scale, self.horizon_y = w, h, scale, horizon_y
+        add_earth_colors()
+        W, H = w, h
         self.image = pyxel.Image(W, H)
         self.pix = np.ctypeslib.as_array(self.image.data_ptr()).reshape(H, W)
         self.pix[:] = BLACK
@@ -106,11 +128,12 @@ class EarthView:
                     self.glow_lut[iq, sq, b] = glow_color(iq, sq, b)
 
     def _precompute(self):
+        W, H = self.w, self.h
         ys, xs = np.mgrid[0:H, 0:W].astype(float)
         f_len = (W / 2) / math.tan(FOV / 2)
         r_cam = R_EARTH + ALTITUDE
         dip = math.acos(R_EARTH / r_cam)
-        pitch = dip + math.atan((H / 2 - HORIZON_Y) / f_len)
+        pitch = dip + math.atan((H / 2 - self.horizon_y) / f_len)
         cp, sp = math.cos(pitch), math.sin(pitch)
         # 軌道座標: x = 進行方向、y = 軌道面の外側(カメラの向き)、z = 地心から衛星の方向
         fwd = np.array([0.0, cp, -sp])
@@ -173,7 +196,7 @@ class EarthView:
             if info is None:
                 continue
             x, _y, elev = info
-            score = abs(elev + math.radians(1.5)) * 10 + abs(x - W * 0.55) / W
+            score = abs(elev + math.radians(1.5)) * 10 + abs(x - self.w * 0.55) / self.w
             if score < best_score:
                 best, best_score = th, score
         return best
@@ -200,20 +223,22 @@ class EarthView:
         pix[self.glow_idx] = self.glow_lut[self.g_iq, sq, self.g_bayer]
 
     def sun_screen(self):
-        """太陽の画面上の位置(320x240 座標)と、地平線からの高さ[rad]。見えなければ None。"""
+        """太陽の画面上の位置(描画解像度の座標)と、地平線からの高さ[rad]。見えなければ None。"""
         s = self.sun_dir(self.theta)
         zf = s @ self.fwd
         if zf <= 0.05:
             return None
-        x = W / 2 + self.f_len * (s @ self.right) / zf
-        y = H / 2 - self.f_len * (s @ self.up) / zf
+        x = self.w / 2 + self.f_len * (s @ self.right) / zf
+        y = self.h / 2 - self.f_len * (s @ self.up) / zf
         dip = math.acos(R_EARTH / (R_EARTH + ALTITUDE))
         elev = math.asin(max(-1.0, min(1.0, s @ (self.cam / np.linalg.norm(self.cam))))) + dip
         return x, y, elev
 
     def draw(self, sx=0, sy=0):
         self.render()
-        pyxel.blt(sx + W / 2, sy + H / 2, self.image, 0, 0, W, H, BLACK, 0, 2)
+        W, H, S = self.w, self.h, self.scale
+        # blt の拡大は転送先の中心が基準なので、左上が (sx, sy) になるようにずらす
+        pyxel.blt(sx + W * (S - 1) / 2, sy + H * (S - 1) / 2, self.image, 0, 0, W, H, BLACK, 0, S)
         self.draw_sun(sx, sy)
 
     def draw_sun(self, sx, sy):
@@ -221,31 +246,34 @@ class EarthView:
         if info is None:
             return
         x, y, elev = info
+        W, S = self.w, self.scale
+        g = S / 2  # 光の大きさ(2 倍表示のときが 1)
         if not (-40 < x < W + 40):
             return
         col = int(min(max(x, 0), W - 1))
         horizon = self.horizon_row[col]
-        fx = sx + x * 2
+        fx = sx + x * S
         if elev < 0:
             # 地平線の下: 地平線の上に朝焼け(夕焼け)の光だけ出す
             k = max(0.0, 1 + elev / math.radians(6))
             if k <= 0:
                 return
-            gy = sy + horizon * 2
-            for rx, ry, c, a in ((120, 14, CYAN, 0.35), (70, 8, LBLUE, 0.5), (30, 4, WHITE, 0.8)):
+            gy = sy + horizon * S
+            for rx, ry, c, a in ((120, 14, A2, 0.35), (70, 8, A3, 0.5), (30, 4, WHITE, 0.8)):
+                rx, ry = rx * g, ry * g
                 pyxel.dither(a * k)
                 pyxel.elli(fx - rx * k, gy - ry, rx * 2 * k, ry * 2, c)
             pyxel.dither(1.0)
-            pyxel.rect(fx - 160 * k, gy - 1, 320 * k, 2, LBLUE)
+            pyxel.rect(fx - 160 * g * k, gy - 1, 320 * g * k, 2, A3)
             if k > 0.6:
-                pyxel.rect(fx - 60 * k, gy - 1, 120 * k, 2, WHITE)
+                pyxel.rect(fx - 60 * g * k, gy - 1, 120 * g * k, 2, WHITE)
             return
         # 地平線の上: 太陽と光芒
-        fy = sy + y * 2
-        if fy > sy + horizon * 2 + 4:
+        fy = sy + y * S
+        if fy > sy + horizon * S + 4:
             return
         pulse = 0.5 + 0.5 * math.sin(pyxel.frame_count / 30)
-        r = 22 + 6 * pulse
+        r = (22 + 6 * pulse) * g
         pyxel.dither(0.5)
         pyxel.circ(fx, fy, r * 0.9, LBLUE)
         pyxel.dither(1.0)
@@ -253,5 +281,5 @@ class EarthView:
             a = math.radians(ang)
             L = r * (2.2 if ang % 90 == 0 else 1.3)
             pyxel.line(fx - math.cos(a) * L, fy - math.sin(a) * L, fx + math.cos(a) * L, fy + math.sin(a) * L, WHITE)
-        pyxel.circ(fx, fy, 7, YELLOW)
-        pyxel.circ(fx, fy, 5, WHITE)
+        pyxel.circ(fx, fy, 7 * g, YELLOW)
+        pyxel.circ(fx, fy, 5 * g, WHITE)
