@@ -11,25 +11,11 @@ import struct
 import pyxel
 
 from . import ui
+from .script import NAMES
 
 MAX_PNG = 128  # 読み込める PNG の最大サイズ
 BANK = 2
 SLOTS = [(0, 0), (128, 0), (0, 128), (128, 128)]
-
-NAMES = {
-    "dylon": "ディーロン",
-    "maya": "マヤ",
-    "ken": "ケン",
-    "sara": "サラ",
-    "noah": "ノア",
-    "dylon_ai": "ディーロンAI",
-    "grey": "グレイ",
-    "doc_hughes": "ドク・ヒューズ",
-    "bolt": "ボルト",
-    "hashimoto": "ハシモト",
-    "mimi": "ミミ",
-    "gen": "ゲンさん",
-}
 
 
 def png_size(path):

@@ -2,10 +2,9 @@
 
 import pyxel
 
-from . import audio, i18n, script, state, ui
-from .i18n import trf
+from . import audio, i18n, script, state, story, ui
 from .portraits import Portraits
-from .missions import MISSIONS, ORDER, next_stage
+from .missions import MISSIONS, ORDER
 from .scene_dock import DockScene
 from .scene_misc import CaptionScene, GameOverScene, ResultScene, TitleScene
 from .scene_mission import MissionScene
@@ -89,42 +88,7 @@ class App:
         self.scene = ResultScene(self, run, self.state.record_flight(run))
 
     def back_to_office_after(self, run, summary):
-        st, m = self.state, run.m
-        if run.result == "success":
-            lines = list(script.SUCCESS[m.id]) if summary["first"] else []
-            if summary["funds"]:
-                lines.append(("sara", trf("{funds:.0f}M$ が入ったわ。", funds=summary["funds"])))
-            if summary["recovered"]:
-                lines.append(("maya", "1段目を回収したわ。次の Eagle 9 は、整備だけで安く作れる。"))
-            nxt = next_stage(m.id)
-            if summary["first"] and nxt:
-                st.stage = nxt
-                st.inspected = False
-                lines += script.INTRO.get(nxt, [])
-                if st.ready() <= 0 and not st.building_now():
-                    cost, months = st.build_cost()
-                    lines.append(("maya", trf("{name} は「製造」で用意して({cost:.0f}M$・{months}ヶ月)。",
-                                              name=st.craft_name, cost=cost, months=months)))
-            elif summary["first"]:
-                st.finished = True
-                lines += script.ENDING
-        else:
-            if run.saved:
-                lines = list(script.SAVED)
-            else:
-                hint = next(text for key, text in script.FAIL_HINTS if key in run.fail_reason)
-                lines = [("maya", hint)]
-            if st.ready() <= 0 and not st.building_now():
-                cost, months = st.build_cost()
-                lines.append(("sara", trf("機体がないわ。「製造」で {name} を用意して({cost:.0f}M$・{months}ヶ月)。",
-                                          name=st.craft_name, cost=cost, months=months)))
-            recent = [f["result"] for f in st.flights[-3:]]
-            if recent == ["fail"] * 3 and "comeback" not in st.seen:
-                st.seen.add("comeback")
-                st.funds += script.COMEBACK_FUNDS
-                lines += script.COMEBACK
-        lines.append(("sara", "今月はもう手一杯。「待機」で次の月へ。"))
-        self.scene = OfficeScene(self, lines)
+        self.scene = OfficeScene(self, story.after_flight(self.state, run, summary))
 
     def game_over(self):
         self.scene = GameOverScene(self, script.GAME_OVER)

@@ -4,10 +4,10 @@ import math
 
 import pyxel
 
-from . import audio, kickoff, rocket_art, script, state, ui
+from . import audio, kickoff, rocket_art, script, state, story, ui
 from .i18n import trf
 from .missions import MISSIONS
-from .portraits import NAMES
+from .script import NAMES
 from .vehicles import EAGLE9_S1R, EAGLE9_S2, HOPPER
 
 
@@ -31,12 +31,10 @@ class Layout:
 
 
 class Command:
-    def __init__(self, key, label, ap, desc, action):
+    def __init__(self, key, label, ap):
         self.key = key
         self.label = label
         self.ap = ap
-        self.desc = desc
-        self.action = action
 
 
 class OfficeScene:
@@ -49,13 +47,7 @@ class OfficeScene:
         self.party = party
         self.sel = 0
         self.frame = 0
-        self.commands = [
-            Command("build", "製造", 1, "", self.cmd_build),
-            Command("inspect", "点検", 1, trf("次の打ち上げの故障を起きにくくする({cost}M$)", cost=self.st.INSPECT_COST), self.cmd_inspect),
-            Command("fund", "調達", 1, "資金を集める(3ヶ月に1回)", self.cmd_fund),
-            Command("launch", "打上", 0, "", self.cmd_launch),
-            Command("wait", "待機", 0, "次の月へ進む", self.cmd_wait),
-        ]
+        self.commands = [Command(*c) for c in story.COMMANDS]
         self.eagle9 = None  # 格納庫に立てる Eagle 9 の絵(必要になったら読み込む)
         state.save(self.st)  # 会社に戻るたびに自動でセーブする
         if lines:
@@ -63,85 +55,17 @@ class OfficeScene:
 
     def describe(self, cmd):
         """コマンドの説明文(製造と打上は、いまのステージに合わせて変わる)。"""
-        st = self.st
-        if cmd.key == "build":
-            cost, months = st.build_cost()
-            if st.craft == "eagle9" and st.recovered > 0:
-                return trf("回収した1段目を整備して Eagle 9 にする({cost:.0f}M$・{months}ヶ月)", cost=cost, months=months)
-            return trf("{name} を製造する({cost:.0f}M$・{months}ヶ月)", name=st.craft_name, cost=cost, months=months)
-        if cmd.key == "launch":
-            m = MISSIONS[st.stage]
-            return trf("{title}: {goal}(その月の残り AP をすべて使う)", title=ui.tr(m.title), goal=ui.tr(m.goal))
-        return cmd.desc
+        return story.describe(self.st, cmd.key)
 
-    # ---- コマンド ----
-    def say(self, lines, on_done=None):
-        self.dlg.start(lines, on_done)
-
-    def use_ap(self, n):
-        if self.st.ap < n:
-            self.say([("sara", "今月はもう動けないわ。「待機」して。")])
-            return False
-        self.st.ap -= n
-        return True
-
-    def cmd_build(self):
-        st = self.st
-        if st.ready() + st.building_now() >= 2:
-            self.say([("maya", "もう2機あるわ。置き場所がない。")])
-            return
-        cost, months = st.build_cost()
-        if st.funds < cost:
-            self.say([("sara", "製造するお金が足りないわ。")])
-            return
-        if not self.use_ap(1):
-            return
-        st.funds -= cost
-        if st.craft == "eagle9" and st.recovered > 0:
-            st.recovered -= 1
-        st.building.append([st.craft, months])
-        self.say([("maya", trf("{name} の製造を始めたわ。{months}ヶ月後に完成する。", name=st.craft_name, months=months))])
-
-    def cmd_inspect(self):
-        st = self.st
-        if st.inspected:
-            self.say([("maya", "点検はもう済んでる。次の打ち上げまで有効よ。")])
-            return
-        if not self.use_ap(1):
-            return
-        st.funds -= st.INSPECT_COST
-        st.inspected = True
-        self.say([("maya", "機体を隅々まで見直した。故障はだいぶ起きにくくなるはず。")])
-
-    def cmd_fund(self):
-        st = self.st
-        if st.month_index - st.last_fundraise < 3:
-            self.say([("sara", "調達は3ヶ月に1回までよ。")])
-            return
-        if not self.use_ap(1):
-            return
-        st.last_fundraise = st.month_index
-        amount = st.fundraise_amount()
-        st.funds += amount
-        self.say([("sara", trf("{amount}M$ 集まったわ。", amount=amount))])
-
-    def cmd_launch(self):
-        st = self.st
-        if st.ready() <= 0:
-            self.say([("maya", "機体がないわ。「製造」して。")])
-            return
-        mdef = MISSIONS[st.stage]
-        lines = list(script.BRIEFING[mdef.id])
-        lines += script.BRIEFING_INSPECTED if st.inspected else script.BRIEFING_NOT_INSPECTED
-        lines += script.BRIEFING_END
-        self.say(lines, on_done=lambda: self.app.start_mission(mdef))
-
-    def cmd_wait(self):
-        lines = self.st.next_month()
-        if self.st.funds < 0:
-            self.say(lines, on_done=self.app.game_over)
+    def run_command(self, key):
+        lines, then = story.command(self.st, key)
+        if then == "launch":
+            mdef = MISSIONS[self.st.stage]
+            self.dlg.start(lines, lambda: self.app.start_mission(mdef))
+        elif then == "game_over":
+            self.dlg.start(lines, self.app.game_over)
         else:
-            self.say(lines)
+            self.dlg.start(lines)
 
     # ---- 更新 ----
     def update(self):
@@ -155,7 +79,7 @@ class OfficeScene:
         if ui.right_p():
             self.sel = (self.sel + 1) % len(self.commands)
         if ui.confirm():
-            self.commands[self.sel].action()
+            self.run_command(self.commands[self.sel].key)
 
     # ---- 描画 ----
     def draw(self):
