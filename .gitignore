@@ -4,3 +4,4 @@ __pycache__/
 venv/
 tempCodeRunnerFile.py
 .vscode/
+tools/shots/
