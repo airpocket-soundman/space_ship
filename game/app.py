@@ -82,9 +82,6 @@ class App:
             key = "fire" if "火災" in reason else "aero" if "分解" in reason else "tilt" if "姿勢" in reason else "other"
             lines = list(script.RESULT_FAIL_1_1[key])
             st = self.state
-            if key in ("fire", "aero") and "rud" not in st.seen:
-                st.seen.add("rud")
-                lines += script.RESULT_RUD
             if st.rockets <= 0:
                 lines += script.RESULT_FAIL_COMMON
             recent = [f["result"] for f in st.flights[-3:]]
@@ -92,7 +89,7 @@ class App:
                 st.seen.add("comeback")
                 st.funds += script.COMEBACK_FUNDS
                 lines += script.COMEBACK
-        lines.append(("sara", "打ち上げで今月は手一杯。「待機」で次の月へ進めましょう。"))
+        lines.append(("sara", "今月はもう手一杯。「待機」で次の月へ。"))
         self.scene = OfficeScene(self, lines)
 
     def game_over(self):

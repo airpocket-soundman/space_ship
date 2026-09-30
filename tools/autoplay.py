@@ -101,8 +101,8 @@ class Bot:
             if not sc.dlg.active:
                 if "03_office_menu" not in self.shots:
                     self.shot_once("03_office_menu")
-                    self.queue = ([pyxel.KEY_RIGHT] * 2 + [pyxel.KEY_SPACE]  # 点検
-                                  + ["wait"] + [pyxel.KEY_RIGHT] * 5 + [pyxel.KEY_SPACE])  # 打上
+                    self.queue = ([pyxel.KEY_RIGHT] * 1 + [pyxel.KEY_SPACE]  # 点検
+                                  + ["wait"] + [pyxel.KEY_RIGHT] * 2 + [pyxel.KEY_SPACE])  # 打上
                     return
                 if "09_office_after" in self.shots or app.state.flights:
                     self.shot_once("09_office_after")

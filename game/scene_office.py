@@ -50,14 +50,10 @@ class OfficeScene:
         self.sel = 0
         self.frame = 0
         self.commands = [
-            Command("dev", "開発", 1, "研究で機体を扱いやすくする(準備中)", self.cmd_dev),
             Command("build", "製造", 1, trf("Eagle 1 を製造する({cost:.0f}M$・{months}ヶ月)", cost=self.st.ROCKET_COST, months=self.st.ROCKET_MONTHS), self.cmd_build),
             Command("inspect", "点検", 1, trf("次の打ち上げの故障を起きにくくする({cost}M$)", cost=self.st.INSPECT_COST), self.cmd_inspect),
-            Command("pr", "宣伝", 1, "ケンに配信を頼んで評判を上げる。CEO の SNS は当たり外れあり", self.cmd_pr),
-            Command("sales", "営業", 1, "顧客を探す", self.cmd_sales),
-            Command("fund", "調達", 1, "投資家にピッチして資金を集める(3ヶ月に1回)", self.cmd_fund),
-            Command("hire", "採用", 1, "エンジニアを採用。AP +1、固定費 +0.5M$", self.cmd_hire),
-            Command("launch", "打上", 0, "ミッションを選んで打ち上げる(その月の残り AP をすべて使う)", self.cmd_launch),
+            Command("fund", "調達", 1, "資金を集める(3ヶ月に1回)", self.cmd_fund),
+            Command("launch", "打上", 0, "打ち上げる(その月の残り AP をすべて使う)", self.cmd_launch),
             Command("wait", "待機", 0, "次の月へ進む", self.cmd_wait),
         ]
         if lines:
@@ -69,18 +65,15 @@ class OfficeScene:
 
     def use_ap(self, n):
         if self.st.ap < n:
-            self.say([("sara", "今月はもう動けないわ。「待機」で次の月へ進めて。")])
+            self.say([("sara", "今月はもう動けないわ。「待機」して。")])
             return False
         self.st.ap -= n
         return True
 
-    def cmd_dev(self):
-        self.say([("maya", "研究メニューはまだ準備中よ。次のアップデートを待ってて。")])
-
     def cmd_build(self):
         st = self.st
         if st.rockets + len(st.building) >= 2:
-            self.say([("maya", "もう手元と製造中を合わせて2機ある。これ以上は置き場所がないわ。")])
+            self.say([("maya", "もう2機あるわ。置き場所がない。")])
             return
         if st.funds < st.ROCKET_COST:
             self.say([("sara", "製造するお金が足りないわ。")])
@@ -100,67 +93,24 @@ class OfficeScene:
             return
         st.funds -= st.INSPECT_COST
         st.inspected = True
-        self.say([("maya", "燃料ラインの継ぎ目とナットを全部見直した。これで火災の危険はだいぶ下がるはず。")])
-
-    def cmd_pr(self):
-        if not self.use_ap(1):
-            return
-        r = pyxel.rndf(0, 1)
-        if r < 0.2:
-            self.st.reputation += 8
-            self.say([("dylon", "(SNS に投稿)「俺たちは火星に行く」"),
-                      ("ken", "バズった! 評判がぐっと上がったよ!")])
-        elif r < 0.3:
-            self.st.reputation = max(0, self.st.reputation - 3)
-            self.say([("dylon", "(SNS に投稿)「ロケットなんて簡単だ」"),
-                      ("ken", "……炎上してる。評判が下がったよ。")])
-        else:
-            gain = pyxel.rndi(2, 4)
-            self.st.reputation += gain
-            self.say([("ken", trf("工場見学の配信をしたよ! 評判が {gain} 上がった。", gain=gain))])
-
-    def cmd_sales(self):
-        if not self.use_ap(1):
-            return
-        self.say([("sara", "どこも「まず飛んでから来てくれ」って。実績がないと話も聞いてもらえないわ。")])
+        self.say([("maya", "燃料ラインを見直した。火災はだいぶ起きにくくなるはず。")])
 
     def cmd_fund(self):
         st = self.st
         if st.month_index - st.last_fundraise < 3:
-            self.say([("sara", "この前ピッチしたばかりよ。3ヶ月は空けないと、投資家も会ってくれない。")])
+            self.say([("sara", "調達は3ヶ月に1回までよ。")])
             return
         if not self.use_ap(1):
             return
         st.last_fundraise = st.month_index
         amount = round(3 + st.reputation * 0.4 + (10 if "1-1" in st.cleared else 0), 1)
         st.funds += amount
-        if "schedule" not in st.seen:
-            st.seen.add("schedule")
-            lines = list(script.FUND_FIRST)
-        else:
-            lines = [("dylon", "(投資家に)俺たちは、戻ってくるロケットで宇宙を安くする。")]
-        lines.append(("sara", trf("{amount}M$ 集まったわ。", amount=amount)))
-        self.say(lines)
-
-    def cmd_hire(self):
-        st = self.st
-        if st.ap_max >= 5:
-            self.say([("maya", "今の工場じゃ、これ以上は人を置けないわ。")])
-            return
-        if not self.use_ap(1):
-            return
-        first = st.staff == 0
-        st.ap_max += 1
-        st.fixed_cost += 0.5
-        st.staff += 1
-        lines = list(script.HIRE_FIRST) if first else [("maya", "腕のいい溶接工を一人採用したわ。来月から AP が 1 増える。")]
-        lines.append(("sara", trf("固定費は月 {cost:.1f}M$ になったわよ。", cost=st.fixed_cost)))
-        self.say(lines)
+        self.say([("sara", trf("{amount}M$ 集まったわ。", amount=amount))])
 
     def cmd_launch(self):
         st = self.st
         if st.rockets <= 0:
-            self.say([("maya", "飛ばせる機体がないわ。「製造」で新しい Eagle 1 を作って。")])
+            self.say([("maya", "機体がないわ。「製造」して。")])
             return
         mdef = MISSIONS.get(st.stage) or MISSIONS["1-1"]
         lines = list(script.BRIEFING_1_1)
