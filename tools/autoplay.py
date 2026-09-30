@@ -80,6 +80,8 @@ class Bot:
         if isinstance(sc, TitleScene):
             if self.t == 40:
                 self.shot_once("01_title")
+            if QUICK and self.t == 50:
+                pyxel.quit()
             if self.t == 60:
                 self.tap(pyxel.KEY_SPACE)
             return
