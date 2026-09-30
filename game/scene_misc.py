@@ -7,6 +7,7 @@ import pyxel
 
 from . import ui
 from .i18n import trf
+from .logo import load_logo
 from .title_earth import EarthView
 
 
@@ -18,13 +19,13 @@ class TitleScene:
     # 画面サイズごとの配置。背景と地球は bg_w x bg_h で描いて bg_scale 倍で表示する
     LAYOUTS = {
         "640x480": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=2, horizon=105,
-                        logo_y=100, logo=1.0, menu_y=336, menu=3, menu_row=26, tag=2),
+                        logo_y=40, logo=2, menu_y=336, menu=3, menu_row=26, tag=2),
         "720x720": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=2, horizon=150,
-                        logo_y=130, logo=1.0, menu_y=440, menu=3, menu_row=30, tag=2),
+                        logo_y=90, logo=2, menu_y=440, menu=3, menu_row=30, tag=2),
         "360x360": dict(bg="title_bg_sq.png", bg_w=360, bg_h=360, bg_scale=1, horizon=150,
-                        logo_y=52, logo=0.5, menu_y=218, menu=2, menu_row=18, tag=1),
+                        logo_y=30, logo=1, menu_y=218, menu=2, menu_row=18, tag=1),
         "320x240": dict(bg="title_bg.png", bg_w=320, bg_h=240, bg_scale=1, horizon=105,
-                        logo_y=50, logo=0.5, menu_y=162, menu=2, menu_row=16, tag=1),
+                        logo_y=20, logo=1, menu_y=162, menu=2, menu_row=16, tag=1),
     }
 
     def __init__(self, app):
@@ -36,6 +37,7 @@ class TitleScene:
         self.bg = pyxel.Image(L["bg_w"], L["bg_h"])
         self.bg.load(0, 0, str(ui.ASSETS / L["bg"]))
         self.earth = EarthView(L["bg_w"], L["bg_h"], L["bg_scale"], L["horizon"])
+        self.logo = load_logo()
         self.horizon = L["horizon"] * L["bg_scale"]  # 画面中央での地平線の高さ
         self.ky = self.horizon / 210  # 縦の倍率(640x480 が 1)
         rng = random.Random(5)
@@ -160,58 +162,17 @@ class TitleScene:
 
     # ---- ロゴ ----
     def draw_logo(self):
+        """ロゴ(assets/logo.png)を整数倍で表示し、その下に副題を出す。"""
         k = self.lay["logo"]
-        h, w, t, gap, space = round(48 * k), round(70 * k), round(11 * k), round(14 * k), round(30 * k)
-        sh = max(1, round(3 * k))  # 影のずれ
-        word = ["S", "T", "A", "R", " ", "X"]
-        total = sum(space if ch == " " else w for ch in word) + gap * (len(word) - 1)
-        x = (ui.W - total) // 2
+        w, h = self.logo.width, self.logo.height
+        x = (ui.W - w * k) // 2
         y = self.lay["logo_y"]
-        for ch in word:
-            if ch == " ":
-                x += space + gap
-                continue
-            self.draw_letter(ch, x + sh, y + sh, w, h, t, ui.NAVY)
-            self.draw_letter(ch, x, y, w, h, t, ui.WHITE)
-            x += w + gap
+        # blt の拡大は転送先の中心が基準なので、左上が (x, y) になるようにずらす
+        pyxel.blt(x + w * (k - 1) / 2, y + h * (k - 1) / 2, self.logo, 0, 0, w, h, ui.BLACK, 0, k)
         sub = "FLY IT YOURSELF"
         ss = 1 if ui.SMALL else 2
         sw = ui.big_text_width(sub, ss, spacing=4)
-        ui.big_text((ui.W - sw) // 2, y + h + round(22 * k), sub, ss, ui.WHITE, shadow=ui.BLACK, spacing=4)
-
-    @staticmethod
-    def quad(p0, p1, p2, p3, col):
-        pyxel.tri(*p0, *p1, *p2, col)
-        pyxel.tri(*p0, *p2, *p3, col)
-
-    def draw_letter(self, ch, x, y, w, h, t, col):
-        mid = y + (h - t) // 2
-        if ch == "S":
-            pyxel.rect(x, y, w, t, col)
-            pyxel.rect(x, y, t, (h + t) // 2, col)
-            pyxel.rect(x, mid, w, t, col)
-            pyxel.rect(x + w - t, mid, t, h - (mid - y), col)
-            pyxel.rect(x, y + h - t, w, t, col)
-        elif ch == "T":
-            pyxel.rect(x, y, w, t, col)
-            pyxel.rect(x + (w - t) // 2, y, t, h, col)
-        elif ch == "A":
-            s = t * 1.25
-            ax = x + w / 2
-            self.quad((ax - s / 2, y), (ax + s / 2, y), (x + s, y + h), (x, y + h), col)
-            self.quad((ax - s / 2, y), (ax + s / 2, y), (x + w, y + h), (x + w - s, y + h), col)
-        elif ch == "R":
-            bw = w - round(w * 6 / 70)
-            pyxel.rect(x, y, t, h, col)
-            pyxel.rect(x, y, bw, t, col)
-            pyxel.rect(x + bw - t, y, t, (h + t) // 2, col)
-            pyxel.rect(x, mid, bw, t, col)
-            s = t * 1.3
-            self.quad((x + w * 0.42, mid), (x + w * 0.42 + s, mid), (x + w, y + h), (x + w - s, y + h), col)
-        elif ch == "X":
-            s = t * 1.35
-            self.quad((x, y), (x + s, y), (x + w, y + h), (x + w - s, y + h), col)
-            self.quad((x + w - s, y), (x + w, y), (x + s, y + h), (x, y + h), col)
+        ui.big_text((ui.W - sw) // 2, y + h * k + (4 if ui.SMALL else 8), sub, ss, ui.WHITE, shadow=ui.BLACK, spacing=4)
 
     # ---- メニュー ----
     def draw_menu(self):

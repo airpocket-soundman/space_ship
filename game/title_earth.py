@@ -42,9 +42,10 @@ EARTH_COLORS = [
     0x0A1C6A, 0x1A4CD8, 0x3094FF, 0x84D6FF, 0xE8FAFF,  # 大気の光
     0xFFD43A, 0xFF9A1A,  # 街の明かり
     0x6AA8F4,  # 地平線のかすみ
+    0x01030C,  # 夜(黒は透明色なので、ほぼ黒の紺で塗る)
 ]
 (O0, O1, O2, O3, O4, G0, G1, G2, G3, G4, D0, D1, D2, D3, C0, C1, C2,
- A0, A1, A2, A3, A4, CITY, CITY2, HAZE) = range(16, 16 + len(EARTH_COLORS))
+ A0, A1, A2, A3, A4, CITY, CITY2, HAZE, NIGHT) = range(16, 16 + len(EARTH_COLORS))
 
 
 def add_earth_colors():
@@ -60,30 +61,37 @@ def ramp(colors, v, b):
     return colors[base]
 
 
+def lit(colors, L, b):
+    """明るさ L(0〜1)に応じた色。暗い所(0.15 未満)は夜の色へ沈め、それより明るい所は colors の段階を使う。"""
+    if L < 0.15:
+        return ramp([NIGHT, colors[0]], L / 0.15, b)
+    return ramp(colors, 0.1 + 0.9 * (L - 0.15) / 0.85, b)
+
+
 def surface_color(mat, lq, haze, b):
     night = lq / 15.0 < 0.12
-    # 夜側も真っ暗にせず、海や陸の色が見える明るさを残す
-    L = 0.3 + 0.7 * lq / 15.0
+    # 夜側は暗く沈め(街の明かりと大気の光だけ)、日が当たると鮮やかになる
+    L = lq / 15.0
     if mat == DBLUE:  # 海
-        c = ramp([O0, O1, O2, O3, O3, O4], L, b)
+        c = lit([O0, O1, O2, O3, O3, O4], L, b)
     elif mat == TEAL:  # 緑の陸
-        c = ramp([O0, G0, G1, G2, G3, G4], L, b)
+        c = lit([O0, G0, G1, G2, G3, G4], L, b)
     elif mat == BROWN:  # 砂漠
-        c = ramp([O0, D0, D1, D2, D3], L, b)
+        c = lit([O0, D0, D1, D2, D3], L, b)
     elif mat == GRAY:  # 薄い雲
-        c = ramp([O0, C0, C1, C2, WHITE], L * 0.85 + 0.1, b)
+        c = lit([O0, C0, C1, C2, WHITE], L, b)
     elif mat == WHITE:  # 厚い雲
-        c = ramp([O1, C0, C1, C2, WHITE, WHITE], L * 0.85 + 0.2, b)
+        c = lit([O0, C0, C1, C2, WHITE, WHITE], L, b)
     else:  # 都市のある陸(夜は明かりが灯る)
-        c = (CITY if b % 3 else CITY2) if night else ramp([O0, G0, G1, G2, G3, G4], L, b)
+        c = (CITY if b % 3 else CITY2) if night else lit([O0, G0, G1, G2, G3, G4], L, b)
     # 地平線近くのかすみ(昼は明るい青、夜は暗い青)
     if haze and b < haze * 4:
-        c = A3 if L > 0.7 else HAZE if L > 0.45 else A1 if L > 0.2 else A0
+        c = A3 if L > 0.7 else HAZE if L > 0.45 else A1 if L > 0.2 else A0 if L > 0.05 else c
     return c
 
 
 def glow_color(iq, sq, b):
-    v = (iq / 7) * (0.45 + 0.55 * (sq / 7))
+    v = (iq / 7) * (0.12 + 0.88 * (sq / 7))
     return ramp([BLACK, A0, A1, A2, A3, A4, WHITE], v, b)
 
 
