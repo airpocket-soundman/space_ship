@@ -90,6 +90,7 @@ python main.py 720x720 2-3  # 画面サイズ・言語と組み合わせても�
 | `assets/fonts/` | 日本語フォント(umplus) |
 | `tools/sim_check.py` | 全ステージのバランスをヘッドレスで確認(自動操縦で 20 回ずつ飛ばす。`python tools/sim_check.py 3-3` でステージ指定) |
 | `tools/autoplay.py` | 自動操作でスクリーンショットを撮る(`python tools/autoplay.py 720x720 en` で画面サイズ・言語を指定。`python tools/autoplay.py 3-3 --fast` でステージ指定) |
+| `tools/launcher.py` | 動作確認用のページ(`http://127.0.0.1:8765/`)をブラウザで開き、ゲーム本体・飛行テスト・ストーリー確認・バランス確認・自動操作スクリーンショット・英語訳チェックをボタンで起動する。撮ったスクリーンショットも一覧できる。終了は Ctrl+C |
 | `tools/flight_test.py` | 飛行パートだけを確かめる。メニューからステージを選んですぐ飛ぶ(←→ で点検あり・なし、飛行中 Q でメニューへ)。`python tools/flight_test.py 720x720 en mute` のように画面サイズ・言語・消音を指定 |
 | `tools/story_check.py` | 画面なし・文字だけでシナリオを進めて確かめる(Pyxel 不要)。セリフを読み、会社のコマンドを番号で選ぶ。飛行は「成功 / 失敗」を選ぶだけで会社に戻る。`--auto` で最後まで自動、`2-1` でステージ指定、`en` で英語 |
 | `tools/check_i18n.py` | 英語の訳が抜けている文言を探す |
