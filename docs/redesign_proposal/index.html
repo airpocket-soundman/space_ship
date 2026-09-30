@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="StarXのキャラクター、ロケット、ゲーム背景のドット絵再デザイン案">
+<title>StarX | グラフィック再デザイン案</title>
+<style>
+  :root { color-scheme: dark; --bg:#101525; --panel:#202b48; --line:#4c6084; --text:#eeeeee; --muted:#a9c1ff; --gold:#e9c35b; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.75 system-ui,"Noto Sans JP",sans-serif; }
+  a { color:var(--gold); }
+  .wrap { max-width:1060px; margin:auto; padding:0 22px; }
+  header { border-bottom:3px solid var(--gold); background:#171f35; }
+  header .wrap { padding-top:34px; padding-bottom:28px; }
+  .eyebrow { margin:0 0 6px; color:var(--gold); font:700 13px/1.4 ui-monospace,monospace; letter-spacing:.14em; }
+  h1 { margin:0; font-size:clamp(28px,5vw,46px); line-height:1.2; }
+  header p:last-child { margin-bottom:0; max-width:760px; }
+  nav { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+  nav a { padding:5px 12px; border:1px solid var(--line); border-radius:3px; text-decoration:none; }
+  main { padding-top:34px !important; padding-bottom:70px !important; }
+  section { margin-bottom:52px; }
+  h2 { margin:0 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line); font-size:25px; }
+  h3 { margin:17px 0 3px; color:var(--gold); font-size:17px; }
+  p { margin:8px 0 15px; }
+  .lead { color:var(--muted); }
+  .frame { padding:12px; border:1px solid var(--line); background:var(--panel); border-radius:5px; }
+  .frame img { display:block; max-width:100%; height:auto; margin:auto; image-rendering:pixelated; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+  .grid figure { margin:0; }
+  figcaption { padding-top:9px; color:var(--muted); font-size:14px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+  .cards article { padding:12px; border:1px solid var(--line); background:var(--panel); }
+  .cards strong { color:var(--gold); }
+  .note { padding:12px 15px; border-left:3px solid var(--gold); background:var(--panel); }
+  footer { padding:22px; border-top:1px solid var(--line); color:var(--muted); text-align:center; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <p class="eyebrow">STARX / PIXEL ART PROPOSAL</p>
+  <h1>グラフィック再デザイン案</h1>
+  <p>キャラクター、ロケット、会社・打ち上げ画面の代替案です。既存のゲーム素材とプログラムは残したまま、比較と検討のために制作しました。タイトル画面は対象外です。</p>
+  <nav><a href="#characters">キャラクター</a><a href="#screens">画面案</a><a href="#rockets">ロケット</a><a href="#implementation">現状と実装メモ</a><a href="../">企画書へ戻る</a></nav>
+</div></header>
+<main class="wrap">
+  <section id="characters">
+    <h2>キャラクター</h2>
+    <p class="lead">12人の表情、髪型、衣装、アクセサリーを整理し、小さい画面でも役割が分かるようにしました。各素材は64×64 pxのPNGで、ゲームと同じPyxel標準16色の範囲です。</p>
+    <figure class="frame"><img src="_contact_sheet.png" width="768" height="304" alt="12人の新しいキャラクタードット絵の一覧"><figcaption>クリックなしで一覧を比較できます。個別PNGは下から開けます。</figcaption></figure>
+    <div class="cards">
+      <article><strong>創業チーム</strong><br><a href="dylon.png">ディーロン</a> / <a href="maya.png">マヤ</a> / <a href="ken.png">ケン</a> / <a href="sara.png">サラ</a></article>
+      <article><strong>AI・機械</strong><br><a href="noah.png">ノア</a> / <a href="dylon_ai.png">ディーロンAI</a> / <a href="bolt.png">ボルト</a></article>
+      <article><strong>その他の登場人物</strong><br><a href="grey.png">グレイ</a> / <a href="doc_hughes.png">ドク・ヒューズ</a> / <a href="hashimoto.png">ハシモト</a> / <a href="mimi.png">ミミ</a> / <a href="gen.png">ゲンさん</a></article>
+    </div>
+  </section>
+  <section id="screens">
+    <h2>ゲーム画面の提案</h2>
+    <p class="lead">現在の640×480画面の構成に合わせた、背景とUIを合わせた見本です。実際に取り込む際は背景、キャラ、ロケット、計器を分けて扱います。</p>
+    <div class="grid">
+      <figure class="frame"><img src="office_screen_proposal.png" width="640" height="480" loading="lazy" alt="格納庫と会話画面の新しいドット絵案"><figcaption>会社画面：格納庫の梁、開いた扉、海、道具、機体で奥行きをつけた案。</figcaption></figure>
+      <figure class="frame"><img src="launch_screen_proposal.png" width="640" height="480" loading="lazy" alt="島の発射場と計器を示す打ち上げ画面案"><figcaption>打ち上げ画面：島の射場と機体を明確にし、右側の計器領域を維持した案。</figcaption></figure>
+    </div>
+  </section>
+  <section id="rockets">
+    <h2>ロケットのシルエット</h2>
+    <figure class="frame"><img src="rocket_silhouette_study.png" width="640" height="480" loading="lazy" alt="Eagle 1、再使用型、Starship型の三つの側面デザイン案"><figcaption>左から初期Eagle 1、Falcon 9着想の再使用型、Starship着想の宇宙船型。縮尺比較図ではありません。</figcaption></figure>
+    <div class="grid">
+      <div><h3>Eagle 1</h3><p>物語の初期機体として、細い二段式と単発エンジンを強調しました。白い円筒に左側の反射光と右側の影、黒い段間を置いて立体感を出します。</p></div>
+      <div><h3>再使用型・Starship型</h3><p>次世代機にはグリッドフィンと着陸脚を追加。さらに大型の案にはステンレス色の船体、黒い耐熱タイル、前後フラップを使います。</p></div>
+    </div>
+    <p>形状の参考：SpaceXの<a href="https://new.spacex.com/vehicles/falcon-9">Falcon 9公式ページ</a>、<a href="https://www.spacex.com/assets/media/falcon-users-guide-2025-05-09.pdf">Falconユーザーガイド</a>、<a href="https://new.spacex.com/vehicles/starship">Starship公式ページ</a>。</p>
+  </section>
+  <section id="implementation">
+    <h2>現状の作りと実装メモ</h2>
+    <div class="note">人物はPNGを読み込んで表示しています。一方、会社背景・打ち上げ背景・ロケットは主にPyxelの図形を組み合わせて描画しています。背景画面案をそのまま一枚の画像に置換すると、高度による空の変化やロケットの回転が失われます。背景と動く物体を分けて実装するための設計見本です。</div>
+    <p>詳しい仕様と素材の使い方は<a href="README.md">説明書</a>に記載しました。元の編集用データはリポジトリの <code>art/redesign_proposal</code> にあります。</p>
+  </section>
+</main>
+<footer>StarX graphic proposal · Existing game artwork is preserved.</footer>
+</body>
+</html>
