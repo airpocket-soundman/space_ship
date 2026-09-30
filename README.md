@@ -26,7 +26,7 @@ python main.py
 
 ```
 python main.py 640x480   # 既定
-python main.py 720x720   # RGB20SX など正方形の画面
+python main.py 720x720   # RGB20SX など正方形の画面(絵は 720 の細かさ、文字は 2 倍の大きさ)
 python main.py 360x360   # 720x720 の画面に 2 倍で出す用(文字・立ち絵が小さめ)
 python main.py 320x240   # 640x480 の画面に 2 倍で出す用
 ```

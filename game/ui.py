@@ -23,17 +23,24 @@ SCREEN = "640x480"
 W, H = SCREENS[SCREEN]
 SMALL = False  # 360x360 / 320x240 のときは文字や立ち絵を小さくする
 TINY = False  # 320x240 のときはさらに縦を詰める
+# 720x720 は、絵は 720 の細かさのまま、文字だけを 2 倍の大きさで描く(小さい画面で遊ぶ携帯機向け)。
+# 文字の入る枠は 360x360 と同じ詰めた配置を K 倍して使う。
+K = 1  # 文字と、文字の入る枠の倍率
+COMPACT = False  # 文字の入る枠を、詰めた配置(360x360 と同じ並び)にする
 
 
 def set_screen(name):
     """pyxel.init より前に呼ぶ。"""
-    global SCREEN, W, H, SMALL, TINY
+    global SCREEN, W, H, SMALL, TINY, K, COMPACT, LINE_H
     if name not in SCREENS:
         raise ValueError(f"画面サイズは {' / '.join(SCREENS)} のどれか: {name}")
     SCREEN = name
     W, H = SCREENS[name]
     SMALL = W < 480
     TINY = H < 300
+    K = 2 if name == "720x720" else 1
+    COMPACT = SMALL or K > 1
+    LINE_H = 16 * K
 
 # Pyxel 標準パレットの番号
 BLACK, NAVY, PURPLE, TEAL, BROWN, DBLUE, LBLUE, WHITE = range(8)
@@ -56,6 +63,8 @@ def font(size=12):
 def text(x, y, s, col=WHITE, size=12, border=None):
     """文字を描く。英語のときは訳してから描く(以下の幅・折り返しも同じ)。"""
     s = tr(s)
+    if K > 1:
+        return _text_big(x, y, s, col, size, border)
     f = _fonts[size]
     if border is not None:
         for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
@@ -63,8 +72,37 @@ def text(x, y, s, col=WHITE, size=12, border=None):
     pyxel.text(x, y, s, col, f)
 
 
+_big_cache = {}  # (文字列, 色, 大きさ, 縁の色) → 文字を描いた画像(K 倍にして貼る)
+_BIG_CACHE_MAX = 600
+
+
+def _text_big(x, y, s, col, size, border):
+    key = (s, col, size, border)
+    entry = _big_cache.get(key)
+    if entry is None:
+        f = _fonts[size]
+        w = f.text_width(s) + 2
+        w += w % 2  # 拡大したときに半端なピクセルが出ないよう、幅を偶数にする
+        h = size + 4
+        keycol = next(c for c in (PURPLE, TEAL, BROWN) if c not in (col, border))
+        img = pyxel.Image(max(w, 2), h)
+        img.cls(keycol)
+        if border is not None:
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                img.text(1 + dx, 1 + dy, s, border, f)
+        img.text(1, 1, s, col, f)
+        entry = (img, keycol)
+        if len(_big_cache) >= _BIG_CACHE_MAX:
+            _big_cache.pop(next(iter(_big_cache)))
+        _big_cache[key] = entry
+    img, keycol = entry
+    w, h = img.width, img.height
+    # 拡大は貼り付け先の中心が基準なので、左上が (x, y) になるようにずらす(余白の 1 ドットも引く)
+    pyxel.blt(x - K + w * (K - 1) / 2, y - K + h * (K - 1) / 2, img, 0, 0, w, h, keycol, 0, K)
+
+
 def text_width(s, size=12):
-    return _fonts[size].text_width(tr(s))
+    return _fonts[size].text_width(tr(s)) * K
 
 
 def text_center(cx, y, s, col=WHITE, size=12, border=None):

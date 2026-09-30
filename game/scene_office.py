@@ -15,15 +15,16 @@ class Layout:
     """画面サイズごとの配置(640x480 のときが元の数値)。"""
 
     def __init__(self):
-        small, tall, tiny = ui.SMALL, ui.H > 480, ui.TINY
-        self.status_h = 30 if small else 28  # 小さい画面では2段
-        self.cmd_h = 28 if tiny else 32 if small else 40 if tall else 36
-        self.cmd_y = ui.H - self.cmd_h - (4 if tiny else 6 if small else 16 if tall else 12)
+        # 文字の入る枠は、詰めた配置(360x360)を K 倍して使う(720x720 は文字が 2 倍)
+        small, tall, tiny, K = ui.COMPACT, ui.H > 480 and not ui.COMPACT, ui.TINY, ui.K
+        self.status_h = (30 if small else 28) * K  # 小さい画面では2段
+        self.cmd_h = (28 if tiny else 32 if small else 40 if tall else 36) * K
+        self.cmd_y = ui.H - self.cmd_h - (4 if tiny else 6 if small else 16 if tall else 12) * K
         self.msg_lines = 3 if tiny else 4 if small else 6 if tall else 5
-        self.msg_h = 26 + self.msg_lines * ui.LINE_H - (4 if small else 12 if tall else 14)
-        self.msg_y = self.cmd_y - self.msg_h - (6 if tiny else 8 if small else 10)
-        self.view_bottom = self.msg_y - (8 if tiny else 12)
-        self.margin = 6 if small else 16
+        self.msg_h = 26 * K + self.msg_lines * ui.LINE_H - (4 if small else 12 if tall else 14) * K
+        self.msg_y = self.cmd_y - self.msg_h - (6 if tiny else 8 if small else 10) * K
+        self.view_bottom = self.msg_y - (8 if tiny else 12) * K
+        self.margin = (6 if small else 16) * K
         # 格納庫の絵の倍率(640x480 が 1)。縦が足りない画面では縦に合わせて縮め、横は中央に寄せる
         view_h = self.view_bottom - self.status_h - 1
         self.k = min(ui.W / 640, view_h / 289)
@@ -93,7 +94,7 @@ class OfficeScene:
         speaker = self.dlg.current[0] if self.dlg.active else ""
         if speaker:
             ps = self.app.portraits.size()
-            m = 8 if ui.SMALL else 24
+            m = 8 * ui.K if ui.COMPACT else 24
             self.app.portraits.draw(speaker, m, self.lay.view_bottom - ps - m // 3)
         self.draw_message(speaker)
         self.draw_commands()
@@ -108,14 +109,14 @@ class OfficeScene:
         funds = trf("資金 {funds:6.1f}M$", funds=st.funds)
         rep = trf("評判 {rep}", rep=st.reputation)
         rockets = trf("機体 {n}{build}", n=st.ready(), build=build)
-        if ui.SMALL:  # 2段に分ける
-            c1, c2 = ui.W // 3, ui.W * 2 // 3
-            ui.text(6, 3, st.date_str(), ui.WHITE, size=10)
-            ui.text(c1, 3, funds, col, size=10)
-            ui.text(c2, 3, f"AP {st.ap}/{st.ap_max}", ui.WHITE, size=10)
-            ui.text(6, 16, rep, ui.LIME, size=10)
-            ui.text(c1, 16, f"TLM {st.tlm}", ui.CYAN, size=10)
-            ui.text(c2, 16, rockets, ui.WHITE, size=10)
+        if ui.COMPACT:  # 2段に分ける
+            c1, c2, K = ui.W // 3, ui.W * 2 // 3, ui.K
+            ui.text(6 * K, 3 * K, st.date_str(), ui.WHITE, size=10)
+            ui.text(c1, 3 * K, funds, col, size=10)
+            ui.text(c2, 3 * K, f"AP {st.ap}/{st.ap_max}", ui.WHITE, size=10)
+            ui.text(6 * K, 16 * K, rep, ui.LIME, size=10)
+            ui.text(c1, 16 * K, f"TLM {st.tlm}", ui.CYAN, size=10)
+            ui.text(c2, 16 * K, rockets, ui.WHITE, size=10)
             return
         k = ui.W / 640
         ui.text(12, 8, st.date_str(), ui.WHITE)
@@ -155,7 +156,7 @@ class OfficeScene:
         by = floor - 189 * k
         pyxel.rect(ox + 160 * k, by, 150 * k, 90 * k, ui.WHITE)
         pyxel.rectb(ox + 160 * k, by, 150 * k, 90 * k, ui.GRAY)
-        ui.text(ox + 170 * k, by + 6 * k, self.st.craft_name.upper(), ui.DBLUE, size=10 if ui.SMALL else 12)
+        ui.text(ox + 170 * k, by + 6 * k, self.st.craft_name.upper(), ui.DBLUE, size=10 if ui.COMPACT else 12)
         pyxel.circb(ox + 235 * k, by + 60 * k, 22 * k, ui.RED)
         pyxel.circ(ox + 235 * k, by + 60 * k, 6 * k, ui.DBLUE)
         pyxel.line(ox + 170 * k, by + 28 * k, ox + 250 * k, by + 28 * k, ui.BLACK)
@@ -219,7 +220,7 @@ class OfficeScene:
         pyxel.tri(cx - hw, top + 22 * k, cx + hw - 1, top + 22 * k, cx, top, body)
         pyxel.rect(cx - hw, top + 70 * k, hw * 2, 6 * k, ui.BLACK)
         pyxel.rect(cx + 4 * k, top + 22 * k, 5 * k, h - 22 * k, ui.GRAY if built else ui.DBLUE)
-        if not ui.SMALL:  # 360x360 では機体が細くて文字が入らない
+        if not ui.COMPACT:  # 360x360 では機体が細くて文字が入らない(720x720 は文字が大きくて入らない)
             for i, ch in enumerate("STARX"):
                 ui.text(cx - 3, top + (90 + i * 12) * k, ch, ui.DBLUE, size=10)
         pyxel.tri(cx - 7 * k, base, cx + 6 * k, base, cx, base - 12 * k, ui.BLACK)
@@ -237,38 +238,42 @@ class OfficeScene:
     def draw_message(self, speaker):
         lay = self.lay
         m, y0, h = lay.margin, lay.msg_y, lay.msg_h
-        pad = 10 if ui.SMALL else 16
+        K = ui.K
+        pad = 10 * K if ui.COMPACT else 16
         tw = ui.W - (m + pad) * 2
         ui.window(m, y0, ui.W - m * 2, h)
         if self.dlg.active:
             if speaker:
                 name = NAMES.get(speaker, speaker)
-                nx = m + self.app.portraits.size() + (16 if ui.SMALL else 26)
-                pyxel.rect(nx, y0 - 14, ui.text_width(name) + 16, 18, ui.DBLUE)
-                pyxel.rectb(nx, y0 - 14, ui.text_width(name) + 16, 18, ui.WHITE)
-                ui.text(nx + 8, y0 - 11, name, ui.YELLOW)
+                nx = m + self.app.portraits.size() + (16 * K if ui.COMPACT else 26)
+                pyxel.rect(nx, y0 - 14 * K, ui.text_width(name) + 16 * K, 18 * K, ui.DBLUE)
+                pyxel.rectb(nx, y0 - 14 * K, ui.text_width(name) + 16 * K, 18 * K, ui.WHITE)
+                ui.text(nx + 8 * K, y0 - 11 * K, name, ui.YELLOW)
             lines = ui.wrap(self.dlg.visible_text(), tw)
             for i, line in enumerate(lines[:lay.msg_lines]):
-                ui.text(m + pad, y0 + 12 + i * ui.LINE_H, line, ui.WHITE)
+                ui.text(m + pad, y0 + 12 * K + i * ui.LINE_H, line, ui.WHITE)
             if self.dlg.waiting() and self.frame // 15 % 2:
-                ax, ay = ui.W - m - 24, y0 + h - 16
-                pyxel.tri(ax, ay, ax + 10, ay, ax + 5, ay + 6, ui.WHITE)
+                ax, ay = ui.W - m - 24 * K, y0 + h - 16 * K
+                pyxel.tri(ax, ay, ax + 10 * K, ay, ax + 5 * K, ay + 6 * K, ui.WHITE)
         else:
             cmd = self.commands[self.sel]
-            ui.text(m + pad, y0 + 12, trf("【{label}】", label=ui.tr(cmd.label)), ui.YELLOW)
-            dy = 10 if ui.SMALL else 16
+            ui.text(m + pad, y0 + 12 * K, trf("【{label}】", label=ui.tr(cmd.label)), ui.YELLOW)
+            dy = 10 * K if ui.COMPACT else 16
             # 320x240 は操作説明を省いて、説明文に 2 行使う
             n = lay.msg_lines - (1 if ui.TINY else 2)
             for i, line in enumerate(ui.wrap(self.describe(cmd), tw)[:n]):
                 ui.text(m + pad, y0 + dy + (i + 1) * ui.LINE_H, line, ui.WHITE)
             if not ui.TINY:
-                ui.text(m + pad, y0 + h - (16 if ui.SMALL else 20), "←→ 選択 / SPACE・Z 決定", ui.GRAY, size=10)
+                ui.text(m + pad, y0 + h - (16 * K if ui.COMPACT else 20), "←→ 選択 / SPACE・Z 決定", ui.GRAY, size=10)
 
     def draw_commands(self):
         lay = self.lay
         n = len(self.commands)
-        gap = 2 if ui.SMALL else 4
+        K = ui.K
+        gap = 2 * K if ui.COMPACT else 4
         bw = int(min(64 * ui.W / 640, (ui.W - lay.margin * 2 - (n - 1) * gap) / n))
+        if K > 1:
+            bw = int(min(36 * K * 1.4, (ui.W - lay.margin * 2 - (n - 1) * gap) / n))
         x0 = (ui.W - (n * bw + (n - 1) * gap)) // 2
         y, bh = lay.cmd_y, lay.cmd_h
         for i, cmd in enumerate(self.commands):
@@ -280,6 +285,6 @@ class OfficeScene:
             pyxel.rectb(x, y, bw, bh, ui.YELLOW if selected else ui.DBLUE)
             col = ui.WHITE if usable else ui.GRAY
             fs = 12 if ui.text_width(cmd.label) <= bw - 4 else 10  # 英語の長い名前は小さい字で
-            ui.text_center(x + bw // 2, y + bh // 2 - (12 if fs == 12 else 11), cmd.label, col, size=fs)
+            ui.text_center(x + bw // 2, y + bh // 2 - (12 if fs == 12 else 11) * K, cmd.label, col, size=fs)
             ap = f"AP{cmd.ap}" if cmd.ap else "-"
-            ui.text_center(x + bw // 2, y + bh // 2 + (2 if ui.TINY else 4), ap, ui.GRAY, size=10)
+            ui.text_center(x + bw // 2, y + bh // 2 + (2 if ui.TINY else 4) * K, ap, ui.GRAY, size=10)

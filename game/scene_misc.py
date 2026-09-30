@@ -195,14 +195,14 @@ class TitleScene:
 
     def draw_popup(self):
         lines = self.popup
-        small = ui.SMALL
-        fs, lh = (10, 14) if small else (12, 18)
-        mx = 10 if small else 120 * ui.W // 640
-        h = 30 + len(lines) * lh
+        small, K = ui.COMPACT, ui.K
+        fs, lh = (10, 14 * K) if small else (12, 18)
+        mx = 10 * K if small else 120 * ui.W // 640
+        h = 30 * K + len(lines) * lh
         y = (ui.H - h) // 2
         ui.window(mx, y, ui.W - mx * 2, h)
         for i, line in enumerate(lines):
-            ui.text(mx + (10 if small else 20), y + 16 + i * lh, line, ui.WHITE, size=fs)
+            ui.text(mx + (10 * K if small else 20), y + 16 * K + i * lh, line, ui.WHITE, size=fs)
 
 
 class CaptionScene:
@@ -228,7 +228,7 @@ class CaptionScene:
         f = self.frame
         a = min(1.0, f / self.FADE, max(0.0, (self.FADE * 2 + self.HOLD - f) / self.FADE))
         pyxel.dither(a)
-        lh = 20 if not ui.SMALL else 16
+        lh = 16 * ui.K if ui.COMPACT else 20
         y0 = ui.H // 2 - lh * len(self.lines) // 2
         for i, line in enumerate(self.lines):
             ui.text_center(ui.W // 2, y0 + i * lh, line, ui.WHITE if i == 0 else ui.GRAY)
@@ -256,12 +256,15 @@ class ResultScene:
             win = (4, 4, ui.W - 8, ui.H - 8)
             ys = dict(title=8, status=20, reason=32, wp=46, rows=58, gap=2, sec=14, sec_row=12, prompt=ui.H - 20)
             cols = dict(head=12, label=18, win=84, val=214, mark=272, alt=120)
-        elif ui.SMALL:
-            # 360x360: 10px の文字で詰めて並べる
-            ox, oy, fs, lh = 0, 0, 10, 14
-            win = (6, 6, ui.W - 12, ui.H - 12)
-            ys = dict(title=14, status=32, reason=48, wp=70, rows=86, gap=6, sec=20, sec_row=16, prompt=ui.H - 26)
-            cols = dict(head=14, label=22, win=92, val=250, mark=306, alt=140)
+        elif ui.COMPACT:
+            # 360x360: 10px の文字で詰めて並べる(720x720 は文字が 2 倍なので、この配置を 2 倍に)
+            K = ui.K
+            ox, oy, fs, lh = 0, 0, 10, 14 * K
+            win = (6 * K, 6 * K, ui.W - 12 * K, ui.H - 12 * K)
+            ys = {k: v * K for k, v in dict(title=14, status=32, reason=48, wp=70, rows=86, gap=6, sec=20,
+                                              sec_row=16).items()}
+            ys["prompt"] = ui.H - 26 * K
+            cols = {k: v * K for k, v in dict(head=14, label=22, win=92, val=250, mark=306, alt=140).items()}
         else:
             # 640x480 の配置。大きい画面では中央に置く
             ox, oy, fs, lh = (ui.W - 640) // 2, (ui.H - 480) // 2, 12, 18
@@ -297,7 +300,7 @@ class ResultScene:
         ui.text(ox + cols["head"], y, "会社への影響", ui.YELLOW, size=fs)
         y += ys["sec_row"]
         ui.text(ox + cols["label"], y, trf("テレメトリ +{tlm}", tlm=s["tlm"]), ui.CYAN, size=fs)
-        half = ox + cols["alt"] + (40 if not ui.SMALL else 30)
+        half = ox + cols["alt"] + (30 * ui.K if ui.COMPACT else 40)
         rep = s["rep"]
         ui.text(half, y, trf("評判 {rep:+d}", rep=rep), ui.LIME if rep >= 0 else ui.RED, size=fs)
         y += lh
@@ -334,13 +337,14 @@ class GameOverScene:
         pyxel.cls(ui.BLACK)
         if self.dlg.active:
             speaker, _ = self.dlg.current
-            m = 8 if ui.SMALL else 40
-            pad = 10 if ui.SMALL else 20
-            h = 88 if ui.SMALL else 100
-            y = ui.H - (100 if ui.SMALL else 180)
+            K = ui.K
+            m = 8 * K if ui.COMPACT else 40
+            pad = 10 * K if ui.COMPACT else 20
+            h = 88 * K if ui.COMPACT else 100
+            y = ui.H - (100 * K if ui.COMPACT else 180)
             ui.window(m, y, ui.W - m * 2, h)
             for i, line in enumerate(ui.wrap(self.dlg.visible_text(), ui.W - (m + pad) * 2)[:4]):
                 ui.text(m + pad, y + pad + i * ui.LINE_H, line, ui.WHITE)
             if speaker:
                 ps = self.app.portraits.size()
-                self.app.portraits.draw(speaker, m + pad, y - ps - (14 if ui.SMALL else 22))
+                self.app.portraits.draw(speaker, m + pad, y - ps - (14 * K if ui.COMPACT else 22))

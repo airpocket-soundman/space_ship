@@ -19,10 +19,10 @@ class DockScene:
         self.app = app
         self.m = mdef
         self.run = DockRun(mdef)
-        panel_w = 144 if ui.SMALL else 196 if ui.W > 640 else 188
+        panel_w = 144 * ui.K if ui.COMPACT else 188  # 720x720 は文字が 2 倍なので、詰めた配置を 2 倍に
         self.panel_x = ui.W - panel_w
         self.view_w = self.panel_x - 4
-        self.fs = 10 if ui.SMALL else 12
+        self.fs = 10 if ui.COMPACT else 12
         self.phase = "count"  # count / flight / end
         self.count = COUNTDOWN
         self.frame = 0
@@ -166,16 +166,17 @@ class DockScene:
             pyxel.circ(ex, ey, 1, ui.CYAN)
 
     def draw_texts(self):
-        step = self.fs + 6
-        mx = 8 if ui.SMALL else 12
+        K = ui.K
+        step = (self.fs + 6) * K
+        mx = 8 * K if ui.COMPACT else 12
         lines = [(line, col) for text, col, _ in self.messages
                  for line in ui.wrap(text, self.view_w - mx * 2, self.fs)]
-        y = ui.H - self.fs - 14 - step * (len(lines) - 1)
+        y = ui.H - (self.fs + 14) * K - step * (len(lines) - 1)
         for line, col in lines:
             ui.text(mx, y, line, col, size=self.fs, border=ui.BLACK)
             y += step
-        help_text = "←→↑↓ スラスター" if ui.SMALL else "←→ ↑↓ スラスター(押した向きへ加速)"
-        ui.text(self.view_w - ui.text_width(help_text, 10) - 8, 6, help_text, ui.WHITE, size=10, border=ui.BLACK)
+        help_text = "←→↑↓ スラスター" if ui.COMPACT else "←→ ↑↓ スラスター(押した向きへ加速)"
+        ui.text(self.view_w - ui.text_width(help_text, 10) - 8 * K, 6 * K, help_text, ui.WHITE, size=10, border=ui.BLACK)
         if self.phase == "count":
             ui.text_center(self.view_w // 2, ui.H // 4, f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
         if self.phase == "end":
@@ -188,43 +189,44 @@ class DockScene:
         else:
             i, text = 3, trf("枠の中で止まる。{t:.0f} 秒静止すれば、アームがつかむ", t=run.HOLD_TIME)
         fs = self.fs
-        lines = ui.wrap(trf("手順 {i}/{n}  ", i=i, n=3) + tr(text), self.view_w - 40, fs)
-        h = 14 + len(lines) * (fs + 4)
-        x, y, w = 12, 24 if not ui.TINY else 18, self.view_w - 24
+        lines = ui.wrap(trf("手順 {i}/{n}  ", i=i, n=3) + tr(text), self.view_w - 40 * K, fs)
+        h = (14 + len(lines) * (fs + 4)) * K
+        x, y, w = 12 * K, (24 if not ui.TINY else 18) * K, self.view_w - 24 * K
         pyxel.dither(0.8)
         pyxel.rect(x, y, w, h, ui.BLACK)
         pyxel.dither(1.0)
         pyxel.rectb(x, y, w, h, ui.DBLUE)
         for j, line in enumerate(lines):
-            ui.text(x + 8, y + 7 + j * (fs + 4), line, ui.WHITE, size=fs)
+            ui.text(x + 8 * K, y + (7 + j * (fs + 4)) * K, line, ui.WHITE, size=fs)
         prompt = run.prompt()
         if prompt and self.frame // 12 % 3:
-            ui.text_center(self.view_w // 2, y + h + 10, prompt, ui.YELLOW, border=ui.BLACK)
+            ui.text_center(self.view_w // 2, y + h + 10 * K, prompt, ui.YELLOW, border=ui.BLACK)
 
     def draw_banner(self):
         run = self.run
         ok = run.result == "success"
+        K = ui.K
         sub = trf("ランク {rank}", rank=run.rank()) if ok else run.fail_reason
-        subs = ui.wrap(sub, self.view_w - 16)
-        h = 70 + 14 * len(subs)
+        subs = ui.wrap(sub, self.view_w - 16 * K)
+        h = (70 + 14 * len(subs)) * K
         y = ui.H * 3 // 8
         pyxel.dither(0.7)
         pyxel.rect(0, y, self.view_w, h, ui.BLACK)
         pyxel.dither(1.0)
-        ui.text_center(self.view_w // 2, y + 14, "ミッション成功" if ok else "ミッション失敗",
+        ui.text_center(self.view_w // 2, y + 14 * K, "ミッション成功" if ok else "ミッション失敗",
                        ui.LIME if ok else ui.RED, size=10 if ui.TINY else 12)
         for i, line in enumerate(subs):
-            ui.text_center(self.view_w // 2, y + 36 + i * 16, line, ui.WHITE)
+            ui.text_center(self.view_w // 2, y + (36 + i * 16) * K, line, ui.WHITE)
         if self.end_timer > 60 and self.frame // 20 % 2:
-            ui.text_center(self.view_w // 2, y + h - 22, "SPACE で続ける", ui.WHITE, size=10)
+            ui.text_center(self.view_w // 2, y + h - 22 * K, "SPACE で続ける", ui.WHITE, size=10)
 
     def draw_panel(self):
         run = self.run
         x = self.panel_x
-        small, tiny = ui.SMALL, ui.TINY
-        vx_ = 52 if small else 64
-        row_h = 11 if tiny else 12 if small else 13
-        bw = ui.W - x - vx_ - 10 if small else 112
+        small, tiny, K = ui.COMPACT, ui.TINY, ui.K  # 720x720 は詰めた配置を K 倍
+        vx_ = (52 if small else 64) * K
+        row_h = (11 if tiny else 12 if small else 13) * K
+        bw = ui.W - x - vx_ - 10 * K if small else 112
         pyxel.rect(x - 4, 0, ui.W - x + 4, ui.H, ui.NAVY)
         pyxel.line(x - 4, 0, x - 4, ui.H, ui.DBLUE)
         if tiny:
@@ -232,17 +234,17 @@ class DockScene:
             ui.text(x + 4, y, self.m.title, ui.YELLOW, size=10)
             y += 13
         else:
-            y = 8
-            ui.text(x + 4, y, self.m.title, ui.YELLOW)
-            y += 16
-            for line in ui.wrap(self.m.goal, ui.W - x - 8, 10)[:2]:
-                ui.text(x + 4, y, line, ui.WHITE, size=10)
-                y += 12
-            y += 8
+            y = 8 * K
+            ui.text(x + 4 * K, y, self.m.title, ui.YELLOW, size=10 if K > 1 else 12)
+            y += 16 * K
+            for line in ui.wrap(self.m.goal, ui.W - x - 8 * K, 10)[:2]:
+                ui.text(x + 4 * K, y, line, ui.WHITE, size=10)
+                y += 12 * K
+            y += 8 * K
 
         def row(label, value, col=ui.WHITE):
             nonlocal y
-            ui.text(x + 4, y, label, ui.GRAY, size=10)
+            ui.text(x + 4 * K, y, label, ui.GRAY, size=10)
             ui.text(x + vx_, y, value, col, size=10)
             y += row_h
 
@@ -252,28 +254,28 @@ class DockScene:
         row("距離", f"{run.dist:7.1f} m")
         row("前後の速度", f"{run.vx:+6.2f} m/s")
         row("上下の速度", f"{run.vy:+6.2f} m/s")
-        y += 4
-        ui.text(x + 4, y, "燃料", ui.GRAY, size=10)
+        y += 4 * K
+        ui.text(x + 4 * K, y, "燃料", ui.GRAY, size=10)
         bx = x + vx_
-        pyxel.rect(bx, y + 1, bw, 8, ui.BLACK)
-        pyxel.rect(bx, y + 1, int(bw * run.fuel / run.FUEL), 8, ui.CYAN)
-        pyxel.rectb(bx, y + 1, bw, 8, ui.DBLUE)
-        y += row_h + 6
+        pyxel.rect(bx, y + K, bw, 8 * K, ui.BLACK)
+        pyxel.rect(bx, y + K, int(bw * run.fuel / run.FUEL), 8 * K, ui.CYAN)
+        pyxel.rectb(bx, y + K, bw, 8 * K, ui.DBLUE)
+        y += row_h + 6 * K
 
         rows = run.rows()
-        ww = ui.W - x - 6
-        pad = 6 if small else 10
-        cols = (48, 104) if small else (64, 130)
-        wh = 24 + row_h * len(rows) if tiny else 40 + (row_h + 1) * len(rows) + 4
+        ww = ui.W - x - 6 * K
+        pad = (6 if small else 10) * K
+        cols = (48 * K, 104 * K) if small else (64, 130)
+        wh = 24 + row_h * len(rows) if tiny else 40 * K + (row_h + K) * len(rows) + 4 * K
         ui.window(x, y, ww, wh, fill=ui.BLACK, border=ui.LIME, shadow=False)
-        ui.text(x + pad, y + (4 if tiny else 8), "把持の条件", ui.LIME, size=10)
-        pw = ww - pad * 2 - 4 if small else 160
-        py, ph = (y + 16, 3) if tiny else (y + 24, 6)
+        ui.text(x + pad, y + (4 if tiny else 8) * K, "把持の条件", ui.LIME, size=10)
+        pw = ww - pad * 2 - 4 * K if small else 160
+        py, ph = (y + 16, 3) if tiny else (y + 24 * K, 6 * K)
         pyxel.rect(x + pad, py, pw, ph, ui.NAVY)
         pyxel.rect(x + pad, py, int(pw * max(0.0, min(1.0, 1.0 - run.dist / 170.0))), ph, ui.LIME)
-        yy = y + (22 if tiny else 38)
+        yy = y + (22 if tiny else 38) * K
         for label, rng, cur, ok in rows:
             ui.text(x + pad, yy, tr(label, "window"), ui.GRAY, size=10)
             ui.text(x + cols[0], yy, rng, ui.WHITE, size=10)
             ui.text(x + cols[1], yy, cur, ui.LIME if ok else ui.RED, size=10)
-            yy += row_h if tiny else row_h + 1
+            yy += row_h if tiny else row_h + K

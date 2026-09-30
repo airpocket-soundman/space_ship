@@ -59,7 +59,7 @@ class Portraits:
     @staticmethod
     def size():
         """表示する枠の大きさ。"""
-        return 64 if ui.SMALL else 128
+        return 64 * ui.K if ui.COMPACT else 128
 
     def draw(self, cid, x, y, dim=False):
         SIZE = self.size()
@@ -70,7 +70,7 @@ class Portraits:
             k = SIZE / 128
             pyxel.circ(x + 64 * k, y + 50 * k, 26 * k, ui.NAVY)
             pyxel.elli(x + 24 * k, y + 80 * k, 80 * k, 60 * k, ui.NAVY)
-            ui.text_center(x + SIZE // 2, y + SIZE - 18, NAMES.get(cid, cid), ui.WHITE, size=10 if ui.SMALL else 12)
+            ui.text_center(x + SIZE // 2, y + SIZE - 18, NAMES.get(cid, cid), ui.WHITE, size=10 if ui.COMPACT else 12)
         else:
             (u, v), w, h = info
             scale = SIZE / max(w, h)

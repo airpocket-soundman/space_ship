@@ -50,20 +50,20 @@ class MenuScene:
     def draw(self):
         app = self.app
         pyxel.cls(ui.NAVY)
-        small = ui.SMALL
+        small, K = ui.COMPACT, ui.K  # 720x720 は文字が 2 倍なので、詰めた配置を 2 倍に
         fs = 10 if small else 12
-        lh = 11 if ui.TINY else 14 if small else 18 if ui.H <= 480 else 22
-        m = 6 if small else 20
-        y = 4 if ui.TINY else 8
+        lh = (11 if ui.TINY else 14 if small else 18) * K
+        m = (6 if small else 20) * K
+        y = (4 if ui.TINY else 8) * K
         ui.text(m, y, "飛行テスト", ui.YELLOW, size=fs)
         insp = "点検あり" if app.state.inspected else "点検なし"
         ui.text(ui.W - m - ui.text_width(f"←→ {tr(insp)}", fs), y, f"←→ {tr(insp)}",
                 ui.LIME if app.state.inspected else ui.WHITE, size=fs)
-        y += lh + (2 if ui.TINY else 6)
+        y += lh + (2 if ui.TINY else 6) * K
         for i, item in enumerate(app.items):
             sel = i == app.sel
             if sel:
-                pyxel.rect(m - 3, y - 2, ui.W - (m - 3) * 2, lh, ui.DBLUE)
+                pyxel.rect(m - 3 * K, y - 2 * K, ui.W - (m - 3 * K) * 2, lh, ui.DBLUE)
             if item == OPENING:
                 label = tr("オープニング(必ず爆発する)")
                 kind = tr("上昇")
@@ -82,11 +82,11 @@ class MenuScene:
                 if ui.text_width(text, 10) > ui.W * 0.4:  # 長い失敗の理由は収まらないので短く
                     text = tr("失敗")
                 w = ui.text_width(text, 10)
-                ui.text(ui.W - m - w, y + (fs - 10), text, col, size=10)
+                ui.text(ui.W - m - w, y + (fs - 10) * K, text, col, size=10)
             y += lh
         hint = "↑↓ 選ぶ  SPACE 飛ぶ  飛行中 Q でメニュー  ESC 終了"
-        if y + 4 < ui.H - 12:
-            ui.text(m, ui.H - 14, hint, ui.GRAY, size=10)
+        if y + 4 * K < ui.H - 12 * K:
+            ui.text(m, ui.H - 14 * K, hint, ui.GRAY, size=10)
 
 
 class FlightTestApp:
