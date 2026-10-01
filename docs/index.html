@@ -193,6 +193,13 @@ svg .green { fill: var(--green); }
 .portraits figcaption { font-size: 12px; line-height: 1.4; }
 .portraits figcaption strong { display: block; font-size: 13px; }
 .portraits figcaption span { color: var(--muted); }
+.sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin: 12px 0 8px; }
+.sheets figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
+.sheets a { display: block; }
+.sheets img { width: 100%; height: auto; display: block; border-radius: 4px; }
+.sheets figcaption { font-size: 12px; line-height: 1.4; margin-top: 6px; }
+.sheets figcaption strong { font-size: 13px; }
+.sheets figcaption span { color: var(--muted); }
 .note { font-size: 12px; color: var(--muted); }
 
 footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: center; color: var(--muted); font-size: 13px; }
@@ -216,7 +223,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <button class="theme-btn" id="themeBtn" type="button">テーマ切替</button>
   <div class="inner">
     <div class="kicker">GAME DESIGN DOCUMENT v0.3</div>
-    <h1 class="logo"><img src="img/starx_logo.png" alt="StarX" width="540" height="128"></h1>
+    <h1 class="logo"><img src="img/starx_logo.png?v=20261001" alt="StarX" width="540" height="128"></h1>
     <p>失敗しながら、ロケットを「扱える機械」に育てていく。<br>会社経営の ADV と、ロケット操縦のアクションを組み合わせた Pyxel ゲームの企画書。</p>
     <div class="meta">実在の宇宙企業と人物へのオマージュ(パロディ)作品です。社名・機体名・人物名は架空のもじりです。</div>
     <div class="play" id="play">
@@ -350,7 +357,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
       <text x="575" y="84" text-anchor="middle" class="muted" font-size="13">ロケット操縦ミッション</text>
       <text x="575" y="114" text-anchor="middle" class="ink" font-size="13">上昇 → 分離 → 放出</text>
       <text x="575" y="134" text-anchor="middle" class="ink" font-size="13">帰還 → 着陸</text>
-      <text x="575" y="160" text-anchor="middle" class="muted" font-size="12">ウェイポイントの窓を通す</text>
+      <text x="575" y="160" text-anchor="middle" class="muted" font-size="12">ウェイポイントのウィンドウを通す</text>
 
       <path d="M270,75 C340,40 380,40 450,75" fill="none" class="stroke" stroke-width="2" marker-end="url(#arr)"/>
       <text x="360" y="38" text-anchor="middle" class="ink" font-size="13">「打ち上げ」を選ぶ</text>
@@ -550,7 +557,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   </ul>
 
   <h3>ウェイポイント (WP)</h3>
-  <p>操作は <kbd>←</kbd><kbd>→</kbd>(姿勢)と <kbd>↑</kbd><kbd>↓</kbd>(スロットル)だけで、次の窓を<strong>すべて同時に</strong>満たすと通過になる。</p>
+  <p>操作は <kbd>←</kbd><kbd>→</kbd>(姿勢)と <kbd>↑</kbd><kbd>↓</kbd>(スロットル)だけで、次のウィンドウを<strong>すべて同時に</strong>満たすと通過になる。</p>
   <div class="table-wrap"><table>
     <tr><th>項目</th><th>内容</th></tr>
     <tr><td>到達時刻</td><td>T+xx 〜 T+yy 秒(早すぎても遅すぎても不可)</td></tr>
@@ -559,7 +566,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td>垂直速度</td><td>vy_min 〜 vy_max</td></tr>
   </table></div>
   <ul>
-    <li>窓を外したまま時刻の上限を過ぎると、その WP は未通過(ランクが下がる)。</li>
+    <li>ウィンドウを外したまま時刻の上限を過ぎると、その WP は未通過(ランクが下がる)。</li>
     <li>必須の WP(分離・放出)を外すとミッション失敗。</li>
     <li><strong>燃料切れはその時点で失敗</strong>(弾道落下の演出)。</li>
   </ul>
@@ -574,7 +581,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h3>段分離(ブースター分離)の条件</h3>
   <div class="table-wrap"><table>
     <tr><th>項目</th><th>条件</th></tr>
-    <tr><td>高度・速度</td><td>分離 WP の窓の中</td></tr>
+    <tr><td>高度・速度</td><td>分離 WP のウィンドウの中</td></tr>
     <tr><td>エンジン停止</td><td>スロットル 0 にしてから、残った推力が消えるまで(t_tail)待つ。早すぎると再衝突で爆発</td></tr>
     <tr><td>角速度</td><td>±ω_sep 以内</td></tr>
     <tr><td>操作</td><td><kbd>Z</kbd></td></tr>
@@ -583,7 +590,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h3>衛星放出の条件</h3>
   <div class="table-wrap"><table>
     <tr><th>項目</th><th>条件</th></tr>
-    <tr><td>軌道</td><td>近地点・遠地点が目標の範囲内(= 位置と速度の窓)</td></tr>
+    <tr><td>軌道</td><td>近地点・遠地点が目標の範囲内(= 位置と速度のウィンドウ)</td></tr>
     <tr><td>放出時の姿勢</td><td>指定の方向から ±θ_tol 以内</td></tr>
     <tr><td>角速度</td><td>±ω_tol 以内。回転が残っていると投入失敗</td></tr>
     <tr><td>時間制限</td><td>投入燃焼の終了から T_align 秒以内に放出</td></tr>
@@ -597,8 +604,8 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h3>HUD の段階(研究で解禁)</h3>
   <div class="table-wrap"><table>
     <tr><th>段階</th><th>表示</th></tr>
-    <tr><td>初期</td><td>数値だけ(現在値 / 次の WP の窓 / 残り時間 / 燃料 / 角度 / 角速度)</td></tr>
-    <tr><td>上昇プロファイル</td><td>水平速度 × 垂直速度のグラフに、窓(四角)と現在地(点)を描く</td></tr>
+    <tr><td>初期</td><td>数値だけ(現在値 / 次の WP のウィンドウ / 残り時間 / 燃料 / 角度 / 角速度)</td></tr>
+    <tr><td>上昇プロファイル</td><td>水平速度 × 垂直速度のグラフに、ウィンドウ(四角)と現在地(点)を描く</td></tr>
     <tr><td>誘導計算機</td><td>推奨の姿勢角とスロットルをマーカーで表示</td></tr>
     <tr><td>パイロット支援</td><td>入力の補正と警告。操縦するのはあくまでディーロン</td></tr>
   </table></div>
@@ -647,7 +654,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
       <tr><td class="nw">1-2 宇宙へ<span class="tag hist">史実</span></td><td>高度 100 km に到達</td><td>2段目の推進剤の揺れによる姿勢振動</td><td><kbd>←</kbd><kbd>→</kbd> を逆向きに当てて打ち消す。研究「バッフル」で軽くなる</td></tr>
       <tr><td class="nw">1-3 相乗り便<span class="tag hist">史実</span></td><td>小型衛星4種を軌道に投入</td><td>段分離時に残った推力で再衝突</td><td>エンジン停止後 t_tail を待ってから分離</td></tr>
       <tr><td class="nw">1-4 最後の1機<span class="tag hist">史実</span></td><td>ダミー衛星を 620〜640 km に投入</td><td>救済イベント。失敗すると倒産</td><td>ギミックなしの純粋な軌道投入</td></tr>
-      <tr><td class="nw">1-5 最初の顧客<span class="tag hist">史実</span></td><td>観測衛星を約 680 km の円軌道に投入</td><td>近地点・遠地点・姿勢・角速度の窓が狭い</td><td>クリアで Chapter 2 へ</td></tr>
+      <tr><td class="nw">1-5 最初の顧客<span class="tag hist">史実</span></td><td>観測衛星を約 680 km の円軌道に投入</td><td>近地点・遠地点・姿勢・角速度のウィンドウが狭い</td><td>クリアで Chapter 2 へ</td></tr>
     </table></div>
     <h4>この章の ADV</h4>
     <ul>
@@ -662,8 +669,8 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <div class="table-wrap"><table>
       <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
       <tr><td class="nw">2-1 Eagle 9 初飛行<span class="tag hist">史実</span></td><td>試験カプセルを軌道に投入</td><td>9基エンジンの新機体で操縦性がピーキーに戻る</td><td>Chapter 1 の制御ソフト研究は引き継げる</td></tr>
-      <tr><td class="nw">2-2 還ってきたカプセル<span class="tag hist">史実</span></td><td>カプセルを軌道から再突入させ、海に着水させる</td><td>再突入角の窓(浅いと大気に弾かれ、深いと燃える)とパラシュート展開のタイミング</td><td>新しい操作モード「カプセル再突入」</td></tr>
-      <tr><td class="nw">2-3 民間初の到着<span class="tag hist">史実</span></td><td>補給カプセルを宇宙ステーションに届ける</td><td>ランデブーの窓が狭い。最後はロボットアームの把持点で相対速度ほぼ 0 にする</td><td>新しい操作モード「近接操作」。成功すると補給の定期便が始まる</td></tr>
+      <tr><td class="nw">2-2 還ってきたカプセル<span class="tag hist">史実</span></td><td>カプセルを軌道から再突入させ、海に着水させる</td><td>再突入角のウィンドウ(浅いと大気に弾かれ、深いと燃える)とパラシュート展開のタイミング</td><td>新しい操作モード「カプセル再突入」</td></tr>
+      <tr><td class="nw">2-3 民間初の到着<span class="tag hist">史実</span></td><td>補給カプセルを宇宙ステーションに届ける</td><td>ランデブーのウィンドウが狭い。最後はロボットアームの把持点で相対速度ほぼ 0 にする</td><td>新しい操作モード「近接操作」。成功すると補給の定期便が始まる</td></tr>
       <tr><td class="nw">2-4 初の静止衛星<span class="tag hist">史実</span></td><td>商業通信衛星を静止トランスファー軌道に投入</td><td>重いペイロード + 2段目の待機後の再点火</td><td>オールドスペース社との価格競争が始まる</td></tr>
       <tr><td class="nw">2-5 定期便の試練<span class="tag hist">史実</span></td><td>補給定期便を届ける</td><td>点検が足りないと上昇中に機体が分解する異常が起きる</td><td>異常が起きたら、カプセルだけでも切り離して救えるか。のちの緊急脱出(Ch6)の伏線</td></tr>
     </table></div>
@@ -690,7 +697,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <h4>この章の ADV</h4>
     <ul>
       <li>再使用が解禁されると、機体ごとの飛行回数・整備度・回転率の管理が加わる。コマンドの重心が「製造」から「整備」へ移る。</li>
-      <li>便が増えてきたところで、ノアがディーロンの飛行記録を学習し、<strong>ディーロン AI</strong> が生まれる。一度クリアした種類の便はディーロン AI に任せられる。</li>
+      <li>Ch3-6 で、創業当初から記録してきたディーロンの飛行で学習した<strong>ディーロン AI</strong>がルーチン便を飛び始める(最初からの計画)。一度クリアした種類の便はディーロン AI に任せられる。</li>
     </ul>
   </div>
 
@@ -701,7 +708,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
       <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
       <tr><td class="nw">4-1 三本の柱<span class="tag hist">史実</span></td><td>初飛行。社長の愛車(赤いオープンカー)を宇宙へ</td><td>サイドブースター2本の同時着地 + センターコアの台船着地</td><td>下の「二機同時操縦」。センターコアは史実どおり難しい</td></tr>
       <tr><td class="nw">4-2 三本とも帰れ<span class="tag hist">史実</span></td><td>大型通信衛星を投入し、3本とも回収する</td><td>センターコアは高速で遠くに落ちるので、着陸燃焼の余裕が少ない</td><td>3本とも着地で S ランク</td></tr>
-      <tr><td class="nw">4-3 長い待機<span class="tag hist">史実</span></td><td>政府衛星を静止軌道に直接投入</td><td>2段目が数時間の慣性飛行のあとに再点火する。待機中も姿勢と燃料の管理が要る</td><td>時間を早送りしながら、再点火の窓に合わせる</td></tr>
+      <tr><td class="nw">4-3 長い待機<span class="tag hist">史実</span></td><td>政府衛星を静止軌道に直接投入</td><td>2段目が数時間の慣性飛行のあとに再点火する。待機中も姿勢と燃料の管理が要る</td><td>時間を早送りしながら、再点火のウィンドウに合わせる</td></tr>
       <tr><td class="nw">4-4 深宇宙へ<span class="tag hist">史実</span></td><td>小惑星探査機を地球の重力圏から脱出させる</td><td>必要な速度が大きく、センターコアを回収する燃料が残らない</td><td>センターコアを使い捨てにする(報酬↑・機体損失)か、回収を狙うかの判断</td></tr>
     </table></div>
     <h4>二機同時操縦(4-1, 4-2)</h4>
@@ -722,7 +729,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <p>「他社の衛星を打つ会社」から「自分の衛星を大量に打つ会社」へ。Space Link が最大の社内顧客になり、毎月の通信料が入り始める。フライホイールが回り出す章。</p>
     <div class="table-wrap"><table>
       <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
-      <tr><td class="nw">5-1 最初の60機<span class="tag hist">史実</span></td><td>Space Link 衛星 60 機を一度に放出</td><td>平たく積んだ衛星を、機体をゆっくり回転させながら一斉に放つ。回転速度が窓から外れると衝突</td><td>放出だけは「回転させる」のが正解という逆転の操作</td></tr>
+      <tr><td class="nw">5-1 最初の60機<span class="tag hist">史実</span></td><td>Space Link 衛星 60 機を一度に放出</td><td>平たく積んだ衛星を、機体をゆっくり回転させながら一斉に放つ。回転速度がウィンドウから外れると衝突</td><td>放出だけは「回転させる」のが正解という逆転の操作</td></tr>
       <tr><td class="nw">5-2 太陽嵐<span class="tag hist">史実</span></td><td>Space Link 衛星を放出して、全機を生き残らせる</td><td>太陽嵐で大気が膨らみ、低い軌道では衛星が落ちてしまう</td><td>放出高度を上げる判断。燃料が減り、1段の回収が難しくなる</td></tr>
       <tr><td class="nw">5-3 相乗り大放出<span class="tag hist">史実</span></td><td>多数の顧客の小型衛星を順番に放出</td><td>衛星ごとに放出方向が違う。放出のたびに姿勢を変えて止める</td><td>RCS 燃料の管理が鍵</td></tr>
       <tr><td class="nw">5-4 十回目の着地<span class="tag hist">史実</span></td><td>同じ1段目で 10 回目の飛行を成功させる</td><td>劣化した機体は応答が少し鈍い</td><td>整備に投資してきたかが問われる</td></tr>
@@ -741,9 +748,9 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <p>同じインフラで人も運ぶ。許容幅は全ステージで最も厳しく、失敗は許されない。そしてディーロンは、ずっと「俺が乗る」と言い続けている。</p>
     <div class="table-wrap"><table>
       <tr><th>#</th><th>目標</th><th>ギミック</th><th>対処法 / 備考</th></tr>
-      <tr><td class="nw">6-1 無人のドッキング<span class="tag hist">史実</span></td><td>無人の Crew Phoenix をステーションにドッキング</td><td>近接操作。ドッキングポートの軸に合わせ、相対速度をごく小さくして接触</td><td>2-3 の把持より窓が狭い</td></tr>
+      <tr><td class="nw">6-1 無人のドッキング<span class="tag hist">史実</span></td><td>無人の Crew Phoenix をステーションにドッキング</td><td>近接操作。ドッキングポートの軸に合わせ、相対速度をごく小さくして接触</td><td>2-3 の把持よりウィンドウが狭い</td></tr>
       <tr><td class="nw">6-2 わざと壊す試験<span class="tag hist">史実</span></td><td>最大動圧付近でカプセルを緊急脱出させる</td><td>異常を検知したら数秒以内に脱出キー。脱出後、ロケットは予定どおり空中分解する</td><td>脱出後はパラシュートのタイミングを合わせて着水</td></tr>
-      <tr><td class="nw">6-3 人を乗せる<span class="tag hist">史実</span></td><td>宇宙飛行士2名をステーションへ送り、地球に帰す</td><td>打ち上げ → ドッキング → 軌道離脱 → 再突入 → 着水の全行程</td><td>全行程で窓が最も厳しい。成功すると有人輸送契約が解禁</td></tr>
+      <tr><td class="nw">6-3 人を乗せる<span class="tag hist">史実</span></td><td>宇宙飛行士2名をステーションへ送り、地球に帰す</td><td>打ち上げ → ドッキング → 軌道離脱 → 再突入 → 着水の全行程</td><td>全行程でウィンドウが最も厳しい。成功すると有人輸送契約が解禁</td></tr>
       <tr><td class="nw">6-4 乗客になれた日<span class="tag hist">史実</span></td><td>民間人だけの軌道飛行。ディーロンもついに搭乗</td><td>操縦はノア。ディーロンが手動で操作できるのは軌道離脱の噴射だけ</td><td>軌道離脱の噴射で着水海域をぴったり狙う</td></tr>
     </table></div>
     <h4>この章の ADV</h4>
@@ -805,18 +812,18 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <h2><span class="num">10</span>シナリオ</h2>
   <h3>登場人物(すべて架空)</h3>
   <div class="portraits">
-    <figure><img src="img/portraits/dylon.png" alt="ディーロン・マスクのドット絵" width="128" height="128"><figcaption><strong>ディーロン・マスク</strong><span>CEO</span></figcaption></figure>
-    <figure><img src="img/portraits/maya.png" alt="マヤ・ホシノのドット絵" width="128" height="128"><figcaption><strong>マヤ・ホシノ</strong><span>チーフエンジニア</span></figcaption></figure>
-    <figure><img src="img/portraits/ken.png" alt="ケン・ドウジマのドット絵" width="128" height="128"><figcaption><strong>ケン・ドウジマ</strong><span>広報・配信</span></figcaption></figure>
-    <figure><img src="img/portraits/sara.png" alt="サラ・カネダのドット絵" width="128" height="128"><figcaption><strong>サラ・カネダ</strong><span>CFO</span></figcaption></figure>
-    <figure><img src="img/portraits/noah.png" alt="ノアのドット絵" width="128" height="128"><figcaption><strong>ノア</strong><span>技術 AI</span></figcaption></figure>
-    <figure><img src="img/portraits/dylon_ai.png" alt="ディーロン AIのドット絵" width="128" height="128"><figcaption><strong>ディーロン AI</strong><span>複製 AI</span></figcaption></figure>
-    <figure><img src="img/portraits/grey.png" alt="グレイのドット絵" width="128" height="128"><figcaption><strong>グレイ</strong><span>NSEA 調達官</span></figcaption></figure>
-    <figure><img src="img/portraits/doc_hughes.png" alt="ドク・ヒューズのドット絵" width="128" height="128"><figcaption><strong>ドク・ヒューズ</strong><span>ガレージ0・燃焼</span></figcaption></figure>
-    <figure><img src="img/portraits/bolt.png" alt="ボルトのドット絵" width="128" height="128"><figcaption><strong>ボルト</strong><span>ガレージ0・溶接</span></figcaption></figure>
-    <figure><img src="img/portraits/hashimoto.png" alt="ハシモトのドット絵" width="128" height="128"><figcaption><strong>ハシモト</strong><span>ガレージ0・タワー</span></figcaption></figure>
-    <figure><img src="img/portraits/mimi.png" alt="ミミのドット絵" width="128" height="128"><figcaption><strong>ミミ</strong><span>ガレージ0・ハッカー</span></figcaption></figure>
-    <figure><img src="img/portraits/gen.png" alt="ゲンさんのドット絵" width="128" height="128"><figcaption><strong>ゲンさん</strong><span>ガレージ0・職人</span></figcaption></figure>
+    <figure><img src="img/portraits/dylon.png?v=20261001" alt="ディーロン・マスクのドット絵" width="128" height="128"><figcaption><strong>ディーロン・マスク</strong><span>CEO</span></figcaption></figure>
+    <figure><img src="img/portraits/maya.png?v=20261001" alt="マヤ・ホシノのドット絵" width="128" height="128"><figcaption><strong>マヤ・ホシノ</strong><span>チーフエンジニア</span></figcaption></figure>
+    <figure><img src="img/portraits/ken.png?v=20261001" alt="ケン・ドウジマのドット絵" width="128" height="128"><figcaption><strong>ケン・ドウジマ</strong><span>広報・配信</span></figcaption></figure>
+    <figure><img src="img/portraits/sara.png?v=20261001" alt="サラ・カネダのドット絵" width="128" height="128"><figcaption><strong>サラ・カネダ</strong><span>CFO</span></figcaption></figure>
+    <figure><img src="img/portraits/noah.png?v=20261001" alt="ノアのドット絵" width="128" height="128"><figcaption><strong>ノア</strong><span>技術 AI</span></figcaption></figure>
+    <figure><img src="img/portraits/dylon_ai.png?v=20261001" alt="ディーロン AIのドット絵" width="128" height="128"><figcaption><strong>ディーロン AI</strong><span>複製 AI</span></figcaption></figure>
+    <figure><img src="img/portraits/grey.png?v=20261001" alt="グレイのドット絵" width="128" height="128"><figcaption><strong>グレイ</strong><span>NSEA 調達官</span></figcaption></figure>
+    <figure><img src="img/portraits/doc_hughes.png?v=20261001" alt="ドク・ヒューズのドット絵" width="128" height="128"><figcaption><strong>ドク・ヒューズ</strong><span>ガレージ0・燃焼</span></figcaption></figure>
+    <figure><img src="img/portraits/bolt.png?v=20261001" alt="ボルトのドット絵" width="128" height="128"><figcaption><strong>ボルト</strong><span>ガレージ0・溶接</span></figcaption></figure>
+    <figure><img src="img/portraits/hashimoto.png?v=20261001" alt="ハシモトのドット絵" width="128" height="128"><figcaption><strong>ハシモト</strong><span>ガレージ0・タワー</span></figcaption></figure>
+    <figure><img src="img/portraits/mimi.png?v=20261001" alt="ミミのドット絵" width="128" height="128"><figcaption><strong>ミミ</strong><span>ガレージ0・ハッカー</span></figcaption></figure>
+    <figure><img src="img/portraits/gen.png?v=20261001" alt="ゲンさんのドット絵" width="128" height="128"><figcaption><strong>ゲンさん</strong><span>ガレージ0・職人</span></figcaption></figure>
   </div>
   <p class="note">128×128 ドット(小さい画面用に 64×64 も用意)・Pyxel 標準 16 色。<code>art/redesign_proposal/</code> の顔デザイン案から <code>export_portraits.py</code> で書き出し、<code>assets/portraits/</code> に置いている。</p>
   <div class="table-wrap"><table>
@@ -867,8 +874,8 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td class="nw">失敗はデータ<span class="tag prop">予定</span></td><td>爆発を「予期せぬ急速な分解」と呼び、限界まで攻めて得たデータを成果とみなす文化</td><td>爆発・空中分解の後の会話(一度だけ)。マヤの口癖「失敗はデータよ」</td></tr>
     <tr><td class="nw">「私のスケジュール」<span class="tag prop">予定</span></td><td>守れない締め切りを突っ込まれ「物理法則の限界の速さで進んだ場合の予定だ。遅れるのは君たちのせい」</td><td>最初の「調達」の会話</td></tr>
     <tr><td class="nw">ジャンボジェットの使い捨て<span class="tag hist">実装済み</span></td><td>「ロケットを毎回捨てるのは、ジャンボジェットを毎回捨てるようなもの」「着陸は嵐の中で鉛筆を手のひらに立てるようなもの」</td><td>Chapter 2-5 と 3-1 の成功後の会話(「捨てなければいい」「旅客機を 1 回飛ばすたびに捨てるようなもの」)</td></tr>
-    <tr><td class="nw">火星への窓<span class="tag prop">予定</span></td><td>地球と火星が近づくのは 26 ヶ月に一度。無人着陸 → 有人 → 100万人の都市という計画</td><td>初飛行成功後の会話で予告。Chapter 12 では打ち上げが 26 ヶ月ごとの「窓」に限られる</td></tr>
-    <tr><td class="nw">箸キャッチ<span class="tag prop">予定</span></td><td>発射塔「メカジラ」の2本のアーム(通称チョップスティック)で、戻ってきた巨大ブースターを空中でつかむ</td><td>Chapter 7。発射塔の名前は「ハシラ」(箸 + 柱)。ハシモトの発案</td></tr>
+    <tr><td class="nw">火星へのウィンドウ<span class="tag prop">予定</span></td><td>地球と火星が近づくのは 26 ヶ月に一度。無人着陸 → 有人 → 100万人の都市という計画</td><td>初飛行成功後の会話で予告。Chapter 12 では打ち上げが 26 ヶ月ごとの「ウィンドウ」に限られる</td></tr>
+    <tr><td class="nw">箸キャッチ<span class="tag prop">予定</span></td><td>発射塔「メカジラ」の2本のアーム(通称チョップスティック)で、戻ってきた巨大ブースターを空中でつかむ</td><td>Chapter 7。発射塔の名前は「ミハシラ」(箸 + 柱)。ハシモトの発案</td></tr>
     <tr><td class="nw">衛星通信網の誕生<span class="tag prop">予定</span></td><td>もともとは火星計画の資金を稼ぐための副業。低い軌道に数千機を並べて、どこでも高速通信。災害地で通信を支えた</td><td>Chapter 5。Space Link 開始の理由と、災害支援イベント</td></tr>
     <tr><td class="nw">火星移住の最初の乗員<span class="tag prop">予定</span></td><td>最初の有人火星飛行は死ぬ可能性が高い決死隊。医者で配線も直せる、といった多才な職人が選ばれる</td><td>Chapter 12 の乗員選考イベント</td></tr>
   </table></div>
@@ -883,7 +890,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td class="nw">Hopper</td><td>Grasshopper</td><td>着陸試験機</td></tr>
     <tr><td class="nw">Space Link</td><td>Starlink</td><td>自社の衛星通信網</td></tr>
     <tr><td class="nw">オメガ島(クワゼラ環礁)</td><td>オメレク島(クェゼリン環礁)</td><td>Eagle 1 の射場</td></tr>
-    <tr><td class="nw">ハシラ</td><td>メカジラ(Mechazilla)</td><td>箸キャッチの発射塔。箸 + 柱</td></tr>
+    <tr><td class="nw">ミハシラ</td><td>メカジラ(Mechazilla)</td><td>箸キャッチの発射塔。箸 + 柱</td></tr>
     <tr><td class="nw">『スペース・ウォーズ』/ ミレニアム・イーグル号</td><td>『スター・ウォーズ』/ ミレニアム・ファルコン号</td><td>Eagle の名前の由来</td></tr>
     <tr><td class="nw">Mega Booster + Space Ship</td><td>Super Heavy + Starship</td><td>完全再使用の超大型機</td></tr>
     <tr><td class="nw">エンジン Hobby</td><td>Merlin</td><td>Eagle 1 / 9 の1段目。チゴハヤブサ(小型のハヤブサ類)。ケン「うちの主力エンジン、名前が趣味なんだけど」</td></tr>
@@ -901,21 +908,48 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <tr><td class="nw">USSA</td><td>United States Space Administration</td><td>合衆国宇宙局</td><td>直球。架空感は薄め</td></tr>
   </table></div>
 
+  <h3>設定画(機体と場所)</h3>
+  <p>挿絵や背景を描くときに、形がぶれないよう参照する設定資料。正面・側面・上面とパースを 1 枚に並べている。クリックすると大きく開く。依頼のプロンプトと状態は <code>art/illustrations/prompts.md</code>、元の画像は <code>art/illustrations/ref/sheets/</code>。</p>
+  <div class="sheets">
+    <figure><a href="img/sheets/r1_eagle1.webp"><img src="img/sheets/r1_eagle1.webp" alt="Eagle 1 の設定画" width="1024" height="804" loading="lazy"></a><figcaption><strong>Eagle 1</strong> <span>2段式の小型ロケット。全長 21 m・直径 1.7 m(元ネタ: Falcon 1)</span></figcaption></figure>
+    <figure><a href="img/sheets/r2_eagle9.webp"><img src="img/sheets/r2_eagle9.webp" alt="Eagle 9 の設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>Eagle 9</strong> <span>使い捨て版と、脚・グリッドフィン付きの回収版(元ネタ: Falcon 9)</span></figcaption></figure>
+    <figure><a href="img/sheets/r3_eagle_heavy.webp"><img src="img/sheets/r3_eagle_heavy.webp" alt="Eagle Heavy の設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>Eagle Heavy</strong> <span>Eagle 9 の1段目を 3 本たばねた大型機(元ネタ: Falcon Heavy)</span></figcaption></figure>
+    <figure><a href="img/sheets/r4_mega_booster.webp"><img src="img/sheets/r4_mega_booster.webp" alt="Mega Booster と Space Ship の設定画" width="1024" height="1072" loading="lazy"></a><figcaption><strong>Mega Booster + Space Ship</strong> <span>完全再使用の超大型機(元ネタ: Super Heavy + Starship)</span></figcaption></figure>
+    <figure><a href="img/sheets/r5_hopper.webp"><img src="img/sheets/r5_hopper.webp" alt="Hopper の設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>Hopper</strong> <span>着陸試験機(元ネタ: Grasshopper)</span></figcaption></figure>
+    <figure><a href="img/sheets/r6_phoenix.webp"><img src="img/sheets/r6_phoenix.webp" alt="Phoenix の設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>Phoenix</strong> <span>貨物カプセルとトランク(元ネタ: Dragon)</span></figcaption></figure>
+    <figure><a href="img/sheets/r7_omega_island.webp"><img src="img/sheets/r7_omega_island.webp" alt="オメガ島の射場の設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>オメガ島の射場</strong> <span>Eagle 1 の射場がある小さな島(元ネタ: オメレク島)</span></figcaption></figure>
+    <figure><a href="img/sheets/r8_mihashira.webp"><img src="img/sheets/r8_mihashira.webp" alt="ミハシラの設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>ミハシラ</strong> <span>箸キャッチの発射塔と発射台(元ネタ: メカジラ)</span></figcaption></figure>
+    <figure><a href="img/sheets/r9_droneship.webp"><img src="img/sheets/r9_droneship.webp" alt="台船の設定画" width="1024" height="683" loading="lazy"></a><figcaption><strong>台船</strong> <span>1段目を洋上で受ける無人の台船(元ネタ: ASDS)</span></figcaption></figure>
+  </div>
+
   <h3>プロローグ</h3>
+  <ul>
+    <li>ゲームは初飛行(Ch1-1)からいきなり始まる。操作説明つきで飛び、うまくいきそうなところでエンジン火災で爆発する。そこから「4年前——」に戻る。</li>
+    <li>ディーロンの操縦を記録して自動操縦 AI を作るのは、会社の<strong>最初からの計画</strong>。最初の数十回はディーロンが飛ばしてデータを作り、その後は AI に任せる。</li>
+    <li>伏線: AI はディーロンの技術だけでなく「自動停止を押し切る判断」まで受け継ぐ。ノアはその危うさに最初から気づいている。</li>
+  </ul>
   <div class="dialog">
-    <p class="stage">(創業の日。家具もない借りビル。むき出しのカーペットの上で、マリアッチ楽団が演奏している)</p>
+    <p class="stage">(4年前。創業の日。家具もない借りビルに、なぜかマリアッチ楽団)</p>
     <p><span class="sp">ケン</span>「……で、なんでマリアッチ?」</p>
-    <p><span class="sp">ディーロン</span>「キックオフだ! 祝うのに理由はいらない。俺たちは火星に行くんだぞ!」</p>
-    <p><span class="sp">ノア</span>「そもそも、なぜロケットを自社で作るのですか」</p>
-    <p><span class="sp">ディーロン</span>「中古のミサイルを買いに行ったら、1基 800万ドルと言われて笑われた。帰りの飛行機で原材料を計算したら、値段のほんの数パーセントだった。だったら自分で作ったほうが早い」</p>
+    <p><span class="sp">ディーロン</span>「キックオフだ! 俺たちは火星に行くんだぞ!」</p>
+    <p><span class="sp">ディーロン</span>「ロケットは高すぎる。材料費は値段の数パーセントだ。なら、自分で作る」</p>
   </div>
   <div class="dialog">
-    <p class="stage">(数か月後。倉庫を改装した工場。机と溶接機、それに一台の中古ノートPC)</p>
-    <p><span class="sp">サラ</span>「資本金は 100M$。それが全部。いい?」</p>
-    <p><span class="sp">マヤ</span>「軌道に届く小さなロケットを作る。いずれは、着陸して戻ってくるロケットを」</p>
-    <p><span class="sp">ケン</span>「つまり、爆発シーンは撮り放題ってことだね!」</p>
-    <p><span class="sp">ノア</span>「飛行制御は私が担当できます。成功率の試算は——」</p><p><span class="sp">ディーロン</span>「却下。俺が飛ばす。宇宙船のパイロットになるのが夢なんだ」</p><p><span class="sp">マヤ</span>「……はいはい。じゃあせめて、飛ばしやすい機体を作るわね」</p>
-    <p class="next">▶ チュートリアル: Eagle 1 のシミュレーターで WP1 を通過する</p>
+    <p class="stage">(4年後。太平洋の孤島、オメガ島の射場)</p>
+    <p><span class="sp">ケン</span>「島流しだろ、これ」</p>
+    <p><span class="sp">マヤ</span>「朝起きて、エンジンを燃やして、壊れたら直して、夜にはもう一回燃やせる。こんな場所、世界中探してもないわ」</p>
+    <p><span class="sp">サラ</span>「資金は 100M$。何もしなくても、33か月で会社は終わる」</p>
+    <p><span class="sp">マヤ</span>「Eagle 1。全長 21m の2段式で、低軌道に最大 670kg。1段目はパラシュートで海から回収できるように作ってある」</p>
+    <p><span class="sp">ノア</span>「フライトコンピュータは3台、多数決。おかしくなれば、機体が自分で飛行を止めます。人が判断するより早く」</p>
+    <p><span class="sp">ディーロン</span>「そこが気に入らない。あと10秒飛ばせばデータが取れる。その判断は人間がやる。俺がやる」</p>
+    <p><span class="sp">ディーロン</span>「俺の操縦を全部記録して、AI に覚えさせる。最初の数十回は俺が飛ばす。その後は、俺の代わりに『俺』が飛ぶ」</p>
+    <p><span class="sp">ノア</span>「飛行制御は私が——」</p>
+    <p><span class="sp">ディーロン</span>「却下。俺が飛ばす」</p>
+    <p><span class="sp">ノア</span>「……わかりました。最初のうちは」</p>
+    <p class="stage">(その夜。管制室)</p>
+    <p><span class="sp">ノア</span>「AI はあなたの判断も覚えます。自動停止を押し切る、あの判断もです」</p>
+    <p><span class="sp">ディーロン</span>「それが一番大事なところだ」</p>
+    <p class="stage">(モニターの隅に、学習データのファイル名が一瞬だけ映る。「dylon_pilot_v0」)</p>
   </div>
 
   <h3>Chapter 1「軌道へ」</h3>
@@ -990,14 +1024,15 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
   <ul>
     <li>災害イベント: 地上の通信網が壊れた被災地へ、Space Link のアンテナを送るかどうかの選択。送ると評判が大きく上がる。</li>
     <li>5-1 の初展開の後、加入者の数字が毎月増えていく画面を見せる。フライホイールが回り始める瞬間。</li>
-    <li>打ち上げの回数が増え、ルーチン便はノアの担当に。ノアはちょっと得意げ。</li>
+    <li>打ち上げの回数が増え、ルーチン便の大半をディーロン AI(Ch3-6 で始動)が飛ぶようになる。</li>
   </ul>
   <div class="dialog">
-    <p><span class="sp">ノア</span>「便が多すぎます。あなたの飛行記録を学習させてください。あなたの飛び方で、あなたの代わりに飛びます」</p>
-    <p><span class="sp">ディーロン</span>「俺のコピーか。……いいだろう。ルーチンはそいつに任せる。初めての便は俺が飛ぶ」</p>
-    <p class="stage">(ディーロン AI 起動)</p>
+    <p class="stage">(Ch3-6 の成功後。プロローグで約束した「最初のうちは」が終わる)</p>
+    <p><span class="sp">ノア</span>「便が増えます。記録した飛行は、もう十分な数になりました。約束どおり、ルーチン便を任せてください」</p>
+    <p><span class="sp">ディーロン</span>「最初のうちは、と言ったからな。……dylon_pilot を起動しろ。初めての便は、これからも俺が飛ぶ」</p>
     <p><span class="sp">ディーロン AI</span>「俺が飛ばす」</p>
     <p><span class="sp">ケン</span>「口癖までそっくりだ!」</p>
+    <p><span class="sp">ノア</span>「……判断の癖も、そっくりです」</p>
   </div>
 
   <h3>Chapter 6「人を乗せる」</h3>
@@ -1025,13 +1060,13 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
     <li>箸キャッチは、管制室が沈黙 → アームが閉じる → 歓声。ゲームでいちばん盛り上がる瞬間にする。</li>
   </ul>
   <div class="dialog">
-    <p><span class="sp">ハシモト</span>「脚をつけると、そのぶん重くなって荷物が減る。だったら地上側でつかめばいい。発射塔の名前は“ハシラ”。箸で、柱だ」</p>
+    <p><span class="sp">ハシモト</span>「脚をつけると、そのぶん重くなって荷物が減る。だったら地上側でつかめばいい。発射塔の名前は“ミハシラ”。箸で、柱だ」</p>
     <p><span class="sp">ケン</span>「怪獣みたいな名前だね……」</p>
     <p><span class="sp">マヤ</span>「つかんだら、そのまま発射台に戻して給油。数時間後にまた飛べる」</p>
   </div>
   <ul>
     <li>月、そして火星へ。ディーロンが火星行きの操縦席に座る。その裏で、ルーチン便のほぼすべてをディーロン AI が飛ばすようになっている。</li>
-    <li>Chapter 12 の火星便は、26 ヶ月に一度の「窓」でしか打ち上げられない。窓に向けて何か月も前から準備する。</li>
+    <li>Chapter 12 の火星便は、26 ヶ月に一度の「ウィンドウ」でしか打ち上げられない。ウィンドウに向けて何か月も前から準備する。</li>
   </ul>
   <div class="dialog">
     <p class="stage">(火星行きの乗員選考)</p>
