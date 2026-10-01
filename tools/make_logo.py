@@ -5,6 +5,7 @@ python tools/make_logo.py
 - assets/logo_<画面サイズ>.png  ゲーム用。画面ごとの幅に直接縮めて等倍で表示する(拡大するとギザギザになるため)。
     game/logo.py の LOGO_COLORS のどれかに振り分ける。暗い所は黒(透明色)なので、宇宙の背景にそのまま重なる
 - docs/img/starx_logo.png  企画書ページ用。明るさを透明度にした PNG(光のにじみも背景になじむ)
+- docs/favicon.ico, docs/img/icon-180.png  企画書ページのファビコン。ロゴの「X」と軌道の輪を正方形に切り出す
 """
 
 import sys
@@ -22,8 +23,15 @@ WEB_WIDTH = 1080
 DARK = 48  # 黒に重ねてこれより暗い所は透明にする(0〜255)
 
 
+FAVICON_BOX = (1190, 0, 1840, 650)  # 元の絵(2000x672)のうち、X と軌道の輪の部分
+
+
 def main():
     src = Image.open(ROOT / "art" / "starx_logo.webp").convert("RGB")
+    icon = src.crop(FAVICON_BOX)
+    icon.resize((256, 256), Image.LANCZOS).save(ROOT / "docs" / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64)])
+    icon.resize((180, 180), Image.LANCZOS).save(ROOT / "docs" / "img" / "icon-180.png")
+    print("docs/favicon.ico / docs/img/icon-180.png")
     bright = np.asarray(src).max(-1)
     ys, xs = np.nonzero(bright > 24)
     m = 6  # 光のにじみが切れないよう少し余白をとる

@@ -66,7 +66,7 @@ class TitleScene:
                 if not self.app.continue_game():
                     self.popup = ["セーブデータがありません。"]
             elif item == "OPTIONS":
-                self.popup = ["オプションは準備中です。"]
+                self.app.open_setup()
             else:
                 self.popup = [
                     "STAR X  ─  ロケット経営 × 操縦ゲーム",
@@ -187,7 +187,7 @@ class TitleScene:
         pyxel.dither(1.0)
         for i, item in enumerate(self.MENU):
             y = y0 + i * row
-            disabled = item == "OPTIONS"
+            disabled = False
             col = ui.WHITE if i == self.sel else (ui.GRAY if disabled else ui.LBLUE)
             ui.big_text(x, y, item, ms, col, shadow=ui.BLACK if i == self.sel else None)
             if i == self.sel and self.frame // 20 % 3:

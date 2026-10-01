@@ -133,13 +133,21 @@ EN = {
     "SPACE で工場へ戻る": "SPACE: back to the factory",
 
     # ---- タイトル ----
-    "オプションは準備中です。": "Options are coming soon.",
     "STAR X  ─  ロケット経営 × 操縦ゲーム": "STAR X  -  rocket company & flight game",
     "企画・原案      airpocket-soundman": "Concept         airpocket-soundman",
     "プログラム      Claude": "Program         Claude",
     "エンジン        Pyxel": "Engine          Pyxel",
     "フォント        umplus(M+ / 東雲)": "Font            umplus (M+ / Shinonome)",
     "実在の宇宙企業へのオマージュ(パロディ)作品です。": "An homage (parody) to real space companies.",
+    # ---- 言語と画面の設定 ----
+    "言語と画面 / Language & Screen": "Language & Screen",
+    "日本語": "日本語",  # 言語の名前はその言語のまま
+    "言語 / Language": "Language",
+    "画面 / Screen": "Screen",
+    "決定 / Start": "Start",
+    "↑↓ 選ぶ  ←→ 変える  SPACE 決定": "↑↓ select  ←→ change  SPACE start",
+    "X 戻る": "X back",
+    "決定すると、この画面サイズで起動し直します。": "The game restarts at this screen size.",
 
     # ---- 会話(簡素化版) ----
     "創業の日。家具もない借りビルに、なぜかマリアッチ楽団。": "Founding day. A rented building with no furniture, and for some reason, a mariachi band.",

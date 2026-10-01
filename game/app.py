@@ -9,12 +9,14 @@ from .scene_dock import DockScene
 from .scene_misc import CaptionScene, GameOverScene, ResultScene, TitleScene
 from .scene_mission import MissionScene
 from .scene_office import OfficeScene
+from .scene_setup import SetupScene
 from .state import GameState
 
 
 class App:
-    def __init__(self, hook=None, screen="640x480", lang="ja", stage=None):
-        """stage: 動作確認用。そのステージの直前の状態から、会社画面で始める。"""
+    def __init__(self, hook=None, screen="640x480", lang="ja", stage=None, setup=False):
+        """stage: 動作確認用。そのステージの直前の状態から、会社画面で始める。
+        setup: 言語と画面サイズを選ぶ画面から始める(初回の起動)。"""
         ui.set_screen(screen)
         i18n.set_lang(lang)
         pyxel.init(ui.W, ui.H, title="StarX", fps=60, quit_key=pyxel.KEY_ESCAPE)
@@ -22,7 +24,7 @@ class App:
         audio.setup()
         self.portraits = Portraits()
         self.state = GameState()
-        self.scene = TitleScene(self)
+        self.scene = SetupScene(self) if setup else TitleScene(self)
         self.hook = hook
         self.frame = 0
         if stage:
@@ -45,6 +47,9 @@ class App:
     # ---- シーン遷移 ----
     def to_title(self):
         self.scene = TitleScene(self)
+
+    def open_setup(self):
+        self.scene = SetupScene(self, from_title=True)
 
     def new_game(self):
         """いきなり初飛行から始める(操作説明つき。途中で必ず爆発する)。"""
