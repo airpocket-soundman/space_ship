@@ -22,6 +22,7 @@ from urllib.parse import unquote, urlparse
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from game import script  # noqa: E402
 from game.i18n import LANGS  # noqa: E402
 from game.missions import ORDER  # noqa: E402
 
@@ -30,6 +31,9 @@ SCREENS = ("640x480", "720x720", "360x360", "320x240")
 
 PORT = 8765
 SHOTS = ROOT / "tools" / "shots"
+# 会話の挿絵。番号(game/script.py の IMAGES)が 6-1 なら s06_1_*.png、2 なら s02_*.png
+ILLUST = ROOT / "assets" / "illustrations"
+ILLUST_TYPES = {".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg"}
 STAGES = [(m.id, m.title) for m in ORDER]
 
 # 起動できるプログラム。console: 別の端末ウィンドウで動かす(文字で出力・入力するもの)
@@ -37,6 +41,7 @@ PROGRAMS = {
     "game": dict(script="main.py", console=False),
     "flight": dict(script="tools/flight_test.py", console=False),
     "story": dict(script="tools/story_check.py", console=True),
+    "read": dict(script="tools/story_read.py", capture=True),
     "sim": dict(script="tools/sim_check.py", console=True),
     "autoplay": dict(script="tools/autoplay.py", console=True),
     "i18n": dict(script="tools/check_i18n.py", capture=True),
@@ -51,9 +56,9 @@ def build_args(prog, opts):
     stage = opts.get("stage") or ""
     if screen in SCREENS and prog in ("game", "flight", "autoplay"):
         args.append(screen)
-    if lang in LANGS and prog in ("game", "flight", "story", "autoplay"):
+    if lang in LANGS and prog in ("game", "flight", "story", "read", "autoplay"):
         args.append(lang)
-    if stage in {s for s, _ in STAGES} and prog in ("game", "story", "sim", "autoplay"):
+    if stage in {s for s, _ in STAGES} and prog in ("game", "story", "read", "sim", "autoplay"):
         args.append(stage)
     flags = {
         "flight": {"mute": "mute"},
@@ -101,6 +106,23 @@ def list_shots():
     return result
 
 
+def illust_prefix(num):
+    """挿絵の番号からファイル名の頭を作る: 6-1 → s06_1_、2 → s02_。"""
+    major, _, minor = num.partition("-")
+    return f"s{int(major):02d}_" + (f"{minor}_" if minor else "")
+
+
+def illust_file(num):
+    """挿絵のファイル。その番号の絵がなければ親の番号の絵(9-1 なら 9)を使う。なければ None。"""
+    while True:
+        files = sorted(f for f in ILLUST.glob(illust_prefix(num) + "*") if f.suffix.lower() in ILLUST_TYPES)
+        if files:
+            return files[0]
+        if "-" not in num:
+            return None
+        num = num.rsplit("-", 1)[0]
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):  # アクセスのたびに端末へ出さない
         pass
@@ -124,7 +146,22 @@ class Handler(BaseHTTPRequestHandler):
             target = (SHOTS / path[len("/shots/"):]).resolve()
             if target.is_file() and SHOTS.resolve() in target.parents and target.suffix == ".png":
                 return self.send(200, target.read_bytes(), "image/png")
+        if path.startswith("/illust/"):
+            return self.illust(path[len("/illust/"):])
         self.send(404, "not found", "text/plain; charset=utf-8")
+
+    def illust(self, num):
+        """挿絵を出す。まだなければ、どこに置けばよいかを出す。"""
+        if num not in script.IMAGES:
+            return self.send(404, "not found", "text/plain; charset=utf-8")
+        target = illust_file(num)
+        if target:
+            return self.send(200, target.read_bytes(), ILLUST_TYPES[target.suffix.lower()])
+        body = (f"<!doctype html><meta charset='utf-8'><title>挿絵 {html.escape(num)}</title>"
+                f"<body style='font-family:sans-serif;padding:24px'><h1>挿絵 {html.escape(num)}: "
+                f"{html.escape(script.IMAGES[num])}</h1><p>まだ画像がありません。"
+                f"<code>assets/illustrations/{html.escape(illust_prefix(num))}*.png</code> に置くと、ここに表示されます。</p></body>")
+        return self.send(200, body, "text/html; charset=utf-8")
 
     def do_POST(self):
         if urlparse(self.path).path != "/api/run":
@@ -178,6 +215,8 @@ def page():
         card("story", "ストーリー確認", "文字だけでシナリオを進める。別の端末ウィンドウで開く。コマンドと飛行の成否を番号で選ぶ。",
              field("開始", options("stage", stages)) + field("言語", options("lang", langs))
              + check("auto", "最後まで自動") + check("step", "1 行ずつ送る")),
+        card("read", "会話の通し読み", "全部の打ち上げが成功したことにして、各ステージの会話を順に出す。選択肢なし。結果はこのページに出る。",
+             field("開始", options("stage", stages)) + field("言語", options("lang", langs))),
         card("sim", "バランス確認", "自動操縦で各ステージを 20 回ずつ飛ばし、成功率を出す(全ステージだと数十分)。別の端末ウィンドウで開く。",
              field("ステージ", options("stage", stages_all, "1-1")) + check("verbose", "詳しく")),
         card("autoplay", "自動操作スクリーンショット", "ステージを自動操縦で通し、tools/shots に画面を保存する。終わったら下の一覧を更新。",
@@ -221,6 +260,30 @@ button:hover { filter:brightness(1.1); }
 code, pre { font-family:ui-monospace, Consolas, monospace; font-size:12px; }
 .cmd { color:var(--muted); overflow-wrap:anywhere; }
 pre.out { background:var(--code); border-radius:6px; padding:8px 10px; margin:0; max-height:220px; overflow:auto; white-space:pre-wrap; }
+dialog.read { width:min(1000px, 94vw); height:92vh; padding:0; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--text); }
+dialog.read::backdrop { background:rgba(0,0,0,.45); }
+.read-wrap { display:flex; flex-direction:column; height:100%; }
+.read-bar { display:flex; gap:10px; align-items:center; padding:10px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.read-bar strong { font-size:15px; }
+.read-bar select { max-width:260px; }
+.read-bar button { margin-left:auto; }
+.read-body { overflow:auto; padding:8px 28px 40px; font-size:16px; line-height:1.8; }
+.read-body h2 { font-size:18px; margin:28px 0 6px; padding-bottom:4px; border-bottom:2px solid var(--accent); }
+.read-body h4 { font-size:12px; color:var(--muted); margin:14px 0 2px; font-weight:600; letter-spacing:.05em; }
+.read-body .ln { display:grid; grid-template-columns:7.5em 1fr; gap:12px; padding:1px 0; }
+.read-body .who { color:var(--accent); font-weight:600; text-align:right; white-space:nowrap; }
+.read-body .nar { color:var(--muted); font-style:italic; padding:2px 0 2px calc(7.5em + 12px); }
+.read-body .img { margin:8px 0 8px calc(7.5em + 12px); }
+.read-body .img a { display:inline-block; padding:3px 10px; border:1px dashed var(--accent); border-radius:6px; color:var(--accent); text-decoration:none; font-size:14px; }
+.read-body .img a:hover { background:var(--code); }
+dialog.illust { max-width:96vw; max-height:94vh; padding:0; border:0; border-radius:10px; background:#000; color:#eee; overflow:hidden; }
+dialog.illust::backdrop { background:rgba(0,0,0,.7); }
+dialog.illust img { display:block; max-width:96vw; max-height:calc(94vh - 40px); image-rendering:pixelated; cursor:zoom-out; }
+dialog.illust .cap { display:flex; gap:12px; align-items:center; padding:8px 12px; font-size:14px; }
+dialog.illust .cap button { margin-left:auto; font-size:12px; padding:3px 10px; }
+dialog.illust .missing { padding:40px 32px; font-size:15px; }
+@media (max-width:600px) { .read-body { padding:8px 14px 32px; } .read-body .ln { grid-template-columns:1fr; gap:0; } .read-body .who { text-align:left; }
+  .read-body .nar, .read-body .img { padding-left:0; margin-left:0; } }
 .ok { color:var(--ok); } .ng { color:var(--ng); }
 h3 { font-size:16px; margin:28px 0 8px; display:flex; gap:10px; align-items:center; }
 h3 button { font-size:12px; padding:3px 10px; }
@@ -240,7 +303,72 @@ h3 button { font-size:12px; padding:3px 10px; }
   <h3>スクリーンショット(tools/shots) <button type="button" id="reload">一覧を更新</button></h3>
   <div class="shots" id="shots"><p class="empty">読み込み中…</p></div>
 </main>
+<dialog class="read" id="read">
+  <div class="read-wrap">
+    <div class="read-bar"><strong>会話の通し読み</strong><select id="read-jump"></select><button type="button" id="read-close">閉じる(Esc)</button></div>
+    <div class="read-body" id="read-body"></div>
+  </div>
+</dialog>
+<dialog class="illust" id="illust">
+  <img id="illust-img" alt="">
+  <p class="missing" id="illust-missing" hidden></p>
+  <div class="cap"><span id="illust-cap"></span><button type="button" id="illust-close">閉じる(Esc)</button></div>
+</dialog>
 <script>
+// 挿絵を、通し読みの上にポップアップで出す
+function showIllust(num, label) {
+  const dlg = document.getElementById('illust'), img = document.getElementById('illust-img'), miss = document.getElementById('illust-missing');
+  document.getElementById('illust-cap').textContent = '画像 ' + num + ': ' + label;
+  img.hidden = false; miss.hidden = true;
+  img.onerror = () => {
+    const [major, minor] = num.split('-');
+    img.hidden = true; miss.hidden = false;
+    miss.textContent = 'まだ画像がありません。assets/illustrations/s' + major.padStart(2, '0') + '_' + (minor ? minor + '_' : '') + '*.png に置くと表示されます。';
+  };
+  img.src = '/illust/' + encodeURIComponent(num);
+  if (!dlg.open) dlg.showModal();
+}
+document.getElementById('illust').addEventListener('click', e => { if (e.target.id !== 'illust-cap') document.getElementById('illust').close(); });
+// Esc で挿絵だけを閉じる(下の通し読みまで閉じない)
+document.addEventListener('keydown', e => {
+  const il = document.getElementById('illust');
+  if (e.key === 'Escape' && il.open) { e.preventDefault(); e.stopPropagation(); il.close(); }
+}, true);
+// 会話の通し読みの結果を、読みやすい形にしてポップアップで出す
+function showRead(text) {
+  const body = document.getElementById('read-body'), jump = document.getElementById('read-jump');
+  body.innerHTML = ''; jump.innerHTML = '<option value="">ステージへ移動…</option>';
+  const add = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; body.appendChild(e); return e; };
+  let n = 0, m;
+  for (const line of text.split(String.fromCharCode(10))) {
+    if ((m = line.match(/^==== (.*) ====$/))) {
+      const h = add('h2', '', m[1]); h.id = 'sec' + (n++);
+      jump.add(new Option(m[1], h.id));
+    } else if ((m = line.match(/^  -- (.*) --$/))) {
+      add('h4', '', m[1]);
+    } else if ((m = line.match(/^  【画像 ([^:】 ]+): ([^】]*)】$/))) {
+      const a = document.createElement('a'); a.href = '/illust/' + encodeURIComponent(m[1]);
+      const num = m[1], label = m[2];
+      a.addEventListener('click', e => { e.preventDefault(); showIllust(num, label); });
+      a.textContent = '画像 ' + m[1] + ': ' + m[2]; add('div', 'img').appendChild(a);
+    } else if ((m = line.match(/^  ([^「(]+)「(.*)」$/))) {
+      const row = add('div', 'ln'); const w = document.createElement('span'); w.className = 'who'; w.textContent = m[1];
+      const t = document.createElement('span'); t.textContent = m[2]; row.append(w, t);
+    } else if (line.startsWith('  (') && line.endsWith(')')) {
+      add('div', 'nar', line.slice(3, -1));
+    } else if (line.trim()) {
+      add('div', 'nar', line.trim());
+    }
+  }
+  const dlg = document.getElementById('read');
+  if (!dlg.open) dlg.showModal();
+  body.scrollTop = 0;
+}
+document.getElementById('read-jump').addEventListener('change', e => {
+  const t = document.getElementById(e.target.value); if (t) t.scrollIntoView({block:'start'}); e.target.value = '';
+});
+document.getElementById('read-close').addEventListener('click', () => document.getElementById('read').close());
+let lastRead = '';
 document.querySelectorAll('.card').forEach(card => {
   card.querySelector('button').addEventListener('click', async () => {
     const opts = {};
@@ -255,7 +383,14 @@ document.querySelectorAll('.card').forEach(card => {
       const r = await res.json();
       cmd.textContent = (r.ok ? '起動: ' : '') + r.cmd;
       cmd.className = 'cmd ' + (r.ok ? 'ok' : 'ng');
-      if (r.out) {
+      if (r.out && card.dataset.prog === 'read') {
+        lastRead = r.out;
+        showRead(r.out);
+        if (!card.querySelector('.reopen')) {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'reopen'; b.textContent = 'もう一度開く';
+          b.addEventListener('click', () => showRead(lastRead)); card.querySelector('.row').appendChild(b);
+        }
+      } else if (r.out) {
         if (!out) { out = document.createElement('pre'); out.className = 'out'; card.appendChild(out); }
         out.textContent = r.out;
       }

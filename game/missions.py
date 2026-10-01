@@ -88,10 +88,10 @@ class Entry:
     """カプセルの再突入の条件。"""
 
     interface: float = 70_000.0  # 大気圏に入るとみなす高度 [m]
-    fpa_lo: float = -4.0  # 再突入角の窓 [°](これより深いと燃える)
+    fpa_lo: float = -4.0  # 再突入角のウィンドウ [°](これより深いと燃える)
     fpa_hi: float = -1.5  # (これより浅いと弾かれる)
     att_tol: float = 20.0  # 耐熱シールドを前に向ける許容 [°]
-    chute_lo: float = 1_500.0  # パラシュートを開く高度の窓 [m]
+    chute_lo: float = 1_500.0  # パラシュートを開く高度のウィンドウ [m]
     chute_hi: float = 4_000.0
     chute_speed: float = 200.0  # これより速いと破れる [m/s]
     splash_max: float = 12.0  # 着水の速度 [m/s]
@@ -129,7 +129,7 @@ class MissionDef:
 # ---- Chapter 1: Eagle 1 ----
 CH1_1 = MissionDef(
     id="1-1",
-    title="Ch1-1 初飛行",
+    title="Ch1-1 再挑戦",
     goal="高度 10 km を突破せよ",
     kind="ascent",
     rocket=Rocket("Eagle 1", [EAGLE1]),
@@ -1020,7 +1020,7 @@ class MissionRun:
                 if fpa is not None and self.steer_in == 0 and abs(v.omega) < math.radians(0.4)                         and v.y > e.interface + 1_500:
                     self.warp = 20
         elif self.phase == "entry":
-            # 加熱は空気の濃さと速さで決まり、深い角度で入るほど強くなる(窓の深い端でほぼ限界)
+            # 加熱は空気の濃さと速さで決まり、深い角度で入るほど強くなる(ウィンドウの深い端でほぼ限界)
             fpa = self.entry_values["fpa"]
             depth = (e.fpa_hi - fpa) / (e.fpa_hi - e.fpa_lo)  # 0: 浅い端 / 1: 深い端
             k = 0.7 + 0.3 * depth if depth <= 1.0 else 1.0 + (depth - 1.0) * 0.7
@@ -1098,7 +1098,7 @@ class MissionRun:
                     return 1, n, "右へ少しずつ倒しながら上昇。迎角は小さく保つ"
                 return 2, n, "推力が消えたら Z で1段目を分離"
             if self.in_orbit:
-                return n, n, "向きと角速度を窓に入れて、Z で放出"
+                return n, n, "向きと角速度をウィンドウに入れて、Z で放出"
             pe, ap = v.apsides()
             if pe < o.pe_lo:
                 if ap < o.pe_lo + 5_000 and (v.engine_on or v.ignitions_left == v.p.ignitions):
@@ -1118,7 +1118,7 @@ class MissionRun:
                     return 3, 4, "耐熱シールドを前に向けたまま、突入を待つ"
                 if abs(v.aoa_tail) > math.radians(15) and not v.engine_on:
                     return 1, 4, "←→ で機体を後ろ向き(進む向きと逆)に回して、止める"
-                return 2, 4, "SPACE で噴射。再突入角が窓に入ったら SPACE で停止"
+                return 2, 4, "SPACE で噴射。再突入角がウィンドウに入ったら SPACE で停止"
             if self.phase == "entry":
                 return 4, 4, "開傘の高度と速度が緑になったら Z でパラシュート"
             return 4, 4, "パラシュートで降下中。着水を待つ"
@@ -1153,12 +1153,12 @@ class MissionRun:
         return n, n, "「噴射の目安」の線まで落ちたら SPACE。出力を合わせて、そっと降りる"
 
     def window_status(self):
-        """現在値が各窓に入っているか(HUD 表示用)。"""
+        """現在値が各ウィンドウに入っているか(HUD 表示用)。"""
         cur = self._wp_now()
         return {k: (cur[k], w.ok(cur[k])) for k, w in self.m.waypoint.windows.items()}
 
     def rows(self):
-        """計器パネルの下の窓に出す行: (ラベル, 範囲, 現在値, 窓に入っているか)。"""
+        """計器パネルの下のウィンドウに出す行: (ラベル, 範囲, 現在値, ウィンドウに入っているか)。"""
         v, m = self.v, self.m
         if m.kind == "ascent":
             wp = m.waypoint
@@ -1263,10 +1263,10 @@ class MissionRun:
             for key, w in m.waypoint.windows.items():
                 if self.wp_values:
                     val = self.wp_values[key]
-                    rows.append((w.label, trf("窓 {lo:+.0f} ~ {hi:+.0f} {unit}", lo=w.lo, hi=w.hi, unit=w.unit),
+                    rows.append((w.label, f"{w.lo:+.0f} ~ {w.hi:+.0f} {w.unit}",
                                  f"{val:+.1f}", w.ok(val)))
                 else:
-                    rows.append((w.label, trf("窓 {lo:+.0f} ~ {hi:+.0f} {unit}", lo=w.lo, hi=w.hi, unit=w.unit),
+                    rows.append((w.label, f"{w.lo:+.0f} ~ {w.hi:+.0f} {w.unit}",
                                  "---", None))
         elif m.kind == "orbit":
             o, r = m.orbit, self.released

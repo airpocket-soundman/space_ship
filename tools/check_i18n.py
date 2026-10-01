@@ -14,12 +14,14 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from game.lang_en import EN  # noqa: E402
-from game.script import FAIL_HINTS  # noqa: E402
+from game.script import FAIL_HINTS, IMAGES  # noqa: E402
 
 JP = re.compile(r"[ぁ-んァ-ヶ一-龥]")
 SKIP_FILES = {"i18n.py", "lang_en.py"}
 # 画面には出さず、判定にだけ使う文言(失敗の理由に含まれる言葉で、マヤの一言を選ぶ)
 LOGIC_ONLY = {key for key, _ in FAIL_HINTS} | {"衝突"}
+# 専用画像の説明(確認ツール用。画面には出さない)
+LOGIC_ONLY |= set(IMAGES.values())
 
 
 def docstrings(tree):

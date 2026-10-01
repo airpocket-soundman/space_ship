@@ -186,7 +186,8 @@ class Dialogue:
     QUIET = set(" 　、。,.!?！？…「」()（）—-ー")  # 声を鳴らさない文字
 
     def start(self, lines, on_done=None):
-        self.lines = [(speaker, tr(body)) for speaker, body in lines]
+        # ("image", 番号) は専用画像を出す位置の印。絵はまだないので飛ばす
+        self.lines = [(speaker, tr(body)) for speaker, body in lines if speaker != "image"]
         self.index = 0
         self.shown = 0
         self.on_done = on_done

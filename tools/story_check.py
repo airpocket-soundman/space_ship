@@ -72,6 +72,9 @@ class Checker:
     # ---- 表示 ----
     def say(self, lines):
         for speaker, body in lines:
+            if speaker == "image":
+                print(f"  【画像 {body}: {script.IMAGES[body]}】")
+                continue
             name = tr(NAMES.get(speaker, speaker)) if speaker else ""
             text = f"  {name}「{tr(body)}」" if name else f"  ({tr(body)})"
             print(text)

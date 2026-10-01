@@ -22,7 +22,9 @@ def main():
         app_dir.mkdir()
         shutil.copy(ROOT / "main.py", app_dir)
         shutil.copytree(ROOT / "game", app_dir / "game", ignore=shutil.ignore_patterns("__pycache__"))
-        shutil.copytree(ROOT / "assets", app_dir / "assets", ignore=shutil.ignore_patterns("*.py", "__pycache__"))
+        # 会話の挿絵(illustrations)は、ゲームでまだ表示していないので入れない(大きいので Web 版が重くなる)
+        shutil.copytree(ROOT / "assets", app_dir / "assets",
+                        ignore=shutil.ignore_patterns("*.py", "__pycache__", "illustrations"))
         subprocess.run([sys.executable, "-m", "pyxel", "package", str(app_dir), str(app_dir / "main.py")],
                        cwd=tmp, check=True, stdout=subprocess.DEVNULL)
         OUT.parent.mkdir(exist_ok=True)

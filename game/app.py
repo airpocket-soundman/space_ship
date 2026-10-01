@@ -83,7 +83,7 @@ class App:
         self.scene = CaptionScene(self, script.FLASHBACK, self.start_story)
 
     def start_story(self):
-        self.scene = OfficeScene(self, script.KICKOFF + script.PROLOGUE, party=len(script.KICKOFF))
+        self.scene = OfficeScene(self, script.KICKOFF + script.PROLOGUE, party=sum(sp != "image" for sp, _ in script.KICKOFF))  # 画像の印の行は会話に出ない
 
     def start_mission(self, mdef):
         self.scene = DockScene(self, mdef) if mdef.kind == "dock" else MissionScene(self, mdef)

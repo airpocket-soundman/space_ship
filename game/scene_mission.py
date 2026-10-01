@@ -22,7 +22,7 @@ TUTORIAL = [
     ("ignite", "SPACE で点火!", 0, 0),
     ("throttle", "↑↓ でスロットル(推力)。このエンジンは 70% より下には絞れない。", 3, 7),
     ("steer", "←→ でノズルを振って姿勢を変える。傾いたら、反対に当てて戻す。", 3, 8),
-    ("window", "右の窓: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
+    ("window", "右のウィンドウ: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
     ("good", "いい調子だ。そのまま、まっすぐ上へ!", 0, 0),
 ]
 
@@ -683,7 +683,7 @@ class MissionScene:
             return
         tid, text, _, _ = TUTORIAL[self.tut]
         bottom = self.top_box(text, ui.YELLOW if tid in ("ignite", "throttle", "steer") else ui.WHITE)
-        if tid == "window" and self.frame // 15 % 2:  # 右の窓を指す矢印
+        if tid == "window" and self.frame // 15 % 2:  # 右のウィンドウを指す矢印
             ax, ay = self.view_w - 14, bottom + 10
             pyxel.tri(ax, ay - 6, ax, ay + 6, ax + 10, ay, ui.YELLOW)
 
@@ -779,7 +779,7 @@ class MissionScene:
         bw = ui.W - x - vx_ - 10 * K if small else 112  # バーの長さ
         pyxel.rect(x - 4, 0, ui.W - x + 4, ui.H, ui.NAVY)
         pyxel.line(x - 4, 0, x - 4, ui.H, ui.DBLUE)
-        if tiny:  # 320x240: 目標は下の窓に出ているので省く
+        if tiny:  # 320x240: 目標は下のウィンドウに出ているので省く
             y = 4
             ui.text(x + 4, y, self.m.title, ui.YELLOW, size=10)
             y += 13
@@ -853,7 +853,7 @@ class MissionScene:
         elif run.anomaly_left is not None:
             bar("タンク", 1.0 - run.anomaly_left / 5.0, ui.RED, text=f"{max(0.0, run.anomaly_left):.1f}")
 
-        # 目標の窓(320x240 は見出しと進み具合を詰め、下の説明を省く)
+        # 目標のウィンドウ(320x240 は見出しと進み具合を詰め、下の説明を省く)
         y += (2 if tiny else 4) * K
         rows = run.rows()
         ww = ui.W - x - 6 * K
@@ -879,10 +879,10 @@ class MissionScene:
             ui.text(x + cols[1], yy, cur, ui.LIME if ok else ui.RED, size=10)
             yy += row_h if tiny else row_h + K
         if foot:
-            ui.text(x + pad, yy + 4 * K, "窓に入るほどランクUP" if small else "窓に入るほどランクが上がる", ui.GRAY, size=10)
+            ui.text(x + pad, yy + 4 * K, "ウィンドウ内でランクUP" if small else "ウィンドウに入るほどランクが上がる", ui.GRAY, size=10)
 
     def objective(self):
-        """目標の窓の見出しと、進み具合(0〜1)。"""
+        """目標のウィンドウの見出しと、進み具合(0〜1)。"""
         m, run, v = self.m, self.run, self.v
         small = ui.COMPACT
         if m.kind == "ascent":

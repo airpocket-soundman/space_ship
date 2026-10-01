@@ -34,6 +34,18 @@ def describe(st, key):
     return tr("次の月へ進む")
 
 
+def _fails(st, mission_id):
+    """そのステージで何回失敗したか(いまの飛行を含む)。"""
+    return sum(f["mission"] == mission_id and f["result"] == "fail" for f in st.flights)
+
+
+def _cycle(variants, n):
+    """n 回目(1 から)に使うもの。用意した数を超えたら、2 つ目から順にくり返す。"""
+    if n <= len(variants):
+        return variants[n - 1]
+    return variants[1 + (n - 1 - len(variants)) % (len(variants) - 1)]
+
+
 def _use_ap(st, n):
     if st.ap < n:
         return False
@@ -81,6 +93,10 @@ def command(st, key):
         if st.ready() <= 0:
             return [("maya", "機体がないわ。「製造」して。")], None
         lines = list(script.BRIEFING[st.stage])
+        fails = _fails(st, st.stage)
+        if fails:  # やり直しのときは、ディーロンの一言を替える
+            retry = script.BRIEFING_RETRY[(fails - 1) % len(script.BRIEFING_RETRY)]
+            lines = [retry if sp == "dylon" else (sp, body) for sp, body in lines]
         lines += script.BRIEFING_INSPECTED if st.inspected else script.BRIEFING_NOT_INSPECTED
         lines += script.BRIEFING_END
         return lines, "launch"
@@ -111,11 +127,17 @@ def after_flight(st, run, summary):
             st.finished = True
             lines += script.ENDING
     else:
+        fails = _fails(st, m.id)
+        lines = list(_cycle(script.FAIL_CHEER, fails))
         if run.saved:
-            lines = list(script.SAVED)
+            lines += script.SAVED
         else:
             hint = next(text for key, text in script.FAIL_HINTS if key in run.fail_reason)
-            lines = [("maya", hint)]
+            if fails == 1:
+                lines += script.FAIL_LINES.get(m.id, [])
+            lines.append(("maya", hint))
+        total = sum(f["result"] == "fail" for f in st.flights)
+        lines.append(script.FAIL_COMMENTS[(total - 1) % len(script.FAIL_COMMENTS)])
         if st.ready() <= 0 and not st.building_now():
             cost, months = st.build_cost()
             lines.append(("sara", trf("機体がないわ。「製造」で {name} を用意して({cost:.0f}M$・{months}ヶ月)。",

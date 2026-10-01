@@ -270,7 +270,7 @@ class RecoverPilot(LandingPilot):
         if run.phase == "s1":
             if v.engine_on:
                 sep = run.m.sep
-                # 分離の窓に入ったらすぐ止める(燃料を残す)。入らなくても keep まで減ったら止める
+                # 分離のウィンドウに入ったらすぐ止める(燃料を残す)。入らなくても keep まで減ったら止める
                 ready = v.y >= sep.alt_lo * 1.03 and v.speed >= sep.speed_lo * 1.03
                 if v.prop <= v.p.prop_mass * self.keep or self.late("meco", ready):
                     run.space()
