@@ -4,7 +4,7 @@
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .physics import Vehicle, VehicleParams
 
@@ -72,8 +72,13 @@ EAGLE1_S2 = VehicleParams(
 )
 
 
-def eagle1(payload):
-    return Rocket("Eagle 1", [EAGLE1_S1, EAGLE1_S2], payload)
+def eagle1(payload, s2_scale=1.0):
+    """s2_scale: 2段目の推進剤を何倍にするか。推力も同じ倍率にする(重くなっても、上へ押し上げる力が落ちないように)。"""
+    s2 = EAGLE1_S2
+    if s2_scale != 1.0:
+        s2 = replace(s2, prop_mass=s2.prop_mass * s2_scale, thrust_sl=s2.thrust_sl * s2_scale,
+                     thrust_vac=s2.thrust_vac * s2_scale)
+    return Rocket("Eagle 1", [EAGLE1_S1, s2], payload)
 
 
 # ---- Eagle 9(中型。9 基のエンジン Hobby) ----

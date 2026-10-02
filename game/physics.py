@@ -43,6 +43,7 @@ class VehicleParams:
     inertia_factor: float = 3.0  # 慣性モーメントの割増(操縦感の調整用)
     rcs_accel: float = math.radians(1.2)  # スラスターの角加速度 [rad/s^2]
     rcs_fuel: float = 30.0  # スラスター噴射可能時間 [s]
+    rcs_trans_accel: float = 0.6  # スラスターで機体の横へ平行移動するときの加速度 [m/s^2]
     ang_damping: float = 0.02  # 角速度の減衰 [1/s]
     aero_instability: float = 0.6  # 空力的な不安定さ(大きいほど倒れやすい)
     ignitions: int = 1  # 点火できる回数
@@ -107,6 +108,7 @@ class Vehicle:
     launched: bool = False  # 最初の点火を済ませたか
     t: float = 0.0  # 最初の点火からの経過時間
     rcs_firing: int = 0
+    rcs_translate: int = 0  # 平行移動のスラスターの向き(機体から見て +1 右 / -1 左)
     gust: float = 0.0
     wind: float = 0.0  # 横風 [m/s](東向きが正)
     engine_frac: float = 1.0  # 使うエンジンの割合(回収のときは 9 基のうち 3 基だけ、など)
@@ -225,8 +227,9 @@ class Vehicle:
         return gone
 
     # ---- 1 ステップ ----
-    def step(self, dt, steer=0, throttle_input=0):
-        """steer: -1(左) / 0 / +1(右)、throttle_input: -1 / 0 / +1"""
+    def step(self, dt, steer=0, throttle_input=0, translate=0):
+        """steer: -1(左) / 0 / +1(右)、throttle_input: -1 / 0 / +1
+        translate: スラスターで機体の横(機軸と直角)へ押す向き。+1 で機体から見て右、-1 で左。"""
         p = self.p
         if self.launched:
             self.t += dt
@@ -283,6 +286,15 @@ class Vehicle:
             drag = 0.5 * self.density * v * v * p.drag_cd * area * self.drag_mult
             ax -= drag * rvx / v / m
             ay -= drag * self.vy / v / m
+
+        # スラスターによる平行移動(機体の横向きに押す。回転はさせない)
+        self.rcs_translate = 0
+        if translate and self.rcs_fuel > 0 and self.lifted_off:
+            a = translate * p.rcs_trans_accel
+            ax += a * math.cos(self.theta)  # 機体から見た右は (cos θ, -sin θ)
+            ay -= a * math.sin(self.theta)
+            self.rcs_fuel = max(0.0, self.rcs_fuel - cdt)
+            self.rcs_translate = translate
 
         # 推進剤の消費
         if thrust > 0:

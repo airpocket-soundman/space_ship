@@ -235,6 +235,15 @@ EN = {
     "全長 21 m": "Length 21 m",
     "2段式": "Two stages",
     "低軌道に 670 kg": "670 kg to low orbit",
+    # ---- 軌道への目安(WP)と燃料ボーナス ----
+    "WP T+{t:.0f}: 垂直 {vy:.0f} / 水平 {vx:.0f} m/s": "WP T+{t:.0f}: vertical {vy:.0f} / horizontal {vx:.0f} m/s",
+    "燃料が残ったぶん、ボーナス {bonus:.1f}M$ よ。": "Fuel left over, so that's a {bonus:.1f}M$ bonus.",
+    "資金 +{funds:.1f}M$": "Funds +{funds:.1f}M$",
+    "(燃料ボーナス {bonus:.1f}M$)": " (fuel bonus {bonus:.1f}M$)",
+    "右の表に、200 秒ごとの目安の速さを出すわ。↑ が垂直、→ が水平。緑なら順調よ。":
+        "The panel on the right shows target speeds every 200 seconds. Up arrow is vertical, right arrow is horizontal. Green means on track.",
+    "垂直": "Vert",
+    "水平": "Horiz",
     "テレメトリも全部残っています。火災の原因は、もう3つまで絞れました。": "We have all the telemetry, too. I've already narrowed the fire down to three causes.",
     "飛行制御は私が——": "I can handle flight control--",
     "却下。俺が飛ばす。": "Denied. I'm flying it.",
@@ -516,7 +525,6 @@ EN = {
     "{d:.0f} m 以内": "within {d:.0f} m",
     "{v:.2f} m/s 以下": "{v:.2f} m/s or less",
     "{t:.0f} s 以内": "within {t:.0f} s",
-    "資金 +{funds:.0f}M$": "Funds +{funds:.0f}M$",
     "機体は無事({name} はもう一度使える)": "Vehicle intact ({name} can fly again)",
     "1段目を回収(次は整備だけで飛べる)": "Booster recovered (next one just needs refurbishing)",
     "機体 -1({name} は使い捨て)": "Rocket -1 ({name} is expendable)",

@@ -305,7 +305,10 @@ class ResultScene:
         ui.text(half, y, trf("評判 {rep:+d}", rep=rep), ui.LIME if rep >= 0 else ui.RED, size=fs)
         y += lh
         if s["funds"]:
-            ui.text(ox + cols["label"], y, trf("資金 +{funds:.0f}M$", funds=s["funds"]), ui.YELLOW, size=fs)
+            text = trf("資金 +{funds:.1f}M$", funds=s["funds"])
+            if s.get("fuel_bonus", 0) >= 0.1:  # 燃料ボーナスの内訳
+                text += trf("(燃料ボーナス {bonus:.1f}M$)", bonus=s["fuel_bonus"])
+            ui.text(ox + cols["label"], y, text, ui.YELLOW, size=fs)
             y += lh
         name = CRAFTS[run.m.craft][0]
         if s["kept"]:

@@ -110,6 +110,8 @@ def after_flight(st, run, summary):
     m = run.m
     if run.result == "success":
         lines = list(script.SUCCESS[m.id]) if summary["first"] else []
+        if summary.get("fuel_bonus", 0) >= 0.1:
+            lines.append(("sara", trf("燃料が残ったぶん、ボーナス {bonus:.1f}M$ よ。", bonus=summary["fuel_bonus"])))
         if summary["funds"]:
             lines.append(("sara", trf("{funds:.0f}M$ が入ったわ。", funds=summary["funds"])))
         if summary["recovered"]:

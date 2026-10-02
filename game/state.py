@@ -16,6 +16,7 @@ CRAFTS = {
 REFURBISH_COST = 8.0  # 回収した1段目を整備して、もう一度 Eagle 9 に仕立てる費用 [M$]
 REFURBISH_MONTHS = 1
 SUPPLY_INCOME = 4.0  # 補給の定期便(Ch2-3 のあと)で毎月入る代金 [M$]
+FUEL_BONUS = 10.0  # 成功したとき、最後の段の推進剤が全部残っていれば入るボーナス [M$](残った割合ぶん入る)
 
 SAVE_KEYS = ("year", "month", "funds", "reputation", "tlm", "ap", "rockets", "building", "inspected", "stage",
              "cleared", "best", "recovered", "last_fundraise", "flights", "seen", "finished")
@@ -94,6 +95,10 @@ class GameState:
         # お金: 荷物を届けた代金(着陸に失敗しても入る)と、初めて成功したときの報酬
         delivered = ok or getattr(run, "phase", "") == "descent"
         funds = (m.income if delivered else 0.0) + (m.reward if first else 0.0)
+        # 燃料ボーナス: 成功したとき、最後の段に残った推進剤の割合に応じて(全部残れば FUEL_BONUS)
+        v = getattr(run, "v", None)
+        fuel_bonus = round(FUEL_BONUS * v.prop / v.p.prop_mass, 1) if ok and v is not None and v.p.prop_mass else 0.0
+        funds += fuel_bonus
         self.funds += funds
         if ok:
             self.cleared.add(m.id)
@@ -102,7 +107,8 @@ class GameState:
                 self.best[m.id] = run.rank()
         self.flights.append({"mission": m.id, "result": run.result, "rank": run.rank(),
                              "reason": run.fail_reason, "max_alt": run.max_alt})
-        return {"tlm": tlm, "rep": rep, "funds": funds, "kept": kept, "recovered": recovered, "first": first}
+        return {"tlm": tlm, "rep": rep, "funds": funds, "kept": kept, "recovered": recovered, "first": first,
+                "fuel_bonus": fuel_bonus}
 
     def fundraise_amount(self):
         """いま調達できる額 [M$]。評判が高いほど多い。"""

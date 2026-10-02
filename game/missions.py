@@ -63,6 +63,17 @@ class Sep:
 
 
 @dataclass
+class GuideWP:
+    """軌道へ上がる途中の目安(時刻ごとの、垂直速度と水平速度の範囲)。評価には入れず、画面に出すだけ。"""
+
+    t: float  # 打ち上げからの時刻 [s]
+    vy_lo: float
+    vy_hi: float
+    vx_lo: float
+    vx_hi: float
+
+
+@dataclass
 class Landing:
     """着陸の目標と、耐えられる接地条件。"""
 
@@ -125,6 +136,7 @@ class MissionDef:
     reward: float = 0.0  # 初めて成功したときの報酬 [M$]
     income: float = 0.0  # 打ち上げるたびに入る代金 [M$]
     reusable: bool = False  # 着陸に成功すると機体が手元に残る
+    guide: tuple = ()  # 軌道へ上がる途中の目安(GuideWP の並び)
 
 
 # ---- Chapter 1: Eagle 1 ----
@@ -184,8 +196,11 @@ CH1_2 = MissionDef(
     title="Ch1-2 相乗り便",
     goal="小型衛星を軌道に乗せよ",
     kind="orbit",
-    rocket=eagle1(200.0),
+    rocket=eagle1(200.0, s2_scale=1.3),  # 初めての軌道なので、2段目に余裕を持たせる
     orbit=Orbit(pe_lo=300_000.0, ap_hi=800_000.0, att_tol=20.0, rate_tol=3.0, release_time=30.0),
+    # 目安は、近地点 380 km・遠地点 700 km ほどに入る飛び方(2段目は推力が小さいので、上へ上がりながら加速する)
+    guide=(GuideWP(200, 1_100, 1_800, 1_400, 2_300), GuideWP(400, 500, 1_200, 2_300, 3_800),
+           GuideWP(600, -100, 600, 5_500, 7_900), GuideWP(800, -300, 300, 7_300, 7_900)),
     sep=Sep(),
     time_limit=3000.0,
     tilt_limit=135.0,
@@ -515,6 +530,7 @@ class MissionRun:
         self.release_timer = 0.0
         self.in_orbit = False
         self.released = None  # 放出したときの値
+        self.guide_values = {}  # 目安の時刻を過ぎたときの値 {時刻: (垂直速度, 水平速度)}
         self.sep_values = None  # 分離したときの値(回収)
         self.ship_x = mdef.land.x if mdef.land else 0.0
         self.pred_x = None  # 1段目の着地予想点 [m](噴射中は、計算にかかる時間のぶん先を読んだ値)
@@ -674,13 +690,19 @@ class MissionRun:
         self.emit("good", "パラシュート展開")
 
     # ---- 1 ステップ ----
-    def step(self, dt, steer=0, throttle_input=0):
+    def step(self, dt, steer=0, throttle_input=0, translate=0):
         if self.result is not None:
             return
         v, m = self.v, self.m
         self.steer_in = steer
-        v.step(dt, steer, throttle_input)
+        v.step(dt, steer, throttle_input, translate)
         self.max_alt = max(self.max_alt, v.y)
+        for g in m.guide:  # 目安の時刻を過ぎたら、そのときの速さを残して知らせる
+            if g.t not in self.guide_values and v.launched and v.t >= g.t and self.released is None:
+                self.guide_values[g.t] = (v.vy, v.vx)
+                ok = g.vy_lo <= v.vy <= g.vy_hi and g.vx_lo <= v.vx <= g.vx_hi
+                self.emit("good" if ok else "info", trf("WP T+{t:.0f}: 垂直 {vy:.0f} / 水平 {vx:.0f} m/s",
+                                                        t=g.t, vy=v.vy, vx=v.vx))
         self.apex = max(self.apex, v.y)
 
         # 最大動圧の通知
@@ -1164,6 +1186,17 @@ class MissionRun:
         """現在値が各ウィンドウに入っているか(HUD 表示用)。"""
         cur = self._wp_now()
         return {k: (cur[k], w.ok(cur[k])) for k, w in self.m.waypoint.windows.items()}
+
+    def hud_targets(self):
+        """計器パネルの値の横に出す目標(WP): {"t" / "vy" / "vx" / "ang" / "rate": (下限, 上限)}。
+        打ち上げのミッションはウェイポイントのウィンドウ(通過するまで)、軌道のミッションは次の目安の時刻の速さ。"""
+        m = self.m
+        if m.kind == "ascent" and self.wp_values is None:
+            return {k: (w.lo, w.hi) for k, w in m.waypoint.windows.items()}
+        nxt = next((g for g in m.guide if g.t not in self.guide_values), None)
+        if nxt is None or self.released is not None:
+            return {}
+        return {"t": (0, nxt.t), "vy": (nxt.vy_lo, nxt.vy_hi), "vx": (nxt.vx_lo, nxt.vx_hi)}
 
     def rows(self):
         """計器パネルの下のウィンドウに出す行: (ラベル, 範囲, 現在値, ウィンドウに入っているか)。"""

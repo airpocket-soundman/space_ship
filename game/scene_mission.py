@@ -86,6 +86,10 @@ class MissionScene:
         self.frame += 1
         steer = (1 if pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_RIGHT) else 0) - \
                 (1 if pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT) else 0)
+        # Shift(パッドは L ボタン)を押しながら ←→ は、回転ではなくスラスターで横へ平行移動
+        translate = 0
+        if pyxel.btn(pyxel.KEY_SHIFT) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_LEFTSHOULDER):
+            translate, steer = steer, 0
         thr = (1 if pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_UP) else 0) - \
               (1 if pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN) else 0)
         ignite = pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A)
@@ -119,7 +123,7 @@ class MissionScene:
             ts = round(run.time_scale)
             self.warp_used = run.warp * ts  # 基本の倍率(画面には出さない)× 早送り
             for _ in range(SUBSTEPS * run.warp * ts):
-                run.step(1 / 60 / SUBSTEPS, steer, thr)
+                run.step(1 / 60 / SUBSTEPS, steer, thr, translate)
                 if run.result:
                     break
             if v.lifted_off and not was_lifted:
@@ -291,6 +295,15 @@ class MissionScene:
             hw = rocket_art.HALF_W[v.p.style]
             side = v.rcs_firing
             for along, sgn in ((L * 0.85, -side), (L * 0.12, side)):
+                x = v.x + s * along + c * sgn * hw
+                y = v.y + c * along - s * sgn * hw
+                parts.jet(x, y, gvx, v.vy, v.theta + math.pi / 2 * sgn, 2)
+        # 平行移動のスラスター: 機首と機尾で同じ側に噴く(押したい向きと反対側に噴き出す)
+        if v.rcs_translate and not self.exploded:
+            L = v.length
+            hw = rocket_art.HALF_W[v.p.style]
+            sgn = -v.rcs_translate
+            for along in (L * 0.85, L * 0.12):
                 x = v.x + s * along + c * sgn * hw
                 y = v.y + c * along - s * sgn * hw
                 parts.jet(x, y, gvx, v.vy, v.theta + math.pi / 2 * sgn, 2)
@@ -793,21 +806,36 @@ class MissionScene:
                 y += 12 * K
             y += 8 * K
 
-        def row(label, value, col=ui.WHITE):
+        targets = run.hud_targets()
+        # 列をそろえる: 値は右端に右寄せ。目標(WP)は、値の列のすぐ左に右寄せ(値の長さで位置が動かないように)
+        # 小さい画面(詰めた配置)は横が狭いので、目標を出せる行(key のある行)は単位を省く
+        right = ui.W - 4 * K
+        tgt_right = right - ui.text_width("+00000.00" if small else "+00000.0 m/s", 10) - 4 * K
+
+        def row(label, value, col=ui.WHITE, key=None, now=None):
+            """key に目標(WP)があれば、値の左に目標の範囲を書き、値を範囲に入っているかで色分けする。"""
             nonlocal y
             ui.text(x + 4 * K, y, label, ui.GRAY, size=10)
-            ui.text(x + vx_, y, value, col, size=10)
+            target = targets.get(key)
+            if target is not None:
+                lo, hi = target
+                col = ui.LIME if lo <= now <= hi else ui.RED
+                tgt = f"~{hi:g}" if key == "t" else f"{lo:g}~{hi:g}"
+                ui.text(tgt_right - ui.text_width(tgt, 10), y, tgt, ui.CYAN, size=10)
+            value = value.split()[0] if small and key else value.strip()
+            ui.text(right - ui.text_width(value, 10), y, value, col, size=10)
             y += row_h
 
-        row("T+", f"{v.t:6.1f} s")
+        row("T+", f"{v.t:6.1f} s", key="t", now=v.t)
         row("高度", f"{v.y:8.0f} m" if v.y < 100_000 else f"{v.y / 1000:7.1f} km")
-        row("垂直速度", f"{v.vy:+7.1f} m/s")
-        row("水平速度", f"{v.vx:+7.1f} m/s")
+        row("垂直" if small else "垂直速度", f"{v.vy:+7.1f} m/s", key="vy", now=v.vy)
+        row("水平" if small else "水平速度", f"{v.vx:+7.1f} m/s", key="vx", now=v.vx)
         limit = self.m.land.q_limit if self.m.land and run.phase == "descent" else 30_000
         row("動圧", f"{v.q / 1000:6.1f} kPa", ui.ORANGE if limit and v.q > limit * 0.7 else ui.WHITE)
-        row("傾き", f"{run.tilt_deg():+6.1f} °")
+        row("傾き", f"{run.tilt_deg():+6.1f} °", key="ang", now=run.tilt_deg())
         if not tiny:
-            row("角速度", f"{math.degrees(v.omega):+6.2f} °/s")
+            rate = math.degrees(v.omega)
+            row("角速度", f"{rate:+6.2f} °/s", key="rate", now=rate)
         aoa = math.degrees(v.aoa_tail if run.phase in ("descent", "entry", "deorbit") else v.aoa)
         if v.air_speed < 30:
             aoa = 0.0
