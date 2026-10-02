@@ -9,7 +9,7 @@ import math
 
 import pyxel
 
-from . import ui
+from . import backgrounds, ui
 
 
 class Painter:
@@ -94,10 +94,23 @@ def maraca(p, x, y, col):
     p.rect(x - 4, y - 1, 8, 2, ui.WHITE)
 
 
-def draw(top, bottom, k, ox, frame):
-    """top〜bottom の範囲にキックオフの場面を描く。"""
+def draw(top, bottom, k, ox, frame, bg=None, board=None, doodle=None):
+    """top〜bottom の範囲にキックオフの場面を描く。
+    bg: 部屋の背景画(あれば壁・床・ホワイトボードは描かず、人と楽団だけを重ねる)。board: 絵の中のボードの白い面。
+    doodle: ボードに重ねる落書きの絵(なければ「MARS」と火星を描く)。"""
     floor_y = bottom - 64 * k  # 床(カーペット)の奥の線
     p = Painter(k, ox, floor_y - 200 * k)  # 基準座標で床の奥の線が y=200
+    if bg is not None:
+        pyxel.blt(0, top, bg, 0, 0, bg.width, bg.height)
+        if board and doodle is not None:
+            backgrounds.draw_doodle(doodle, board, top)
+        elif board:
+            x0, y0, x1, y1 = board
+            ui.text(x0 + (x1 - x0) * 0.08, top + y0 + (y1 - y0) * 0.12, "MARS", ui.RED, size=10 if k < 0.9 else 12)
+            r = min(x1 - x0, y1 - y0) * 0.18
+            pyxel.circ(x0 + (x1 - x0) * 0.77, top + y0 + (y1 - y0) * 0.55, r, ui.ORANGE)
+        people(p, k, frame)
+        return
     # 壁と天井
     pyxel.rect(0, top, ui.W, bottom - top, ui.WHITE)
     pyxel.rect(0, top, ui.W, max(2, 10 * k), ui.GRAY)
@@ -123,6 +136,11 @@ def draw(top, bottom, k, ox, frame):
     pyxel.line(0, floor_y, ui.W, floor_y, ui.DBLUE)
     for i in range(0, 640, 23):  # 織り目
         p.rect(i, 214 + (i * 7) % 40, 2, 1, ui.WHITE)
+    people(p, k, frame)
+
+
+def people(p, k, frame):
+    """手拍子する創業メンバー、マリアッチ楽団、マラカスを振るディーロン、音符。"""
     beat = math.sin(frame / 8)
 
     # 後ろで手拍子する創業メンバー

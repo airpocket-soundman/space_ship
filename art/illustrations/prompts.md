@@ -68,11 +68,34 @@
 
 | 記号 | 内容 | 状態 | できた絵(`assets/backgrounds/`) |
 |---|---|---|---|
-| B0 | 場面: 創業の日の借りオフィス(キックオフ) | ⬜ A / B / C | `b0_kickoff_<型>.png` |
-| B1 | 場面: オメガ島の格納庫(Chapter 1・Eagle 1) | ⬜ A / B / C | `b1_hangar_omega_<型>.png` |
-| B2 | 場面: 大きな組立工場(Chapter 2〜3・Eagle 9 / Hopper) | ⬜ A / B / C | `b2_factory_<型>.png` |
-| U1 | 下の操作パネル(会話の窓とコマンドの後ろ) | ⬜ A / B / C | `u1_panel_<型>.png` |
-| U2 | 上のステータス欄 | ⬜ A / B / C | `u2_status_<型>.png` |
+| B0 | 場面: 創業の日の借りオフィス(キックオフ) | ✅ A / B / C | `b0_kickoff_<型>.png` |
+| B1 | 場面: オメガ島の格納庫(Chapter 1・Eagle 1) | ✅ A / B / C(ホワイトボードの位置がずれている。下の注) | `b1_hangar_omega_<型>.png` |
+| B2 | 場面: 大きな組立工場(Chapter 2〜3・Eagle 9 / Hopper) | ✅ A / B / C(ホワイトボードの位置がずれている。下の注) | `b2_factory_<型>.png` |
+| U1 | 下の操作パネル(会話の窓とコマンドの後ろ) | ✅ A / B / C | `u1_panel_<型>.png` |
+| U2 | 上のステータス欄 | ✅ A / B / C | `u2_status_<型>.png` |
+
+注: B1・B2 のホワイトボードは、指定の位置から最大 30 ピクセルほど(1 倍の大きさで)ずれている。型 A の B1 は左に、型 B の B1 と型 A の B2 は下にずれている。描き直さず、ゲーム側でホワイトボードの文字の位置を絵に合わせる(表示の処理を作るときに、絵ごとにボードの位置を測って決める)。
+
+**ホワイトボードの落書き**(会社画面のホワイトボードに重ねる、透過の絵。下の「ホワイトボードの落書き」の章)
+
+| キー | ステージ | 状態(番号ごと) | できた絵(`assets/whiteboard/`) |
+|---|---|---|---|
+| kickoff | 創業の日(キックオフ) | ⬜ 1 / ⬜ 2 | `wb_kickoff_<番号>.png` |
+| 1-1 | Ch1-1 宇宙へ(高度 100 km) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_1-1_<番号>.png` |
+| 1-2 | Ch1-2 相乗り便(小型衛星を軌道へ) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_1-2_<番号>.png` |
+| 1-3 | Ch1-3 最後の1機 | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_1-3_<番号>.png` |
+| 1-4 | Ch1-4 最初の顧客(円軌道) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_1-4_<番号>.png` |
+| 2-1 | Ch2-1 Eagle 9 初飛行 | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_2-1_<番号>.png` |
+| 2-2 | Ch2-2 還ってきたカプセル(再突入・着水) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_2-2_<番号>.png` |
+| 2-3 | Ch2-3 民間初の到着(ステーション) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_2-3_<番号>.png` |
+| 2-4 | Ch2-4 初の静止衛星(遠地点 2000 km) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_2-4_<番号>.png` |
+| 2-5 | Ch2-5 定期便の試練 | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_2-5_<番号>.png` |
+| 3-1 | Ch3-1 跳ねるバッタ(Hopper) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_3-1_<番号>.png` |
+| 3-2 | Ch3-2 海面に立つ | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_3-2_<番号>.png` |
+| 3-3 | Ch3-3 台船の試練 | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_3-3_<番号>.png` |
+| 3-4 | Ch3-4 帰ってきた(発射場へ戻る) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_3-4_<番号>.png` |
+| 3-5 | Ch3-5 海の上の小さな島(台船) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_3-5_<番号>.png` |
+| 3-6 | Ch3-6 二度目の空(再使用) | ⬜ 1 / ⬜ 2 / ⬜ 3 | `wb_3-6_<番号>.png` |
 
 ---
 
@@ -298,7 +321,7 @@ retro 16-bit pixel art, limited 16-color palette, ordered dithering, crisp pixel
 retro 16-bit pixel art, limited 16-color palette, crisp pixels, no anti-aliasing, a flat user-interface background strip for a game screen, exactly [幅]x[高さ] pixels, dark and calm colors, low contrast, simple texture, no text, no icons, no buttons, no people
 ```
 
-### B0. 創業の日の借りオフィス ⬜
+### B0. 創業の日の借りオフィス ✅
 挿絵 1(`assets/illustrations/s01_kickoff.png`)を参照画像として渡し、同じ部屋を描く。キックオフの会話のあいだの場面。
 ```
 [場面の共通スタイル]
@@ -306,7 +329,7 @@ An empty rented office on its first day: white walls, fluorescent ceiling lights
 ```
 マリアッチ楽団を絵に入れるかは、今の `game/kickoff.py` の動き(楽団が揺れる)を残すかで決める。入れない場合は、楽団はゲームが重ねる。
 
-### B1. オメガ島の格納庫 ⬜
+### B1. オメガ島の格納庫 ✅
 参照画像: 設定資料 R7(`ref/sheets/r7_omega_island.png`)、挿絵 2(`s02_island.png`)。Chapter 1(Eagle 1)の場面。
 ```
 [場面の共通スタイル]
@@ -314,7 +337,7 @@ Inside a small gray metal hangar on a tiny tropical launch island, seen from the
 ```
 扉・ホワイトボード・空ける場所は、上の「ゲームが上に重ねるもの」の表の位置に合わせるよう、プロンプトに数字で書き足す(例: A なら `the open door spans x 810 to 1372, the whiteboard spans x 360 to 698 and y 160 to 362, keep x 990 to 1126 empty above the floor`)。
 
-### B2. 大きな組立工場 ⬜
+### B2. 大きな組立工場 ✅
 参照画像: 設定資料 R2(`ref/sheets/r2_eagle9.png`)、R5(`ref/sheets/r5_hopper.png`)、実物写真 `ref/real/falcon9_pad39a_vertical.jpg`。Chapter 2〜3(Eagle 9・Hopper)の場面。
 ```
 [場面の共通スタイル]
@@ -322,26 +345,282 @@ Inside a large, clean rocket assembly factory, seen from the side: tall white wa
 ```
 B1 と同じく、扉・ホワイトボード・空ける場所の位置を数字で書き足す。
 
-### U1. 下の操作パネル ⬜
+### U1. 下の操作パネル ✅
 会話の窓とコマンドのボタンの後ろ。どの場面でも共通。
 ```
 [U1・U2 の共通スタイル]
 The surface of a dark navy metal control desk seen from the front, with faint panel seams and a few small rivets near the edges, a thin lighter edge along the top border.
 ```
 
-### U2. 上のステータス欄 ⬜
+### U2. 上のステータス欄 ✅
 日付・資金・評判などの文字の後ろ。どの場面でも共通。文字が読めるよう、とても暗く平らにする。
 ```
 [U1・U2 の共通スタイル]
 A very dark navy horizontal header bar with a subtle metallic texture and a thin blue line along the bottom edge.
 ```
 
-### ゲーム側の対応(絵がそろったら)
+### ゲーム側の対応(済み)
 
-- 部分ごとの絵を読み込んで、型に合わせて置く(いまは `game/scene_office.py` の `draw_status()` / `draw_hangar()` と `game/kickoff.py` がプログラムで描いている)
-- 依頼した 2 倍の絵を半分に縮め、ゲームのパレットに合わせて色を減らす
-- 360x360 は A の絵をさらに半分にして使う
-- ホワイトボードの文字・機体・足場・立ち絵・会話の窓・ボタンは、今までどおりゲームが上に描く
+- `python tools/make_backgrounds.py` で、ここに置いた発注どおりの絵(2 倍の大きさ)を画面サイズごとの実寸に縮め、全部の背景で共通の 64 色に減らして `assets/bg/` に書き出す。**絵を差し替えたら、これを実行し直す**
+- ゲーム(`game/backgrounds.py`、`game/scene_office.py`、`game/kickoff.py`)は `assets/bg/` の絵を使う。絵がなければ、今までどおりプログラムで描く
+- ホワイトボードの位置は、変換のときに絵の中の白い面を探して測る(`assets/bg/meta.json`)。ゲームはそこに機体名・目標・落書きを書く。ボードを描き直すときも、**白い面を濃い色の枠で囲む**と測れる
+- 場面の使い分け: キックオフの会話のあいだは B0、Eagle 1 の間(Chapter 1)は B1、Eagle 9・Hopper の間は B2
+- Web 版には `assets/bg/` だけを入れる(発注した大きな絵の `assets/backgrounds/` は入れない)
+
+## ホワイトボードの落書き
+
+会社画面のホワイトボードに、マーカーで描いた落書きを重ねる。ステージごとに何パターンか用意し、月が変わるたびに入れ替わる。ジョークも入れる。
+
+### 決まり
+
+- **背景は透明**(透過 PNG)。ボードの白い面や枠は描かない。マーカーの線と文字だけ
+- 大きさは **600 × 300 px**(横 2:縦 1)。まわりに 5% ほど余白を残す。ゲームがボードの大きさに縮めて重ねる
+- 画面ではかなり小さくなる(640x480 で幅 140 ピクセル前後)。**線は太く、文字は大きく、描き込みは少なく**。320x240 では幅 45 ピクセルほどになり、文字は読めない(形と色で雰囲気が伝わればよい)
+- 文字は英語で、1 枚に 2〜4 語まで。日本語は使わない(英語版でもそのまま出すため)
+- 色はマーカーらしく 4 色まで: 黒 `#000000`、紺 `#2B335F`、赤 `#D4186C`、緑 `#3FA34D`。**紫(`#7E2072`)は使わない**(ゲームが透明の印に使う)
+- 人物は棒人間か、ごく簡単な顔だけ。実在の人や会社のロゴは描かない
+- できた絵は `assets/whiteboard/wb_<キー>_<番号>.png` に置き、上の一覧の印を ✅ にする。置いたら `python tools/make_backgrounds.py` を実行する
+
+### 共通スタイル(各プロンプトの先頭に付ける)
+```
+hand-drawn dry-erase marker doodle on a whiteboard, retro pixel art with thick crisp lines, no anti-aliasing, only marker strokes and handwritten letters on a fully transparent background, do not draw the whiteboard itself, no frame, 600x300 pixels, at most four marker colors (black, dark navy, red, green), never use purple, bold simple shapes that stay readable when shrunk to a small size, playful and funny
+```
+
+### kickoff. 創業の日(キックオフ)
+
+**1. ⬜** 宇宙開発の 3 段階計画のジョーク。「STEP 1: ROCKET / STEP 2: ??? / STEP 3: MARS」と書き、横に赤い火星
+```
+[共通スタイル] a joke three-step plan written as a list: 'STEP 1: ROCKET', 'STEP 2: ???', 'STEP 3: MARS', with a red Mars planet drawn next to it
+```
+**2. ⬜** 大きく「KICKOFF!」。紙吹雪と、マラカスを振る棒人間(ディーロン)と、ソンブレロ
+```
+[共通スタイル] big letters 'KICKOFF!' with confetti, a stick figure shaking two maracas and a sombrero
+```
+
+### 1-1. Ch1-1 宇宙へ(高度 100 km)
+
+**1. ⬜** 高さのはしご: 地面 → 10 km の飛行機 → 100 km の線に「SPACE!」。下から上へ矢印を伸ばしたロケット
+```
+[共通スタイル] an altitude ladder: the ground, a small airplane at '10km', a dashed line at '100km' labeled 'SPACE!', and a rocket with a long arrow pointing up from the ground to the line
+```
+**2. ⬜** ロケットの絵に、引越しの箱のような「THIS END UP ↑」の注意書き(ジョーク)
+```
+[共通スタイル] a simple rocket drawing with a shipping-box style warning 'THIS END UP' and an arrow pointing to the nose (joke)
+```
+**3. ⬜** チェックリスト「☑ IGNITE / ☐ GO UP / ☐ DON'T EXPLODE」。最後の項目に、赤い二重線のアンダーライン
+```
+[共通スタイル] a checklist: a ticked box 'IGNITE', an empty box 'GO UP', an empty box 'DON'T EXPLODE' underlined twice in red
+```
+
+### 1-2. Ch1-2 相乗り便(小型衛星を軌道へ)
+
+**1. ⬜** 地球の丸と、まわりを回る楕円の軌道と、小さな衛星。「ORBIT!」
+```
+[共通スタイル] a circle for the Earth with an elliptical orbit around it, a tiny satellite on the orbit and the word 'ORBIT!'
+```
+**2. ⬜** 座席に並んでシートベルトをした小さな衛星たち。「RIDESHARE - NO REFUNDS」
+```
+[共通スタイル] several tiny satellites sitting in a row of seats with seatbelts, like bus passengers, with 'RIDESHARE - NO REFUNDS'
+```
+**3. ⬜** とても大きな横向きの矢印と、とても小さな上向きの矢印。「SIDEWAYS!!」
+```
+[共通スタイル] one huge arrow pointing sideways labeled '7.8 km/s' and one tiny arrow pointing up, with 'SIDEWAYS!!'
+```
+
+### 1-3. Ch1-3 最後の1機
+
+**1. ⬜** ロケット 1 本とハートマーク。「LAST ONE」
+```
+[共通スタイル] a single rocket with a heart next to it and 'LAST ONE'
+```
+**2. ⬜** 資金のグラフが床まで落ちている線と、小さく「PLEASE WORK」
+```
+[共通スタイル] a money graph line falling down to zero and hitting the floor, with small letters 'PLEASE WORK'
+```
+**3. ⬜** お守りや四つ葉のクローバーを付けたロケット。「GOOD LUCK」
+```
+[共通スタイル] a rocket wearing a lucky charm amulet and a four-leaf clover, with 'GOOD LUCK'
+```
+
+### 1-4. Ch1-4 最初の顧客(円軌道)
+
+**1. ⬜** 石を投げる棒人間と、地球のまわりを回り続ける石の道筋。「KEEP FALLING」(マヤの説明の場面)
+```
+[共通スタイル] a stick figure throwing a stone, and the stone's path curving all the way around a round Earth, with 'KEEP FALLING'
+```
+**2. ⬜** 楕円の軌道に赤いバツ、円の軌道に赤い丸。「CIRCLE」
+```
+[共通スタイル] an elliptical orbit crossed out with a red X, and a circular orbit with a big check mark, labeled 'CIRCLE'
+```
+**3. ⬜** リボンをかけたお客さんの衛星と「FRAGILE」のスタンプ
+```
+[共通スタイル] a customer satellite wrapped with a gift ribbon and a 'FRAGILE' stamp
+```
+
+### 2-1. Ch2-1 Eagle 9 初飛行
+
+**1. ⬜** エンジンを下から見た 3×3 の丸。「x9!」
+```
+[共通スタイル] nine circles in a 3 by 3 grid, the engines seen from below, with 'x9!'
+```
+**2. ⬜** 3×3 のエンジンの丸を使った三目並べ(ジョーク)。誰かが勝っている
+```
+[共通スタイル] a game of tic-tac-toe played on the 3 by 3 grid of engine circles, with one player winning (joke)
+```
+**3. ⬜** 「HOBBY x9 = 9 HOBBIES」(主力エンジンの名前のジョーク)
+```
+[共通スタイル] the pun 'HOBBY x9 = 9 HOBBIES' with nine small flames
+```
+
+### 2-2. Ch2-2 還ってきたカプセル(再突入・着水)
+
+**1. ⬜** パラシュートで波の上に降りるカプセル。「SPLASH!」
+```
+[共通スタイル] a space capsule coming down on a parachute over waves, with 'SPLASH!'
+```
+**2. ⬜** 再突入の角度 3 本: 浅いと跳ねる、深いと燃える、ちょうどいいとにっこり。「GOLDILOCKS」
+```
+[共通スタイル] three reentry paths into a curved atmosphere: too shallow bounces off, too steep burns up, the middle one has a smiley face, labeled 'GOLDILOCKS'
+```
+**3. ⬜** 炎の中から飛び立つ鳥の形をしたカプセル(不死鳥)
+```
+[共通スタイル] a capsule shaped like a phoenix bird rising out of flames
+```
+
+### 2-3. Ch2-3 民間初の到着(ステーション)
+
+**1. ⬜** 宇宙ステーションと、ゆっくり近づくカプセル。「SLOW!! 1.2 m/s」
+```
+[共通スタイル] a space station and a capsule approaching it slowly, with 'SLOW!! 1.2 m/s'
+```
+**2. ⬜** 甲羅がカプセルになったカメ。「BE THE TURTLE」
+```
+[共通スタイル] a turtle whose shell is a space capsule, with 'BE THE TURTLE'
+```
+**3. ⬜** クレーンゲームのアームでカプセルをつかむステーションのロボットアーム(ジョーク)
+```
+[共通スタイル] the station's robot arm grabbing the capsule like a claw machine game, with 'CLAW MACHINE?' (joke)
+```
+
+### 2-4. Ch2-4 初の静止衛星(遠地点 2000 km)
+
+**1. ⬜** 地球と、縦に長くのびた楕円の軌道。「2000km!」
+```
+[共通スタイル] the Earth with a very long, stretched elliptical orbit, with '2000km!'
+```
+**2. ⬜** パラボラアンテナの衛星と、アンテナがついたテレビ。「CH 1」
+```
+[共通スタイル] a satellite with a dish antenna beaming to a little TV set showing 'CH 1'
+```
+**3. ⬜** 小さな点線の軌道(Eagle 1)と、とても大きな楕円。「WAY UP」
+```
+[共通スタイル] a tiny dotted orbit next to a huge ellipse, with 'WAY UP'
+```
+
+### 2-5. Ch2-5 定期便の試練
+
+**1. ⬜** 毎月に丸が付いたカレンダー。「CARGO EVERY MONTH」
+```
+[共通スタイル] a calendar with a circle on every month, with 'CARGO EVERY MONTH'
+```
+**2. ⬜** カプセルの中の冷凍ピザの箱。「FROZEN PIZZA x1」(サラの「経費で落ちるのは 1 枚だけ」のジョーク)
+```
+[共通スタイル] a frozen pizza box inside a cargo capsule, with 'FROZEN PIZZA x1' (joke)
+```
+**3. ⬜** タンクの絵とスパナと「CHECK THE TANK!」
+```
+[共通スタイル] a fuel tank, a wrench and 'CHECK THE TANK!'
+```
+
+### 3-1. Ch3-1 跳ねるバッタ(Hopper)
+
+**1. ⬜** ロケットの脚をつけたバッタ。「HOP!」
+```
+[共通スタイル] a grasshopper with little rocket legs, with 'HOP!'
+```
+**2. ⬜** 手のひらの上に立てた鉛筆。「LIKE THIS?」(ディーロンのたとえ)
+```
+[共通スタイル] a pencil balanced upright on an open palm, with 'LIKE THIS?'
+```
+**3. ⬜** 2 つのパッドのあいだの山なりの点線。「100m」
+```
+[共通スタイル] a dotted arc hopping from one landing pad to another, with '100m'
+```
+
+### 3-2. Ch3-2 海面に立つ
+
+**1. ⬜** 波の上に立つ 1 段目。「STAND ON THE SEA?」
+```
+[共通スタイル] a rocket booster standing upright on top of waves, with 'STAND ON THE SEA?'
+```
+**2. ⬜** 倒れていく 1 段目と「TIMBER!」(木を切り倒すときの掛け声)
+```
+[共通スタイル] a booster tipping over sideways with 'TIMBER!'
+```
+**3. ⬜** 1 段目を見上げて「?」を出している魚たち
+```
+[共通スタイル] a few fish looking up at a booster with question marks
+```
+
+### 3-3. Ch3-3 台船の試練
+
+**1. ⬜** 台船と、甲板に書かれた「READ THE INSTRUCTIONS」(台船の名前のジョーク)
+```
+[共通スタイル] a flat landing barge with 'READ THE INSTRUCTIONS' written on its deck (joke about its name)
+```
+**2. ⬜** 台船の的と、ダーツの矢になったロケット
+```
+[共通スタイル] a bullseye target on the barge and a rocket drawn as a dart flying toward it
+```
+**3. ⬜** 波で揺れて、目を回している 1 段目
+```
+[共通スタイル] a seasick booster with swirly dizzy eyes on rocking waves
+```
+
+### 3-4. Ch3-4 帰ってきた(発射場へ戻る)
+
+**1. ⬜** U ターンの矢印で発射場へ戻る道筋。「RETURN」
+```
+[共通スタイル] a U-turn arrow from the sky back down to the launch pad, with 'RETURN'
+```
+**2. ⬜** ロケットの形をしたブーメラン
+```
+[共通スタイル] a boomerang shaped like a rocket, flying back
+```
+**3. ⬜** スーツケースを持った 1 段目。「HOME SWEET HOME」
+```
+[共通スタイル] a booster carrying a suitcase, with 'HOME SWEET HOME'
+```
+
+### 3-5. Ch3-5 海の上の小さな島(台船)
+
+**1. ⬜** ヤシの木が 1 本生えた台船。「SHIP」
+```
+[共通スタイル] a landing barge with one palm tree on it like a tiny island, with 'SHIP'
+```
+**2. ⬜** 「BUILD = $$$$ / FLY AGAIN = $」のくらべっこ
+```
+[共通スタイル] a comparison written as 'BUILD = $$$$' and 'FLY AGAIN = $'
+```
+**3. ⬜** ヘッドホンをした棒人間(ケン)が叫んでいる。「STAND STILL!!」
+```
+[共通スタイル] a stick figure with big headphones shouting 'STAND STILL!!'
+```
+
+### 3-6. Ch3-6 二度目の空(再使用)
+
+**1. ⬜** ロケットのまわりのリサイクルの矢印。「REUSE!」
+```
+[共通スタイル] recycling arrows circling around a rocket, with 'REUSE!'
+```
+**2. ⬜** スタンプが 2 つ押されたポイントカード。「FREQUENT FLYER」
+```
+[共通スタイル] a loyalty stamp card with two stamps, with 'FREQUENT FLYER'
+```
+**3. ⬜** 棒人間のディーロンと、そっくりなロボットの顔。「v0.1」(伏線)
+```
+[共通スタイル] a stick figure and a robot with the same messy hair standing side by side, with 'v0.1' (a hint at the copy AI)
+```
 
 ## 設定資料
 

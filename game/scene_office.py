@@ -4,7 +4,7 @@ import math
 
 import pyxel
 
-from . import audio, kickoff, rocket_art, script, state, story, ui
+from . import audio, backgrounds, kickoff, rocket_art, script, state, story, ui
 from .i18n import trf
 from .missions import MISSIONS
 from .script import NAMES
@@ -85,9 +85,12 @@ class OfficeScene:
     # ---- 描画 ----
     def draw(self):
         pyxel.cls(ui.BLACK)
+        lay = self.lay
+        backgrounds.draw("u1_panel", 0, lay.view_bottom)  # 会話の窓とコマンドの後ろ
         if self.dlg.active and self.dlg.index < self.party:
-            lay = self.lay
-            kickoff.draw(lay.status_h + 1, lay.view_bottom, lay.k, lay.ox, self.frame)
+            kickoff.draw(lay.status_h + 1, lay.view_bottom, lay.k, lay.ox, self.frame,
+                         bg=backgrounds.image("b0_kickoff"), board=backgrounds.board("b0_kickoff"),
+                         doodle=backgrounds.whiteboard("kickoff", self.st.month_index))
         else:
             self.draw_hangar()
         self.draw_status()
@@ -102,8 +105,9 @@ class OfficeScene:
     def draw_status(self):
         st = self.st
         h = self.lay.status_h
-        pyxel.rect(0, 0, ui.W, h, ui.NAVY)
-        pyxel.line(0, h, ui.W, h, ui.DBLUE)
+        if not backgrounds.draw("u2_status", 0, 0):
+            pyxel.rect(0, 0, ui.W, h, ui.NAVY)
+            pyxel.line(0, h, ui.W, h, ui.DBLUE)
         col = ui.RED if st.funds < 10 else ui.YELLOW
         build = trf(" 製造中{n}", n=st.building_now()) if st.building_now() else ""
         funds = trf("資金 {funds:6.1f}M$", funds=st.funds)
@@ -127,10 +131,52 @@ class OfficeScene:
         ui.text(530 * k, 8, rockets, ui.WHITE, size=10)
 
     def draw_hangar(self):
-        """格納庫。640x480 のときの絵を倍率 k で拡大・縮小し、床を基準に置く。"""
+        """格納庫。背景画があればそれを使い、なければ 640x480 のときの絵を倍率 k で描く。床を基準に機体を立てる。"""
         k, ox = self.lay.k, self.lay.ox
         top, bottom = self.lay.status_h + 1, self.lay.view_bottom
         floor = bottom - 70 * k
+        scene = "b1_hangar_omega" if self.st.craft == "eagle1" else "b2_factory"  # Chapter 1 は島の格納庫
+        if backgrounds.draw(scene, 0, top):
+            board = backgrounds.board(scene) or (ox + 160 * k, floor - 189 * k - top, ox + 310 * k, floor - 99 * k - top)
+            doodle = backgrounds.whiteboard(self.st.stage, self.st.month_index)
+            if doodle:  # ステージごとの落書き(月ごとに入れ替わる)
+                backgrounds.draw_doodle(doodle, board, top)
+            else:
+                x0, y0, x1, y1 = board
+                self.draw_board(x0, top + y0, x1, top + y1)
+        else:
+            self.draw_hangar_room(top, bottom, floor)
+        # 機体(あれば格納庫に立っている)
+        if self.st.ready() > 0 or self.st.building_now():
+            built = self.st.ready() > 0
+            cx = ox + 470 * k
+            if self.st.craft == "eagle1":
+                self.draw_rocket_in_hangar(cx, floor, k, built=built)
+            else:
+                self.draw_craft_in_hangar(cx, floor, k, built)
+
+    def draw_board(self, x0, y0, x1, y1):
+        """ホワイトボードの字と落書き。(x0, y0)〜(x1, y1) はボードの白い面。元の絵(150 x 90)の位置を、面の大きさに合わせて置く。"""
+        sx, sy = (x1 - x0) / 150, (y1 - y0) / 90
+        size = 10 if ui.COMPACT else 12
+        ui.text(x0 + 10 * sx, y0 + 6 * sy, self.st.craft_name.upper(), ui.DBLUE, size=size)
+        line_y = max(y0 + 28 * sy, y0 + 6 * sy + size * ui.K + 1)  # 字の大きさに対してボードが小さいときは、字の下へずらす
+        pyxel.line(x0 + 10 * sx, line_y, x0 + 90 * sx, line_y, ui.BLACK)
+        right = x1 - 6 * sx  # 落書きの丸を置ける右の端(目標の字があれば、その左まで)
+        if not ui.TINY:  # 320x240 ではボードが小さくて入らない
+            goal = script.BOARD.get(self.st.stage, "")
+            right = x0 + 144 * sx - ui.text_width(goal, 10)
+            ui.text(right, line_y + 6 * sy, goal, ui.RED, size=10)
+        cx = (x0 + 10 * sx + right) / 2  # 丸は、左の端と目標の字のあいだの真ん中
+        cy = (line_y + y1) / 2
+        r = min(22 * min(sx, sy), (right - x0 - 10 * sx) / 2 - 2, (y1 - line_y) / 2 - 2)
+        if r >= 3:
+            pyxel.circb(cx, cy, r, ui.RED)
+            pyxel.circ(cx, cy, max(1, r * 0.27), ui.DBLUE)
+
+    def draw_hangar_room(self, top, bottom, floor):
+        """背景画がないときの格納庫(プログラムで描く)。"""
+        k, ox = self.lay.k, self.lay.ox
         # 壁
         pyxel.rect(0, top, ui.W, bottom - top, ui.NAVY)
         for x in range(0, ui.W, round(40 * k)):
@@ -156,27 +202,13 @@ class OfficeScene:
         by = floor - 189 * k
         pyxel.rect(ox + 160 * k, by, 150 * k, 90 * k, ui.WHITE)
         pyxel.rectb(ox + 160 * k, by, 150 * k, 90 * k, ui.GRAY)
-        ui.text(ox + 170 * k, by + 6 * k, self.st.craft_name.upper(), ui.DBLUE, size=10 if ui.COMPACT else 12)
-        pyxel.circb(ox + 235 * k, by + 60 * k, 22 * k, ui.RED)
-        pyxel.circ(ox + 235 * k, by + 60 * k, 6 * k, ui.DBLUE)
-        pyxel.line(ox + 170 * k, by + 28 * k, ox + 250 * k, by + 28 * k, ui.BLACK)
-        if not ui.TINY:  # 320x240 ではボードが小さくて入らない
-            goal = script.BOARD.get(self.st.stage, "")
-            ui.text(ox + 304 * k - ui.text_width(goal, 10), by + 34 * k, goal, ui.RED, size=10)
+        self.draw_board(ox + 160 * k, by, ox + 310 * k, by + 90 * k)
         # 机とノートPC
         pyxel.rect(ox + 40 * k, floor - 40 * k, 120 * k, 10 * k, ui.BROWN)
         pyxel.rect(ox + 48 * k, floor - 30 * k, 6 * k, 40 * k, ui.BROWN)
         pyxel.rect(ox + 146 * k, floor - 30 * k, 6 * k, 40 * k, ui.BROWN)
         pyxel.rect(ox + 80 * k, floor - 58 * k, 40 * k, 18 * k, ui.GRAY)
         pyxel.rect(ox + 82 * k, floor - 56 * k, 36 * k, 14 * k, ui.TEAL if self.frame // 30 % 2 else ui.LIME)
-        # 機体(あれば格納庫に立っている)
-        if self.st.ready() > 0 or self.st.building_now():
-            built = self.st.ready() > 0
-            cx = ox + 470 * k
-            if self.st.craft == "eagle1":
-                self.draw_rocket_in_hangar(cx, floor, k, built=built)
-            else:
-                self.draw_craft_in_hangar(cx, floor, k, built)
 
     def draw_craft_in_hangar(self, cx, base, k, built):
         """Eagle 9 / Hopper。Eagle 9 は用意した絵(assets/rockets)があればそれを使う。"""
