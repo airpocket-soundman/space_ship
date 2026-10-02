@@ -54,12 +54,13 @@
 | R4 | Mega Booster + Space Ship | ✅ | `r4_mega_booster.png` |
 | R5 | Hopper | ✅ 参照写真なしで作った | `r5_hopper.png` |
 | R6 | Phoenix(カプセル) | ✅ | `r6_phoenix.png` |
-| R7 | オメガ島の射場 | 1 枚版 ✅ / 1 方向ずつ ⬜ | `r7_omega_island.png`(1 枚版)、`r7_omega_island_<向き>.png` |
-| R8 | ミハシラの射場 | 1 枚版 ✅ / 1 方向ずつ ⬜ 腕を開いた版と閉じた版で 4 枚ずつ | `r8_mihashira.png`(1 枚版)、`r8_mihashira_open_<向き>.png` / `r8_mihashira_closed_<向き>.png` |
-| R9 | 台船 | 1 枚版 ✅ / 1 方向ずつ ⬜ | `r9_droneship.png`(1 枚版)、`r9_droneship_<向き>.png` |
-| R1-1 | Eagle 1 分離後(1段目 / 2段目) | ⬜ R1 を渡して作る | `r1_1_eagle1_separated.png` |
-| R2-1 | Eagle 9 分離後(1段目 / 2段目 / フェアリング) | ⬜ R2 を渡して作る | `r2_1_eagle9_separated.png` |
-| R3-1 | Eagle Heavy 分離後(サイドブースター / センターコア / 2段目) | ⬜ R3 を渡して作る | `r3_1_eagle_heavy_separated.png` |
+| R7 | オメガ島の射場 | 1 枚版 ✅ / 1 方向ずつ ✅ | `r7_omega_island.png`(1 枚版)、`r7_omega_island_<向き>.png` |
+| R8 | ミハシラの射場 | 1 枚版 ✅ / 1 方向ずつ ✅ 腕を開いた版と閉じた版で 4 枚ずつ | `r8_mihashira.png`(1 枚版)、`r8_mihashira_open_<向き>.png` / `r8_mihashira_closed_<向き>.png` |
+| R9 | 台船 | 1 枚版 ✅ / 1 方向ずつ ✅ | `r9_droneship.png`(1 枚版)、`r9_droneship_<向き>.png` |
+| R1-1 | Eagle 1 分離後(1段目 / 2段目) | ✅ | `r1_1_eagle1_separated.png` |
+| R2-1 | Eagle 9 分離後(1段目 / 2段目 / フェアリング) | ✅ | `r2_1_eagle9_separated.png` |
+| R2-2 | Eagle 9 着陸時の1段目(グリッドフィンと着陸脚を開いた形。側面・正面・上面・パース) | ✅ | `r2_2_eagle9_landing.png` |
+| R3-1 | Eagle Heavy 分離後(サイドブースター / センターコア / 2段目) | ✅ | `r3_1_eagle_heavy_separated.png` |
 | R4-1 | Mega Booster + Space Ship 分離後 | ➖ R4 に、それぞれ単体の図が入っている | ― |
 | R6-1 | Phoenix 分離後(カプセル / トランク) | ➖ R6 に、それぞれ単体の図が入っている | ― |
 
