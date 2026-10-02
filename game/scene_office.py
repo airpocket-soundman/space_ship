@@ -59,6 +59,7 @@ class OfficeScene:
         return story.describe(self.st, cmd.key)
 
     def run_command(self, key):
+        self.party = 0  # キックオフの場面は最初の会話だけ。コマンドの会話では出さない
         lines, then = story.command(self.st, key)
         if then == "launch":
             mdef = MISSIONS[self.st.stage]
