@@ -13,6 +13,11 @@ assets/bg/<名前>_<画面サイズ>.png に書き出す。
 ホワイトボードの落書き(assets/whiteboard/wb_<キー>_<番号>.png、透過)も、画面ごとのボードの大きさに縮めて
 assets/bg/wb/<キー>_<番号>_<画面サイズ>.png に書き出す。キーはステージ(1-1 など)か kickoff。
 色は標準の 16 色に合わせ、透明なところは紫(ゲームが透明の印に使う色)で塗る。
+
+会話の挿絵(assets/illustrations/s<番号>_*.png)も、画面ごとの場面の大きさにして assets/bg/ill/<番号>_<画面サイズ>.png に書き出す。
+- 場面の絵: 高さに合わせて真ん中に置き、左右は同じ絵をぼかして暗くしたもので埋める
+- ウィンドウの絵(script.IMAGE_INSETS): 場面の高さの INSET 倍の小窓の大きさ
+挿絵どうしで共通の ILL_COLORS 色に減らす。
 """
 
 import json
@@ -24,7 +29,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from game import ui  # noqa: E402
+from game import script, ui  # noqa: E402
 from game.missions import MISSIONS  # noqa: E402
 from game.scene_office import Layout  # noqa: E402
 
@@ -35,6 +40,9 @@ WB_SRC = ROOT / "assets" / "whiteboard"
 BASE = [0x000000, 0x2B335F, 0x7E2072, 0x19959C, 0x8B4852, 0x395C98, 0xA9C1FF, 0xEEEEEE,
         0xD4186C, 0xD38441, 0xE9C35B, 0x70C6A9, 0x7696DE, 0xA3A3A3, 0xFF9798, 0xEDC7B0]
 KEY = 2
+ILL_SRC = ROOT / "assets" / "illustrations"
+ILL_COLORS = 128  # 挿絵に使う色の数(背景の 64 色と合わせても、パレットの 256 色に収まる)
+INSET = 0.66  # ウィンドウの絵の高さ(場面の高さに対する割合)
 COLORS = 64  # 背景に使う色の数(パレットは全部で 256 色まで。ほかの絵で 52 色使っている)
 TYPE = {"720x720": "A", "360x360": "A", "640x480": "B", "320x240": "C"}
 SCENES = ("b0_kickoff", "b1_hangar_omega", "b2_factory")
@@ -138,6 +146,62 @@ def whiteboards(boards):
     return {k: sorted(v) for k, v in found.items()}
 
 
+def illustration_file(num):
+    """挿絵の番号のファイル(6-1 → s06_1_*.png)。なければ None。"""
+    major, _, minor = num.partition("-")
+    files = sorted(ILL_SRC.glob(f"s{int(major):02d}_" + (f"{minor}_" if minor else "") + "*.png"))
+    return files[0] if files else None
+
+
+def illustrations():
+    """挿絵を画面ごとの大きさにして書き出す。{番号: "scene" か "inset"} を返す。"""
+    from PIL import ImageEnhance, ImageFilter
+    out_dir = OUT / "ill"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for old in out_dir.glob("*.png"):
+        old.unlink()
+    made, kinds = {}, {}
+    for num in script.IMAGES:
+        if num in script.IMAGE_SKIP or num in script.IMAGE_OVERLAYS:
+            continue
+        path = illustration_file(num)
+        if path is None:
+            print(f"挿絵がありません: {num}")
+            continue
+        src = Image.open(path).convert("RGB")
+        kind = "inset" if num in script.IMAGE_INSETS else "scene"
+        kinds[num] = kind
+        for screen in TYPE:
+            _, _, scene_h = sizes(screen)
+            w = ui.W
+            if kind == "inset":
+                h = round(scene_h * INSET)
+                made[f"{num}_{screen}"] = src.resize((round(h * src.width / src.height), h), Image.LANCZOS)
+                continue
+            # 左右は、同じ絵を横いっぱいに広げて、ぼかして暗くしたもの
+            cover = src.resize((w, round(w * src.height / src.width)), Image.LANCZOS)
+            top = (cover.height - scene_h) // 2
+            back = cover.crop((0, top, w, top + scene_h)).filter(ImageFilter.GaussianBlur(max(2, scene_h // 30)))
+            back = ImageEnhance.Brightness(back).enhance(0.45)
+            fw = round(scene_h * src.width / src.height)
+            back.paste(src.resize((fw, scene_h), Image.LANCZOS), ((w - fw) // 2, 0))
+            made[f"{num}_{screen}"] = back
+    if made:
+        strip = Image.new("RGB", (max(i.width for i in made.values()), sum(i.height for i in made.values())))
+        y = 0
+        for im in made.values():
+            strip.paste(im, (0, y))
+            y += im.height
+        pal = strip.quantize(colors=ILL_COLORS, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+        for name, im in made.items():
+            im.quantize(palette=pal, dither=Image.Dither.NONE).convert("RGB").save(out_dir / f"{name}.png", optimize=True)
+        flat = pal.getpalette()[: ILL_COLORS * 3]
+        colors = sorted({(flat[i], flat[i + 1], flat[i + 2]) for i in range(0, len(flat), 3)})
+        print(f"挿絵 {len(kinds)} 枚 / 色 {len(colors)}")
+        return kinds, colors
+    return kinds, []
+
+
 def main():
     out = {}  # 出力の名前 → 画像(RGB)
     plan = []  # (出力の名前, 画面, 部品)
@@ -186,7 +250,10 @@ def main():
         if name in boards_guess:
             boards[name] = find_board(q, boards_guess[name])
         print(f"{name}.png {q.size[0]}x{q.size[1]}" + (f"  ボード {boards[name]}" if name in boards else ""))
-    meta = {"colors": ["%02X%02X%02X" % c for c in colors], "boards": boards, "whiteboard": whiteboards(boards)}
+    kinds, ill_colors = illustrations()
+    all_colors = colors + [c for c in ill_colors if c not in set(colors)]
+    meta = {"colors": ["%02X%02X%02X" % c for c in all_colors], "boards": boards, "whiteboard": whiteboards(boards),
+            "illustrations": kinds}
     (OUT / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"色 {len(colors)} / {OUT.relative_to(ROOT)}")
 

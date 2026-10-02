@@ -179,6 +179,7 @@ class Dialogue:
 
     def __init__(self):
         self.lines = []
+        self.images = []  # 行ごとの、それまでに出てきた挿絵の印の並び
         self.index = 0
         self.shown = 0
         self.on_done = None
@@ -186,8 +187,15 @@ class Dialogue:
     QUIET = set(" 　、。,.!?！？…「」()（）—-ー")  # 声を鳴らさない文字
 
     def start(self, lines, on_done=None):
-        # ("image", 番号) は専用画像を出す位置の印。絵はまだないので飛ばす
-        self.lines = [(speaker, tr(body)) for speaker, body in lines if speaker != "image"]
+        # ("image", 番号) は挿絵を出す位置の印。会話の行にはせず、その行から先で出す挿絵として覚えておく
+        self.lines, self.images = [], []
+        marks = []
+        for speaker, body in lines:
+            if speaker == "image":
+                marks = marks + [body]
+            else:
+                self.lines.append((speaker, tr(body)))
+                self.images.append(marks)
         self.index = 0
         self.shown = 0
         self.on_done = on_done
@@ -199,6 +207,11 @@ class Dialogue:
     @property
     def current(self):
         return self.lines[self.index] if self.active else None
+
+    @property
+    def image_marks(self):
+        """いまの行までに出てきた挿絵の印(古い順)。"""
+        return self.images[self.index] if self.active else []
 
     def update(self):
         if not self.active:

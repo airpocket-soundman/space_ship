@@ -231,6 +231,10 @@ EN = {
     "次の飛行の成功確率を、少しだけ上方修正しました。": "I've revised the odds of success on the next flight up, just slightly.",
     "保険の書類、もう書き慣れちゃったわ。": "I've gotten way too good at filling out insurance forms.",
     "誰も笑ってないな。笑え。次は飛ぶんだ。": "Nobody's smiling. Smile. Next time it flies.",
+    # ---- 挿絵に重ねる文字 ----
+    "全長 21 m": "Length 21 m",
+    "2段式": "Two stages",
+    "低軌道に 670 kg": "670 kg to low orbit",
     "テレメトリも全部残っています。火災の原因は、もう3つまで絞れました。": "We have all the telemetry, too. I've already narrowed the fire down to three causes.",
     "飛行制御は私が——": "I can handle flight control--",
     "却下。俺が飛ばす。": "Denied. I'm flying it.",

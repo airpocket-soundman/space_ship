@@ -70,3 +70,11 @@ def draw_doodle(img, board, top):
     y = top + (y0 + y1 + 1 - img.height) // 2
     pyxel.blt(x, y, img, 0, 0, img.width, img.height, ui.PURPLE)
 
+
+def illustration(num):
+    """会話の挿絵 (絵, 種類)。種類は "scene"(場面いっぱい)か "inset"(小窓)。なければ (None, None)。"""
+    kind = _load_meta().get("illustrations", {}).get(num)
+    if kind is None:
+        return None, None
+    return image(f"ill/{num}"), kind
+

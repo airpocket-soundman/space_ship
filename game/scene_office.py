@@ -5,7 +5,7 @@ import math
 import pyxel
 
 from . import audio, backgrounds, kickoff, rocket_art, script, state, story, ui
-from .i18n import trf
+from .i18n import tr, trf
 from .missions import MISSIONS
 from .script import NAMES
 from .vehicles import EAGLE9_S1R, EAGLE9_S2, HOPPER
@@ -87,7 +87,9 @@ class OfficeScene:
         pyxel.cls(ui.BLACK)
         lay = self.lay
         backgrounds.draw("u1_panel", 0, lay.view_bottom)  # 会話の窓とコマンドの後ろ
-        if self.dlg.active and self.dlg.index < self.party:
+        if self.draw_illustration():
+            pass
+        elif self.dlg.active and self.dlg.index < self.party:
             kickoff.draw(lay.status_h + 1, lay.view_bottom, lay.k, lay.ox, self.frame,
                          bg=backgrounds.image("b0_kickoff"), board=backgrounds.board("b0_kickoff"),
                          doodle=backgrounds.whiteboard("kickoff", self.st.month_index))
@@ -129,6 +131,59 @@ class OfficeScene:
         ui.text(370 * k, 8, f"TLM {st.tlm}", ui.CYAN)
         ui.text(450 * k, 8, f"AP {st.ap}/{st.ap_max}", ui.WHITE)
         ui.text(530 * k, 8, rockets, ui.WHITE, size=10)
+
+    def illustration_state(self):
+        """いまの会話の行で出す挿絵: (場面の絵の番号, 小窓の番号, 重ねる文字)。どれも、なければ None。"""
+        scene = inset = overlay = None
+        for num in self.dlg.image_marks:
+            if num in script.IMAGE_SKIP:
+                scene = inset = overlay = None
+            elif num in script.IMAGE_OVERLAYS:
+                overlay = script.IMAGE_OVERLAYS[num]
+            elif num in script.IMAGE_INSETS:
+                inset = num
+            else:  # 新しい場面の絵になったら、小窓と文字は消す
+                scene, inset, overlay = num, None, None
+        return scene, inset, overlay
+
+    def draw_illustration(self):
+        """会話の挿絵を、場面の位置に描く。描いたら True(格納庫などは描かない)。"""
+        if not self.dlg.active:
+            return False
+        scene, inset, overlay = self.illustration_state()
+        img, _ = backgrounds.illustration(scene) if scene else (None, None)
+        if img is None:
+            return False
+        lay = self.lay
+        top = lay.status_h + 1
+        pyxel.blt(0, top, img, 0, 0, img.width, img.height)
+        view_h = lay.view_bottom - top
+        if inset:
+            win, _ = backgrounds.illustration(inset)
+            if win is not None:
+                # 右寄りに小窓。縁取りと影をつける
+                m = 8 * ui.K if not ui.TINY else 3
+                x, y = ui.W - win.width - m * 2, top + (view_h - win.height) // 2
+                pyxel.rect(x + 3, y + 3, win.width, win.height, ui.BLACK)
+                pyxel.blt(x, y, win, 0, 0, win.width, win.height)
+                pyxel.rectb(x - 1, y - 1, win.width + 2, win.height + 2, ui.WHITE)
+                lines = script.IMAGE_TEXT.get(inset)
+                if lines and ui.TINY:  # 320x240 は小窓が小さいので、1 行目(機体名)だけ
+                    lines = lines[:1]
+                if lines:  # スペックなどの文字を、小窓の右側に重ねる
+                    size = 10
+                    ty = y + 6 * ui.K
+                    for i, t in enumerate(lines):
+                        t = tr(t)
+                        tx = x + win.width - ui.text_width(t, size) - 6 * ui.K
+                        ui.text(tx, ty, t, ui.YELLOW if i == 0 else ui.WHITE, size=size, border=ui.BLACK)
+                        ty += ui.LINE_H - 2 * ui.K if not ui.TINY else 11
+        if overlay and self.frame % 120 < 24:  # モニターの隅に、ときどき一瞬だけ映る文字
+            size = 10
+            tx = ui.W - ui.text_width(overlay, size) - 12 * ui.K
+            ty = lay.view_bottom - 18 * ui.K
+            ui.text(tx, ty, overlay, ui.LIME, size=size, border=ui.BLACK)
+        return True
 
     def draw_hangar(self):
         """格納庫。背景画があればそれを使い、なければ 640x480 のときの絵を倍率 k で描く。床を基準に機体を立てる。"""
