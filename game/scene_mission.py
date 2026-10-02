@@ -116,8 +116,9 @@ class MissionScene:
             if action:
                 run.z()
             was_lifted = v.lifted_off
-            self.warp_used = run.warp
-            for _ in range(SUBSTEPS * run.warp):
+            ts = round(run.time_scale)
+            self.warp_used = run.warp * ts  # 基本の倍率(画面には出さない)× 早送り
+            for _ in range(SUBSTEPS * run.warp * ts):
                 run.step(1 / 60 / SUBSTEPS, steer, thr)
                 if run.result:
                     break

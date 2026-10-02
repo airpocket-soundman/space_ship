@@ -1,6 +1,6 @@
 """機体の諸元(Pyxel に依存しない)。
 
-数値は「小さな惑星」に合わせたゲーム用の値で、実物の諸元ではない。
+惑星は地球と同じ大きさ。数値は元ネタの機体(Falcon 1 / Falcon 9 など)に近づけた値。
 """
 
 import math
@@ -36,26 +36,27 @@ EAGLE1 = VehicleParams(
     diameter=1.7,
 )
 
-# 2 段式の Eagle 1。1段目は 70 秒ほどで燃え尽き、2段目(エンジン Lanner)が軌道まで運ぶ
+# 2 段式の Eagle 1(元ネタ: Falcon 1)。1段目(エンジン Hobby)は 150 秒ほどで燃え尽き、
+# 推力の小さい2段目(エンジン Lanner)が 6 分かけて軌道まで運ぶ
 EAGLE1_S1 = VehicleParams(
     name="Eagle 1",
-    dry_mass=2_500.0,
-    prop_mass=13_800.0,
-    thrust_sl=450_000.0,
-    thrust_vac=490_000.0,
-    isp_sl=200.0,
-    isp_vac=230.0,
+    dry_mass=1_450.0,
+    prop_mass=21_500.0,
+    thrust_sl=360_000.0,
+    thrust_vac=410_000.0,
+    isp_sl=255.0,
+    isp_vac=304.0,
     length=14.0,
     diameter=1.7,
 )
 EAGLE1_S2 = VehicleParams(
     name="Eagle 1 S2",
-    dry_mass=3_000.0,
-    prop_mass=4_400.0,
-    thrust_sl=155_000.0,
-    thrust_vac=155_000.0,
-    isp_sl=320.0,
-    isp_vac=320.0,
+    dry_mass=430.0,
+    prop_mass=4_300.0,
+    thrust_sl=31_000.0,
+    thrust_vac=31_000.0,
+    isp_sl=340.0,
+    isp_vac=340.0,
     length=7.0,
     diameter=1.7,
     min_throttle=0.5,
@@ -63,7 +64,7 @@ EAGLE1_S2 = VehicleParams(
     cutoff_lag=0.3,
     gimbal_max=math.radians(1.0),
     inertia_factor=10.0,
-    rcs_fuel=60.0,
+    rcs_fuel=240.0,  # 2段目の燃焼は長い(画面の時間で 2 分以上)ので、姿勢を直し続けても足りる量
     ang_damping=0.12,
     aero_instability=0.3,
     ignitions=3,

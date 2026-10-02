@@ -48,11 +48,11 @@ class Pilot:
             marks.pop(key, None)
             return False
         t0 = marks.setdefault(key, t)
-        return t - t0 >= self.sloppy
+        return t - t0 >= self.sloppy * self.run.time_scale  # 反応の遅れは画面の時間
 
     def thr_for_fire(self):
         run, v = self.run, self.run.v
-        if run.fire_active and v.t - run.fire_at > 0.4 + self.sloppy:
+        if run.fire_active and v.t - run.fire_at > (0.4 + self.sloppy) * run.time_scale:
             return -1
         if not run.fire_active and v.throttle_cmd < 1.0:
             return 1
@@ -74,18 +74,20 @@ class AscentPilot(Pilot):
 
 
 class OrbitPilot(Pilot):
-    """重力ターン → 分離 → 遠地点を上げる → 遠地点で円軌道にする → 放出。"""
+    """重力ターン → 分離 → 遠地点を目標の高さに保って噴く →(高い軌道は惰性で遠地点へ → 円にする)→ 放出。"""
 
-    def __init__(self, run, sloppy=0.0, tilt=55.0, p1=70.0):
+    COAST_PE = 160_000.0  # 惰性飛行に入ってよい近地点(大気の上)
+
+    def __init__(self, run, sloppy=0.0, tilt=45.0, p1=85.0, alt_scale=60_000.0):
         super().__init__(run, sloppy)
-        self.tilt, self.p1 = tilt, p1
+        self.tilt, self.p1, self.alt_scale = tilt, p1, alt_scale
         o = run.m.orbit
         self.park_ap = (o.pe_lo + min(o.ap_hi, o.pe_lo + 60_000)) / 2 if not o.ap_lo else 130_000.0
         self.park_pe = (o.pe_lo + 4_000) if not o.ap_lo else 90_000.0
 
     def s1_target(self):
         v = self.run.v
-        des = math.radians(self.tilt) * min(1.0, max(0.0, (v.y - 800) / 27_000)) ** 0.6
+        des = math.radians(self.tilt) * min(1.0, max(0.0, (v.y - 800) / self.alt_scale)) ** 0.6
         if v.speed > 60 and v.q > 8_000:
             va = math.atan2(v.vx, v.vy)
             lim = math.radians(7)
@@ -111,31 +113,37 @@ class OrbitPilot(Pilot):
         if self.state == "start":
             if self.late("s2", True):
                 run.space()
-                self.state = "burn1"
+                self.state = "hold"
             return steer_to(v, math.radians(self.p1)), 1
-        if self.state == "burn1":
-            tgt = math.radians(self.p1)
-            if v.q > 10_000:
-                va = math.atan2(v.vx, v.vy)
-                tgt = min(max(tgt, va - math.radians(8)), va + math.radians(8))
-            if self.late("cut1", ap >= self.park_ap):
+        if self.state == "hold":
+            # 2段目は推力が小さいので止めずに噴く。遠地点を目標の高さに保ちながらほぼ水平に噴き、近地点を上げる
+            # (遠地点が低ければ機首を少し上げ、高すぎれば少し下げる)
+            high = (o.pe_lo + o.ap_hi) / 2 > 400_000 and not o.ap_lo
+            # 低い軌道は近地点の少し上、高い軌道は目標の幅の中ほど(噴いているあいだに伸びるぶん低め)を狙う
+            target_ap = max((o.pe_lo + o.ap_hi) / 2 - 70_000, self.park_pe + 25_000) if high else self.park_pe + 20_000
+            s = max(-0.5, min(0.6, (target_ap - ap) / 30_000))
+            if self.late("cut2", pe >= self.park_pe):
+                run.space()
+                self.state = "gto" if o.ap_lo else "release"
+            elif high and self.late("cut1", pe >= self.COAST_PE and ap >= target_ap - 15_000):
+                # 高い軌道: 近地点が大気の上に出たら止め、遠地点まで惰性で上がって、そこで円にする
                 run.space()
                 self.state = "coast"
-            return steer_to(v, tgt), 1
+            return steer_to(v, horiz - math.asin(s)), (-1 if pe > self.park_pe - 60_000 else 1)
         if self.state == "coast":
             tta = time_to_apoapsis(v.y, v.vx, v.vy)
             aligned = abs(v.theta - horiz) < math.radians(6) and abs(v.omega) < math.radians(1)
-            if tta is None or tta < 12 + self.sloppy:
+            if tta is None or tta < 30 + self.sloppy * 3:
                 run.space()
-                self.state = "burn2"
+                self.state = "circ"
             return (0 if aligned else steer_to(v, horiz)), 0
-        if self.state == "burn2":
+        if self.state == "circ":
+            # 遠地点で水平に噴き、近地点を目標まで上げる(落ち始めたら機首を少し上げる)
             s = max(-0.35, min(0.35, -v.vy / 120))
             if self.late("cut2", pe >= self.park_pe):
                 run.space()
                 self.state = "gto" if o.ap_lo else "release"
-            # 近地点が上がってきたら出力を絞って、止めどきを合わせやすくする
-            return steer_to(v, horiz - math.asin(s)), (-1 if pe > 0 else 1)
+            return steer_to(v, horiz - math.asin(s)), (-1 if pe > self.park_pe - 60_000 else 1)
         if self.state == "gto":
             if not v.engine_on:
                 if abs(v.theta - horiz) < math.radians(4) and self.late("gto", True):
@@ -352,7 +360,7 @@ def fly(mid, sloppy=0.0, inspected=False, seed=0, idle=False, **kw):
             if n % hold == 0:
                 steer = new
         n += 1
-        for _ in range(run.warp):
+        for _ in range(run.warp * round(run.time_scale)):
             run.step(DT, steer, thr)
         wall += DT
     run.wall = wall

@@ -15,7 +15,7 @@ import math
 from dataclasses import dataclass
 
 from .i18n import trf
-from .physics import G0, MU, PLANET_R, time_to_apoapsis
+from .physics import G0, MU, PLANET_R, SCALE_H, TIME_SCALE, time_to_apoapsis
 from .vehicles import EAGLE1, EAGLE9_S1R, HOPPER, PHOENIX, Rocket, eagle1, eagle9
 
 
@@ -112,6 +112,7 @@ class MissionDef:
     entry: Entry = None
     start: dict = None  # 飛行の途中から始めるときの初期状態
     time_limit: float = 150.0
+    time_scale: float = TIME_SCALE  # 物理を実時間の何倍で進めるか(オープニングは史実どおりの時刻に火災が起きるよう等倍)
     tilt_limit: float = 45.0  # これ以上傾くと飛行中断 [°](0 なら制限なし)
     can_cutoff: bool = False  # SPACE でエンジンを止められる
     fire_chance: float = 0.0
@@ -127,9 +128,10 @@ class MissionDef:
 
 
 # ---- Chapter 1: Eagle 1 ----
-CH1_1 = MissionDef(
-    id="1-1",
-    title="Ch1-1 再挑戦",
+# オープニングの初飛行(ステージの並びには入らない。ゲームの最初に飛び、必ず火災で爆発する)
+OPENING = MissionDef(
+    id="opening",
+    title="初飛行",
     goal="高度 10 km を突破せよ",
     kind="ascent",
     rocket=Rocket("Eagle 1", [EAGLE1]),
@@ -144,15 +146,16 @@ CH1_1 = MissionDef(
         },
     ),
     time_limit=150.0,
+    time_scale=1,
     fire_chance=0.8,
     fire_chance_inspected=0.25,
     tlm_success=40,
     rep_success=10,
 )
 
-CH1_2 = MissionDef(
-    id="1-2",
-    title="Ch1-2 宇宙へ",
+CH1_1 = MissionDef(
+    id="1-1",
+    title="Ch1-1 宇宙へ",
     goal="高度 100 km に到達せよ",
     kind="ascent",
     rocket=eagle1(1_000.0),
@@ -176,15 +179,15 @@ CH1_2 = MissionDef(
     reward=30.0,
 )
 
-CH1_3 = MissionDef(
-    id="1-3",
-    title="Ch1-3 相乗り便",
+CH1_2 = MissionDef(
+    id="1-2",
+    title="Ch1-2 相乗り便",
     goal="小型衛星を軌道に乗せよ",
     kind="orbit",
-    rocket=eagle1(600.0),
-    orbit=Orbit(pe_lo=80_000.0, ap_hi=300_000.0, att_tol=20.0, rate_tol=3.0, release_time=30.0),
+    rocket=eagle1(200.0),
+    orbit=Orbit(pe_lo=300_000.0, ap_hi=800_000.0, att_tol=20.0, rate_tol=3.0, release_time=30.0),
     sep=Sep(),
-    time_limit=600.0,
+    time_limit=3000.0,
     tilt_limit=135.0,
     can_cutoff=True,
     fire_chance=0.3,
@@ -194,15 +197,15 @@ CH1_3 = MissionDef(
     reward=10.0,
 )
 
-CH1_4 = MissionDef(
-    id="1-4",
-    title="Ch1-4 最後の1機",
+CH1_3 = MissionDef(
+    id="1-3",
+    title="Ch1-3 最後の1機",
     goal="ダミー衛星を軌道に乗せよ",
     kind="orbit",
-    rocket=eagle1(1_000.0),
-    orbit=Orbit(pe_lo=100_000.0, ap_hi=200_000.0, att_tol=10.0, rate_tol=1.5, release_time=20.0),
+    rocket=eagle1(165.0),
+    orbit=Orbit(pe_lo=550_000.0, ap_hi=750_000.0, att_tol=10.0, rate_tol=1.5, release_time=20.0),
     sep=Sep(),
-    time_limit=600.0,
+    time_limit=6000.0,
     tilt_limit=135.0,
     can_cutoff=True,
     tlm_success=70,
@@ -210,15 +213,15 @@ CH1_4 = MissionDef(
     reward=60.0,
 )
 
-CH1_5 = MissionDef(
-    id="1-5",
-    title="Ch1-5 最初の顧客",
+CH1_4 = MissionDef(
+    id="1-4",
+    title="Ch1-4 最初の顧客",
     goal="観測衛星を円軌道に乗せよ",
     kind="orbit",
-    rocket=eagle1(1_300.0),
-    orbit=Orbit(pe_lo=110_000.0, ap_hi=150_000.0, att_tol=5.0, rate_tol=0.5, release_time=15.0),
+    rocket=eagle1(180.0),
+    orbit=Orbit(pe_lo=650_000.0, ap_hi=750_000.0, att_tol=5.0, rate_tol=0.5, release_time=15.0),
     sep=Sep(),
-    time_limit=600.0,
+    time_limit=6000.0,
     tilt_limit=135.0,
     can_cutoff=True,
     fire_chance=0.25,
@@ -439,7 +442,7 @@ CH3_6 = MissionDef(
     income=28.0,
 )
 
-ORDER = [CH1_1, CH1_2, CH1_3, CH1_4, CH1_5, CH2_1, CH2_2, CH2_3, CH2_4, CH2_5,
+ORDER = [CH1_1, CH1_2, CH1_3, CH1_4, CH2_1, CH2_2, CH2_3, CH2_4, CH2_5,
          CH3_1, CH3_2, CH3_3, CH3_4, CH3_5, CH3_6]
 MISSIONS = {m.id: m for m in ORDER}
 
@@ -472,7 +475,7 @@ class MissionRun:
     AOA_LIMIT = math.radians(12.0)
     Q_LIMIT = 12_000.0
     DOOMED_FIRE_AT = 27.0  # オープニングの飛行で火災が起きる時刻 [s]
-    SPACE_LINE = 45_000.0  # これより上は空気がほとんどなく、早送りできる
+    SPACE_LINE = 100_000.0  # これより上は空気がなく、早送りできる
     RECOVERY_ENGINES = 3 / 9  # 戻りの噴射・再突入噴射に使うエンジンの割合(9 基のうち 3 基)
     LANDING_ENGINES = 0.134  # 着陸噴射は中央の 1 基だけ(最低出力でも、軽くなった機体はわずかに浮く)
     LANDING_ALT = 12_000.0  # これより下で点火すると着陸噴射になる
@@ -481,6 +484,8 @@ class MissionRun:
         """doomed: オープニングの飛行。決まった時刻に火災が起き、何をしても爆発する。"""
         self.m = mdef
         self.v = mdef.rocket.make()
+        self.time_scale = mdef.time_scale
+        self.v.time_scale = mdef.time_scale
         if seed is not None:
             self.v.rng.seed(seed)
         rng = self.v.rng
@@ -685,7 +690,9 @@ class MissionRun:
             self.maxq_announced = True
             self.emit("info", "最大動圧を通過")
 
-        if self._fire(dt) or self._gimmick(dt):
+        # プレイヤーが対処する猶予(火災・故障・空中分解・放出など)は画面の時間 rt で数える
+        rt = dt / self.time_scale
+        if self._fire(rt) or self._gimmick(rt):
             return
 
         # 空力による分解(落ちてくる機体は、エンジン側を前に向けていればよい)
@@ -694,11 +701,11 @@ class MissionRun:
         # 短い2段目や、落ちてくる1段目は、長い機体よりも曲げに強い
         tough = 2.5 if self.stage_no >= 2 else 1.7 if tail_ok else 1.0
         if aoa > self.AOA_LIMIT * (2.0 if tail_ok else 1.0) and v.q > self.Q_LIMIT * tough and self.phase != "chute":
-            self.stress += dt
+            self.stress += rt
             if self.stress > 0.6:
                 return self.fail("迎角が大きすぎて空中分解")
         else:
-            self.stress = max(0.0, self.stress - dt)
+            self.stress = max(0.0, self.stress - rt)
 
         if m.tilt_limit and v.lifted_off and abs(v.theta) > math.radians(m.tilt_limit):
             return self.fail("姿勢を失ったため飛行中断(自爆)")
@@ -834,7 +841,7 @@ class MissionRun:
             self.release_timer = 0.0
             return False
         if ok:
-            self.release_timer += dt
+            self.release_timer += dt / self.time_scale
             if self.release_timer > o.release_time:
                 return self.fail("放出の時間切れ")
             return False
@@ -847,7 +854,8 @@ class MissionRun:
         tta = time_to_apoapsis(v.y, v.vx, v.vy)
         if v.y > self.SPACE_LINE and tta is not None and tta > 14 and self.steer_in == 0 \
                 and v.ignitions_left < v.p.ignitions:
-            self.warp = 6
+            # 地球の軌道は遠地点まで何十分もかかる。遠いうちは大きく早送りし、近づいたら倍率を落とす
+            self.warp = 30 if tta > 120 else 6
         return False
 
     def _step_recover(self, dt):
@@ -892,11 +900,11 @@ class MissionRun:
         # 降下中の動圧: 再突入噴射で速度を落とさないと壊れる
         if land.q_limit and self.phase == "descent":
             if v.q > land.q_limit:
-                self.q_stress += dt
+                self.q_stress += dt / self.time_scale
                 if self.q_stress > 1.5:
                     return self.fail("減速が足りず、再突入で機体が分解")
             else:
-                self.q_stress = max(0.0, self.q_stress - dt)
+                self.q_stress = max(0.0, self.q_stress - dt / self.time_scale)
         self.warp = 1
         if self.phase == "descent" and not v.engine_on and v.y > 36_000 and self.steer_in == 0                 and abs(v.omega) < math.radians(1.0):
             self.warp = 6  # 空気のないところを惰性で飛んでいるあいだは早送り
@@ -964,7 +972,7 @@ class MissionRun:
         ka = 0.5 * p.drag_cd * math.pi * (p.diameter / 2) ** 2 * v.drag_mult
         spd, y, d, dt, t = v.speed, v.y, 0.0, 0.2, 0.0
         for _ in range(400):
-            rho = 1.225 * math.exp(-max(y, 0.0) / 8_500.0)
+            rho = 1.225 * math.exp(-max(y, 0.0) / SCALE_H)
             on = t >= delay
             a = (thrust / m if on else 0.0) - G0 + ka * rho * spd * spd / m
             if on and spd <= a * dt:

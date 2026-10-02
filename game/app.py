@@ -4,7 +4,7 @@ import pyxel
 
 from . import audio, i18n, script, state, story, ui
 from .portraits import Portraits
-from .missions import MISSIONS, ORDER
+from .missions import MISSIONS, OPENING, ORDER
 from .scene_dock import DockScene
 from .scene_misc import CaptionScene, GameOverScene, ResultScene, TitleScene
 from .scene_mission import MissionScene
@@ -54,7 +54,7 @@ class App:
     def new_game(self):
         """いきなり初飛行から始める(操作説明つき。途中で必ず爆発する)。"""
         self.state = GameState()
-        self.scene = MissionScene(self, MISSIONS["1-1"], cold_open=True)
+        self.scene = MissionScene(self, OPENING, cold_open=True)
 
     def continue_game(self):
         """セーブしたところから続ける。セーブがなければ False。"""

@@ -17,7 +17,7 @@ import pyxel  # noqa: E402
 
 from game import audio, i18n, state, ui  # noqa: E402
 from game.i18n import tr  # noqa: E402
-from game.missions import MISSIONS, ORDER  # noqa: E402
+from game.missions import MISSIONS, OPENING, ORDER  # noqa: E402
 from game.scene_dock import DockScene  # noqa: E402
 from game.scene_mission import MissionScene  # noqa: E402
 from game.state import GameState  # noqa: E402
@@ -122,7 +122,7 @@ class FlightTestApp:
     def launch(self, item):
         self.current = item
         if item == OPENING:
-            self.scene = MissionScene(self, MISSIONS["1-1"], cold_open=True)
+            self.scene = MissionScene(self, OPENING, cold_open=True)
             return
         mdef = MISSIONS[item]
         self.scene = DockScene(self, mdef) if mdef.kind == "dock" else MissionScene(self, mdef)

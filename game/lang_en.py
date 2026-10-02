@@ -70,7 +70,7 @@ EN = {
     "ゲンさん": "Gen",
 
     # ---- ミッション ----
-    "Ch1-1 再挑戦": "Ch1-1 Second Try",
+    "初飛行": "First Flight",
     "高度 10 km を突破せよ": "Climb past 10 km",
     "時刻": "Time",
     "垂直速度": "V speed",
@@ -262,13 +262,13 @@ EN = {
     "機体がないわ。「製造」して。": "No rocket. \"Build\" one.",
 
     # ---- ステージ名と目標 ----
-    "Ch1-2 宇宙へ": "Ch1-2 To Space",
+    "Ch1-1 宇宙へ": "Ch1-1 To Space",
     "高度 100 km に到達せよ": "Reach 100 km",
-    "Ch1-3 相乗り便": "Ch1-3 Rideshare",
+    "Ch1-2 相乗り便": "Ch1-2 Rideshare",
     "小型衛星を軌道に乗せよ": "Put small satellites in orbit",
-    "Ch1-4 最後の1機": "Ch1-4 The Last One",
+    "Ch1-3 最後の1機": "Ch1-3 The Last One",
     "ダミー衛星を軌道に乗せよ": "Put a dummy satellite in orbit",
-    "Ch1-5 最初の顧客": "Ch1-5 First Customer",
+    "Ch1-4 最初の顧客": "Ch1-4 First Customer",
     "観測衛星を円軌道に乗せよ": "Put the satellite in a circular orbit",
     "Ch2-1 Eagle 9 初飛行": "Ch2-1 Eagle 9 Debut",
     "試験カプセルを軌道に乗せよ": "Put the test capsule in orbit",
@@ -545,9 +545,9 @@ EN = {
     "消える前に切り離すと、1段目が追突する。待ってから Z。": "Separate before it's gone and stage 1 rams you. Wait, then Z.",
     "軌道に入ったら、機体を水平に向けて回転を止め、Z で衛星を放出して。":
         "Once in orbit, point level, stop the rotation, and press Z to release the satellites.",
-    "ダミー衛星を高度 100〜200 km の軌道へ。ウィンドウは前より狭いわ。": "A dummy satellite to a 100-200 km orbit. The windows are tighter.",
+    "ダミー衛星を高度 550〜750 km の軌道へ。ウィンドウは前より狭いわ。": "A dummy satellite to a 550-750 km orbit. The windows are tighter.",
     "小細工はなし。いままでやったことを、正確にやるだけ。": "No tricks. Just do what you've done, precisely.",
-    "近地点 110 km 以上、遠地点 150 km 以下。ほぼ円よ。": "Periapsis above 110 km, apoapsis below 150 km. Nearly a circle.",
+    "近地点 650 km 以上、遠地点 750 km 以下。ほぼ円よ。": "Periapsis above 650 km, apoapsis below 750 km. Nearly a circle.",
     "放出の向きは ±5°、回転は ±0.5°/s。スラスターは、ちょんと押すだけ。":
         "Release within ±5° and ±0.5°/s. Just tap the thrusters.",
     "Eagle 9 の初飛行。長くて重いぶん、回り出すと止まりにくいわ。":
@@ -656,8 +656,8 @@ EN = {
 
     # ---- 会話: 次のステージ ----
     "今度こそ高度 100 km。宇宙の入口よ。": "This time, 100 km for real. The edge of space.",
-    "次は軌道。高く上がるだけじゃ足りない。横へ秒速 2.2 km まで加速するの。":
-        "Next, orbit. Going high isn't enough. You accelerate sideways to 2.2 km/s.",
+    "次は軌道。高く上がるだけじゃ足りない。横へ秒速 7.8 km まで加速するの。":
+        "Next, orbit. Going high isn't enough. You accelerate sideways to 7.8 km/s.",
     "手順は飛行中に画面の上へ出す。計器の「近地点」「遠地点」を見て。":
         "The steps show at the top of the screen in flight. Watch \"Pe\" and \"Ap\" on the panel.",
     "資金は底が見えてきた。工場の空気は重い。": "The money is running out. The factory is quiet.",
@@ -677,7 +677,7 @@ EN = {
     "石が落ちるのと同じだけ、地面が逃げていく速さで投げたら——": "Throw it so fast that the ground drops away exactly as fast as the stone falls, and—",
     "……いつまでたっても、地面に届かない?": "...It never reaches the ground?",
     "そう。石は、地平線の向こうに落ち続けるの。それが軌道。": "Exactly. The stone keeps falling past the horizon, forever. That's an orbit.",
-    "この星なら、横に秒速 2.2 km です。": "On this world, that's 2.2 km per second sideways.",
+    "地球なら、横に秒速 7.8 km です。": "On Earth, that's 7.8 km per second sideways.",
     "つまり宇宙船は、飛んでるんじゃない。ずっと落ちてるんだ。": "So a spaceship isn't flying. It's falling, the whole time.",
     "円軌道は、どこでも同じ高さで落ち続けること。速さが合っていないと、膨らんだり、低いところへ寄ってきたりする。": "A circular orbit falls at the same height all the way around. If the speed is off, it bulges out or sags low.",
     "だから、一番高いところに着く手前で、もう一度横に噴いて、速さをそろえるの。": "So just before the highest point, you burn sideways once more and even out the speed.",
@@ -750,7 +750,7 @@ EN = {
     "監禁、の方が正確です。帰りの船の予定表、どこにも貼ってありませんから。": "\"Confinement\" is more accurate. The return ship schedule isn't posted anywhere.",
     '貼ってないんじゃなくて、予算の都合で組んでないの。': "It's not that it isn't posted. We never booked one. Budget.",
     '……もっとひどいじゃん。': "...That's even worse.",
-    "でもね。": "But you know what?",
+    "昼はああ言ったけどね。": "I know what we said this afternoon, but...",
     'ここなら会議の承認待ちもないし、近所から『うるさい』って苦情も来ない。': "Out here there's no waiting for meetings to sign off, and no neighbors complaining about the noise.",
     "朝起きて、エンジンを燃やして、壊れたら直して、夜にはもう一回燃やせる。": "Wake up, fire the engine, fix what breaks, and fire it again by night.",
     'こんな場所、世界中探してもないわ。': "You won't find a place like this anywhere in the world.",
@@ -805,4 +805,5 @@ EN = {
     '便が増えます。記録した飛行は、もう十分な数になりました。約束どおり、ルーチン便を任せてください。': "Flights are increasing. We've recorded enough of your flights. As promised, let it take the routine flights.",
     "最初のうちは、と言ったからな。……dylon_pilot を起動しろ。初めての便は、これからも俺が飛ぶ。": "I did say \"for now.\" ...Start dylon_pilot. New flights are still mine.",
     "……判断の癖も、そっくりです。": "...Its judgment is just like yours, too.",
+    "また届かなかった……。宇宙の入口が、遠い。": "Missed again... The edge of space is so far.",
 }

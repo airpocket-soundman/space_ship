@@ -2,7 +2,9 @@
 
 座標系: x は東向きの地表距離[m]、y は高度[m](上向き)。
 姿勢 theta は鉛直からの傾き[rad]。正で東(右)に傾く。
-惑星は実物の約 1/10 の大きさ(半径 600 km)。軌道速度は約 2.2 km/s で、1 回の飛行が数分で終わる。
+惑星は地球と同じ大きさ(半径 6371 km、軌道速度は約 7.8 km/s)。
+時間は常に TIME_SCALE 倍で進める(画面には出さない)。機体の向き・回転・ノズル・スロットル操作だけは
+画面の時間で進めるので、何倍で進めても操縦の手応えは変わらない。
 """
 
 import math
@@ -10,11 +12,12 @@ import random
 from dataclasses import dataclass, field
 
 G0 = 9.80665
-PLANET_R = 600_000.0
+PLANET_R = 6_371_000.0
 MU = G0 * PLANET_R ** 2
 RHO0 = 1.225
-SCALE_H = 8_500.0
-ATMO_TOP = 70_000.0  # これより上は真空とみなす(軌道が空気で落ちてこない)
+SCALE_H = 7_000.0  # 空気の濃さが 1/e になる高さ(実際の大気に近くなる値)
+ATMO_TOP = 100_000.0  # これより上は真空とみなす(軌道が空気で落ちてこない)
+TIME_SCALE = 3  # 物理を実時間の何倍で進めるか
 P0 = 101_325.0
 
 
@@ -110,6 +113,7 @@ class Vehicle:
     fins: bool = False  # グリッドフィンを開いているか
     drag_mult: float = 1.0  # パラシュートなどによる抗力の倍率
     torque_bias: float = 0.0  # 故障や揺れによる外乱の角加速度 [rad/s^2]
+    time_scale: float = TIME_SCALE  # 物理を実時間の何倍で進めているか(操縦と回転を画面の時間で進めるのに使う)
     rng: random.Random = field(default_factory=random.Random)
 
     def __post_init__(self):
@@ -226,9 +230,10 @@ class Vehicle:
         p = self.p
         if self.launched:
             self.t += dt
+        cdt = dt / self.time_scale  # 画面の時間(操縦と回転はこちらで進める)
 
         # スロットル(目標 → 実値は一次遅れ)
-        self.throttle_cmd += throttle_input * p.throttle_rate * dt
+        self.throttle_cmd += throttle_input * p.throttle_rate * cdt
         self.throttle_cmd = min(1.0, max(p.min_throttle, self.throttle_cmd))
         if self.engine_on:
             self.throttle += (self.throttle_cmd - self.throttle) * min(1.0, dt / p.throttle_lag)
@@ -237,7 +242,7 @@ class Vehicle:
 
         # ジンバル(一次遅れ)
         g_target = steer * p.gimbal_max if self.engine_on else 0.0
-        self.gimbal += (g_target - self.gimbal) * min(1.0, dt / p.gimbal_lag)
+        self.gimbal += (g_target - self.gimbal) * min(1.0, cdt / p.gimbal_lag)
 
         thrust = self.thrust_now()
         m = self.mass
@@ -250,18 +255,18 @@ class Vehicle:
         self.rcs_firing = 0
         if steer != 0 and self.rcs_fuel > 0:
             alpha += steer * p.rcs_accel
-            self.rcs_fuel = max(0.0, self.rcs_fuel - dt)
+            self.rcs_fuel = max(0.0, self.rcs_fuel - cdt)
             self.rcs_firing = steer
         if self.lifted_off:
             q = self.q
             if self.fins and steer != 0:
                 alpha += steer * p.fin_auth * min(1.5, q / 20_000.0)
             alpha += p.aero_instability * (q / 20_000.0) * math.sin(self.aoa) * 0.05
-            self.gust += (self.rng.gauss(0, 1) * 1.2 - self.gust * 0.5) * dt
+            self.gust += (self.rng.gauss(0, 1) * 1.2 - self.gust * 0.5) * cdt
             alpha += self.gust * math.radians(1.5) * min(1.0, self.density / RHO0 * 1.5)
             alpha += self.torque_bias
-        self.omega += alpha * dt
-        self.omega *= 1.0 - p.ang_damping * dt
+        self.omega += alpha * cdt
+        self.omega *= 1.0 - p.ang_damping * cdt
 
         # 力: 推力(ジンバル分だけ機体軸から逆向きに傾く)+ 重力 + 抗力
         dir_angle = self.theta - self.gimbal
@@ -300,4 +305,4 @@ class Vehicle:
         self.vy += ay * dt
         self.x += self.vx * dt * PLANET_R / r
         self.y += self.vy * dt
-        self.theta += self.omega * dt
+        self.theta += self.omega * cdt
