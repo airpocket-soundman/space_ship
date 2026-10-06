@@ -1,6 +1,10 @@
 """動作確認用のランチャー: ブラウザのページから、各テストプログラムを起動する。
 
 python tools/launcher.py        → http://127.0.0.1:8765/ がブラウザで開く
+python tools/launcher.py --python C:/path/to/python.exe   起動に使う Python を指定する
+
+起動に使う Python: このランチャーを動かした Python に Pyxel が入っていればそれを使う。入っていなければ、
+Anaconda の環境(envs)や PATH 上の Python から Pyxel の入っているものを探して使う(環境変数 STARX_PYTHON でも指定できる)。
 
 ブラウザは手元のプログラムを直接は起動できないので、このスクリプトが小さな Web サーバーになって、
 ページのボタンが押されたらプログラムを起動する。自分の PC(127.0.0.1)からしか開けない。
@@ -8,9 +12,12 @@ python tools/launcher.py        → http://127.0.0.1:8765/ がブラウザで開
 終了は、このスクリプトを動かしている端末で Ctrl+C。
 """
 
+import glob
 import html
+import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -35,6 +42,8 @@ SHOTS = ROOT / "tools" / "shots"
 ILLUST = ROOT / "assets" / "illustrations"
 ILLUST_TYPES = {".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg"}
 STAGES = [(m.id, m.title) for m in ORDER]
+
+NEEDS_PYXEL = {"game", "flight", "autoplay"}  # Pyxel がないと動かないもの
 
 # 起動できるプログラム。console: 別の端末ウィンドウで動かす(文字で出力・入力するもの)
 PROGRAMS = {
@@ -72,18 +81,81 @@ def build_args(prog, opts):
     return args
 
 
+def has_pyxel(python):
+    """その Python に Pyxel が入っているか。"""
+    if os.path.normcase(os.path.abspath(python)) == os.path.normcase(os.path.abspath(sys.executable)):
+        return importlib.util.find_spec("pyxel") is not None
+    try:
+        out = subprocess.run([python, "-c", "import importlib.util as u; print(bool(u.find_spec('pyxel')))"],
+                             capture_output=True, text=True, timeout=20)
+        return out.stdout.strip() == "True"
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def candidate_pythons():
+    """Pyxel が入っていそうな Python の候補(先に見るものほど優先)。"""
+    exe = "python.exe" if os.name == "nt" else os.path.join("bin", "python")
+    found = [sys.executable]
+    # Anaconda / Miniconda の環境: いまの環境の envs と、いまが envs の中ならその兄弟
+    prefixes = {sys.prefix, os.environ.get("CONDA_PREFIX", ""), os.path.dirname(os.environ.get("CONDA_EXE", ""))}
+    roots = set()
+    for prefix in filter(None, prefixes):
+        prefix = os.path.abspath(prefix)
+        if os.path.basename(os.path.dirname(prefix)) == "envs":
+            roots.add(os.path.dirname(prefix))
+        roots.add(os.path.join(prefix, "envs"))
+        roots.add(os.path.join(os.path.dirname(prefix), "envs"))  # CONDA_EXE は Scripts の中
+    envs = sorted(p for root in roots for p in glob.glob(os.path.join(root, "*", exe)))
+    # 名前に pyxel が入っている環境を先に
+    envs.sort(key=lambda p: "pyxel" not in p.lower())
+    found += envs
+    for name in ("python", "python3"):
+        path = shutil.which(name)
+        if path:
+            found.append(path)
+    seen, result = set(), []
+    for p in found:
+        key = os.path.normcase(os.path.abspath(p))
+        if key not in seen and os.path.exists(p):
+            seen.add(key)
+            result.append(p)
+    return result
+
+
+def find_python():
+    """ゲームの起動に使う Python。指定(--python / STARX_PYTHON)があればそれ、なければ Pyxel の入ったものを探す。"""
+    if "--python" in sys.argv:
+        i = sys.argv.index("--python")
+        if i + 1 < len(sys.argv):
+            return sys.argv[i + 1]
+    if os.environ.get("STARX_PYTHON"):
+        return os.environ["STARX_PYTHON"]
+    for python in candidate_pythons():
+        if has_pyxel(python):
+            return python
+    return None
+
+
+PYTHON = None  # main() で決める
+
+
 def launch(prog, opts):
     """プログラムを起動する。(ok, メッセージ, 出力) を返す。"""
     spec = PROGRAMS.get(prog)
     if not spec:
         return False, "知らないプログラムです", ""
-    cmd = [sys.executable, str(ROOT / spec["script"])] + build_args(prog, opts)
+    python = PYTHON or sys.executable
+    if PYTHON is None and prog in NEEDS_PYXEL:
+        return False, ("Pyxel の入った Python が見つかりません。pip install pyxel するか、"
+                       "python tools/launcher.py --python <Pyxel の入った python.exe> で起動してください"), ""
+    cmd = [python, str(ROOT / spec["script"])] + build_args(prog, opts)
     shown = " ".join(["python", spec["script"]] + cmd[2:])
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     if spec.get("capture"):
         out = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8",
                              errors="replace", timeout=120)
-        return True, shown, (out.stdout + out.stderr).strip()
+        return out.returncode == 0, shown, (out.stdout + out.stderr).strip()
     if spec.get("console"):
         if os.name == "nt":
             # 新しい端末ウィンドウで動かし、終わっても閉じずに結果を読めるようにする
@@ -91,8 +163,18 @@ def launch(prog, opts):
         else:
             subprocess.Popen(cmd, cwd=ROOT, env=env)  # 出力はランチャーを動かしている端末に出る
         return True, shown, ""
-    subprocess.Popen(cmd, cwd=ROOT, env=env)
-    return True, shown, ""
+    # ウィンドウの開くもの: すぐに落ちたら、そのエラーをページに返す
+    proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stderr=subprocess.PIPE, text=True, encoding="utf-8",
+                            errors="replace")
+    try:
+        proc.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        threading.Thread(target=proc.stderr.read, daemon=True).start()  # 動き続けている。出力は読み捨てる
+        return True, shown, ""
+    err = proc.stderr.read().strip()
+    if proc.returncode != 0:
+        return False, f"起動してすぐに終了しました(終了コード {proc.returncode}): {shown}", err
+    return True, shown, err
 
 
 def list_shots():
@@ -444,6 +526,13 @@ def main():
     else:
         print("空いているポートが見つかりませんでした")
         return
+    global PYTHON
+    PYTHON = find_python()
+    if PYTHON:
+        print(f"ゲームの起動に使う Python: {PYTHON}", flush=True)
+    else:
+        print("Pyxel の入った Python が見つかりません。ゲームを起動するボタンは動きません。", flush=True)
+        print("  pip install pyxel するか、--python <Pyxel の入った python.exe> を付けて起動してください。", flush=True)
     url = f"http://127.0.0.1:{port}/"
     print(f"StarX 動作確認ランチャー: {url}  (終了は Ctrl+C)", flush=True)
     if "--no-browser" not in sys.argv:

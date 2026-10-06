@@ -23,11 +23,13 @@ def _load_meta():
         _meta = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"colors": [], "boards": {}}
         title_earth.add_earth_colors()  # タイトルの地球は 16 番からの色を決め打ちで使うので、先に足しておく
         have = set(pyxel.colors)
+        new = []
         for hex_ in _meta["colors"]:
             c = int(hex_, 16)
             if c not in have:
-                pyxel.colors.append(c)
+                new.append(c)
                 have.add(c)
+        ui.add_colors(new)
     return _meta
 
 

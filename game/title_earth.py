@@ -52,7 +52,7 @@ EARTH_COLORS = [
 
 def add_earth_colors():
     if len(pyxel.colors) < 16 + len(EARTH_COLORS):
-        pyxel.colors.extend(EARTH_COLORS)
+        ui.add_colors(EARTH_COLORS)
 
 
 def ramp(colors, v, b):

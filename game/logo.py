@@ -26,7 +26,6 @@ LOGO_COLORS = [
 
 def load_logo():
     """パレットにロゴの色を足してから読み込む(読み込み時に一番近い色へ置き換わるため)。"""
-    for c in LOGO_COLORS:
-        if c not in list(pyxel.colors):
-            pyxel.colors.append(c)
+    have = list(pyxel.colors)
+    ui.add_colors(c for c in dict.fromkeys(LOGO_COLORS) if c not in have)
     return pyxel.Image.from_image(str(ui.ASSETS / f"logo_{ui.SCREEN}.png"))

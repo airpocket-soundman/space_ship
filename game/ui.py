@@ -51,6 +51,17 @@ LINE_H = 16
 _fonts = {}
 
 
+def add_colors(colors):
+    """パレットの後ろに色を足す。古い Pyxel(2.3 系)の colors には append / extend がないので、まとめて入れ直す。"""
+    colors = list(colors)
+    if not colors:
+        return
+    if hasattr(pyxel.colors, "extend"):
+        pyxel.colors.extend(colors)
+    else:
+        pyxel.colors.from_list(pyxel.colors.to_list() + colors)
+
+
 def load_fonts():
     _fonts[12] = pyxel.Font(str(ASSETS / "fonts" / "umplus_j12r.bdf"))
     _fonts[10] = pyxel.Font(str(ASSETS / "fonts" / "umplus_j10r.bdf"))
