@@ -11,6 +11,7 @@
 文字の入る枠は、詰めた配置(360x360 / 320x240)と通常(640x480)の 2 通り。720x720 は詰めた配置を K 倍する。
 """
 
+import math
 import re
 
 import pyxel
@@ -68,7 +69,8 @@ def draw_hud(lay, entries, bars):
     """下の帯の計器。
 
     entries: 計器の行。(項目, 目標 or "", 現在値, 色)。2 列に、上から順に詰める(None は空き行)
-    bars: (ラベル, 割合, 色, 目盛り or None, 右端の文字 or "") の並び。割合が None ならジンバル(-1〜1)
+    bars: (ラベル, 割合, 色, 目盛り or None, 右端の文字 or "") の並び。割合が None ならジンバル(-1〜1)、
+          割合も目盛りも None なら、バーなしで文字だけ(色はその文字の色)
     戻り値: 1 行目の目標の列の位置(操作説明の矢印で指す)
     """
     K, rh = lay.K, lay.row_h
@@ -95,6 +97,10 @@ def draw_hud(lay, entries, bars):
     for label, frac, col, marker, text in bars[:lay.rows]:
         ui.text(bx0, y, tr(label, "hud"), ui.GRAY, size=10)
         bx, by = bx0 + lw, y + (rh - bh) // 2 - K
+        if frac is None and marker is None:  # 文字だけ
+            ui.text(bx + bw - ui.text_width(text, 10) - 2 * K, y, text, col, size=10)
+            y += rh
+            continue
         pyxel.rect(bx, by, bw, bh, ui.BLACK)
         if frac is None:  # ジンバル: 真ん中からの振れ
             pyxel.rect(bx + bw // 2, by - K, K, bh + 2 * K, ui.DBLUE)
@@ -187,6 +193,38 @@ def draw_messages(lay, title, goal, guide, guide_col, extra, prompt, blink, warp
     for text, col in lines:
         ui.text(x, yy, text, col, size=fs)
         yy += lh
+
+
+def draw_dv(lay, dvx, dvy):
+    """飛行画面の右上の隅に、WP の目標の速さまでに足りない速度ベクトル(右が水平+、上が垂直+)を出す。"""
+    K = lay.K
+    r = (12 if lay.compact else 16) * K  # 矢印の円の半径
+    pad = 3 * K
+    w = max(2 * r, ui.text_width(tr("WPまで"), 10), ui.text_width("9999 m/s", 10)) + pad * 2
+    lh = 11 * K if lay.compact else 12
+    h = pad + lh + 2 * r + pad + lh + pad
+    x0 = lay.view_w - w - 4 * K
+    y0 = 4 * K
+    pyxel.rect(x0, y0, w, h, ui.NAVY)
+    pyxel.rectb(x0, y0, w, h, ui.DBLUE)
+    ui.text_center(x0 + w // 2, y0 + pad, "WPまで", ui.GRAY, size=10)
+    cx, cy = x0 + w // 2, y0 + pad + lh + r
+    pyxel.circb(cx, cy, r, ui.DBLUE)
+    mag = math.hypot(dvx, dvy)
+    if mag < 0.5:  # 範囲に入っている
+        pyxel.circ(cx, cy, 2 * K, ui.LIME)
+        ui.text_center(cx, cy + r + pad, "OK", ui.LIME, size=10)
+        return
+    ux, uy = dvx / mag, -dvy / mag  # 画面は下が +y
+    L = r - 2 * K
+    tx, ty = cx + ux * L, cy + uy * L
+    for o in range(K):  # 720x720 では線を太く
+        pyxel.line(cx + o * -uy, cy + o * ux, tx + o * -uy, ty + o * ux, ui.CYAN)
+    hl, hw = 5 * K, 3 * K  # 矢じり
+    bx, by = tx - ux * hl, ty - uy * hl
+    pyxel.tri(tx, ty, bx - uy * hw, by + ux * hw, bx + uy * hw, by - ux * hw, ui.CYAN)
+    text = f"{mag:.0f} m/s" if mag >= 10 else f"{mag:.1f} m/s"
+    ui.text_center(cx, cy + r + pad, text, ui.CYAN, size=10)
 
 
 def big_count(lay, n):

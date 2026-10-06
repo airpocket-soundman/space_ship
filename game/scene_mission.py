@@ -300,8 +300,8 @@ class MissionScene:
                 x = v.x + s * along + c * sgn * hw
                 y = v.y + c * along - s * sgn * hw
                 parts.jet(x, y, gvx, v.vy, v.theta + math.pi / 2 * sgn, 2)
-        # 火災の炎と黒い煙
-        if (run.fire_active or run.anomaly_left is not None) and not self.exploded:
+        # 火災(オープニング)・タンク異常の炎と黒い煙。ターボポンプの振動は機体が震えるだけ
+        if ((run.fire_active and run.doomed) or run.anomaly_left is not None) and not self.exploded:
             L = v.length
             h = random.uniform(0, L * 0.3) if run.fire_active else random.uniform(L * 0.55, L * 0.75)
             parts.flame(v.x + s * h, v.y + c * h, gvx, v.vy, v.theta + math.pi + random.uniform(-0.6, 0.6),
@@ -537,7 +537,10 @@ class MissionScene:
 
     def draw_rocket(self):
         v, run = self.v, self.run
-        tf = self.body_tf(v.x, v.y, v.theta)
+        x = v.x
+        if run.fire_active and not run.doomed:  # ターボポンプの異常振動: 機体が細かく震える
+            x += (self.frame % 2 * 2 - 1) * ui.K / self.ppm
+        tf = self.body_tf(x, v.y, v.theta)
         style = v.p.style
         stages = [v.p] + list(v.upper)
         rocket_art.vehicle(tf, stages, self.m.rocket.cargo if v.upper or style != "eagle9r" else "none",
@@ -640,13 +643,29 @@ class MissionScene:
         """飛行画面の中に出す文字: カウントダウンの大きな数字と、目標・目安の矢印など。"""
         if self.phase == "count":
             flight_hud.big_count(self.lay, max(0, math.ceil(self.count)))
+        elif self.phase == "flight":
+            self.draw_wp_dv()
+
+    def draw_wp_dv(self):
+        """右上の隅: WP の目標の速さ(垂直・水平の範囲)に入るまでに足りない速度を、矢印と数値で出す。"""
+        targets = self.run.hud_targets()
+        if "vx" not in targets and "vy" not in targets:
+            return
+        v = self.v
+
+        def short(cur, rng):  # 範囲に入るまでの差(入っていれば 0)
+            if rng is None:
+                return 0.0
+            lo, hi = rng
+            return lo - cur if cur < lo else hi - cur if cur > hi else 0.0
+        flight_hud.draw_dv(self.lay, short(v.vx, targets.get("vx")), short(v.vy, targets.get("vy")))
 
     def draw_alert_border(self):
         run = self.run
         if (run.fire_active or run.anomaly_left is not None) and self.frame // 8 % 2:
             for i in range(4 * ui.K):
                 pyxel.rectb(i, i, self.view_w - 2 * i, self.view_h - 2 * i, ui.RED)
-            text = "!! エンジン火災 !!" if run.fire_active else "!! タンク異常 !!"
+            text = ("!! エンジン火災 !!" if run.doomed else "!! ターボポンプ異常 !!") if run.fire_active else                 "!! タンク異常 !!"
             ui.text_center(self.view_w // 2, 30 * ui.K, text, ui.RED, border=ui.BLACK)
 
     def keys_help(self):
@@ -753,7 +772,7 @@ class MissionScene:
     ROW_KEYS = {"時刻": "t", "垂直速度": "vy", "水平速度": "vx", "傾き": "ang", "角速度": "rate",
                 "分離高度": "alt", "動圧": "q"}
     ROW_SKIP = {"推進剤", "温度"}  # バーに出ているもの
-    DROP_ORDER = ("aoa", "q", "ign")  # 行が足りないときに省く計器(空気が薄いときの迎角から)
+    DROP_ORDER = ("aoa", "q")  # 行が足りないときに省く計器(空気が薄いときの迎角から)
     LEFT_KEYS = {"t", "alt", "vy", "vx", "q"}  # 左の列に出す計器
 
     def draw_hud(self):
@@ -765,25 +784,22 @@ class MissionScene:
         limit = self.m.land.q_limit if self.m.land and run.phase == "descent" else 30_000
         tilt = run.tilt_deg()
         eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
-        # 計器: (キー, ラベル, 値の文字, いまの値, ふだんの色)。左の列は時刻〜動圧、右の列は姿勢とエンジン
+        # 計器: (キー, ラベル, 値の文字, いまの値, ふだんの色)。左の列は時刻〜動圧、右の列は姿勢と目標の行
         if small:  # 詰めた配置: ラベルを短く、単位を省く
             alt = f"{v.y:.0f}" if v.y < 100_000 else f"{v.y / 1000:.1f}k"
             inst = [("t", "T+", f"{v.t:.1f}", v.t, ui.WHITE), ("alt", "高度", alt, v.y, ui.WHITE),
                     ("vy", "垂直", f"{v.vy:+.0f}", v.vy, ui.WHITE), ("vx", "水平", f"{v.vx:+.0f}", v.vx, ui.WHITE),
                     ("q", "動圧", f"{v.q / 1000:.1f}k", v.q, ui.ORANGE if v.q > limit * 0.7 else ui.WHITE),
-                    ("ang", "傾き", f"{tilt:+.1f}", tilt, ui.WHITE), ("rate", "角速", f"{rate:+.2f}", rate, ui.WHITE),
-                    ("aoa", "迎角", f"{aoa:+.1f}", aoa, ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
-                    ("ign", "点火", trf("残{n}", n=v.ignitions_left), 0, ui.ORANGE if v.engine_on else ui.WHITE)]
+                    ("rate", "角速", f"{rate:+.2f}", rate, ui.WHITE), ("ang", "傾き", f"{tilt:+.1f}", tilt, ui.WHITE),
+                    ("aoa", "迎角", f"{aoa:+.1f}", aoa, ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE)]
         else:
             inst = [("t", "T+", f"{v.t:.1f} s", v.t, ui.WHITE),
                     ("alt", "高度", f"{v.y:.0f} m" if v.y < 100_000 else f"{v.y / 1000:.1f} km", v.y, ui.WHITE),
                     ("vy", "垂直速度", f"{v.vy:+.1f} m/s", v.vy, ui.WHITE),
                     ("vx", "水平速度", f"{v.vx:+.1f} m/s", v.vx, ui.WHITE),
                     ("q", "動圧", f"{v.q / 1000:.1f} kPa", v.q, ui.ORANGE if v.q > limit * 0.7 else ui.WHITE),
-                    ("ang", "傾き", f"{tilt:+.1f} °", tilt, ui.WHITE), ("rate", "角速度", f"{rate:+.2f} °/s", rate, ui.WHITE),
-                    ("aoa", "迎角", f"{aoa:+.1f} °", aoa, ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
-                    ("ign", "エンジン", trf("{eng} 残{n}", eng=eng, n=v.ignitions_left), 0,
-                     ui.ORANGE if v.engine_on else ui.WHITE)]
+                    ("rate", "角速度", f"{rate:+.2f} °/s", rate, ui.WHITE), ("ang", "傾き", f"{tilt:+.1f} °", tilt, ui.WHITE),
+                    ("aoa", "迎角", f"{aoa:+.1f} °", aoa, ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE)]
         # 目標: ミッションの表の行(範囲の文字と、入っているか)と、計器の横に出す目安(WP)
         goals, extra = {}, []
         for label, rng, cur, ok in run.rows():
@@ -799,6 +815,9 @@ class MissionScene:
                 goals[key] = (text, lo <= now[key] <= hi)
         cap = self.lay.rows * 2
         drop = [k for k in self.DROP_ORDER if k not in goals][:max(0, len(inst) + len(extra) - cap)]
+        n_right = sum(1 for key, *_ in inst if key not in self.LEFT_KEYS) + len(extra)
+        if n_right > self.lay.rows and "aoa" not in goals and "aoa" not in drop:
+            drop.append("aoa")  # 目標の行を右の列にそろえるため、迎角を省く
         left, right = [], []
         for key, label, text, _, col in inst:
             if key in drop:
@@ -818,13 +837,19 @@ class MissionScene:
         if v.p.gimbal_max:
             bars.append(("ジンバ" if small else "ジンバル", None, ui.YELLOW, v.gimbal / v.p.gimbal_max, ""))
         if run.fire_at is not None and (run.fire_active or run.heat > 0) and self.m.kind != "reentry":
-            bars.append(("温度", run.heat / 100, ui.RED, None, "火災!" if run.fire_active else ""))
+            if run.doomed:
+                bars.append(("温度", run.heat / 100, ui.RED, None, "火災!" if run.fire_active else ""))
+            else:
+                bars.append(("振動", run.heat / 100, ui.RED, None, "異常!" if run.fire_active else ""))
         elif self.m.kind == "reentry" and run.phase != "deorbit":
             bars.append(("温度", run.heat / 100, ui.RED if run.heat > 80 else ui.ORANGE, None, f"{run.heat:.0f}"))
         elif run.slosh > 0:
             bars.append(("揺れ", run.slosh / run.SLOSH[1], ui.PINK, None, ""))
         elif run.anomaly_left is not None:
             bars.append(("タンク", 1.0 - run.anomaly_left / 5.0, ui.RED, None, f"{max(0.0, run.anomaly_left):.1f}"))
+        # エンジンの点火の残り回数(バーの下に文字だけ)
+        ign = trf("残{n}", n=v.ignitions_left) if small else trf("{eng} 残{n}", eng=eng, n=v.ignitions_left)
+        bars.append(("点火" if small else "エンジン", None, ui.ORANGE if v.engine_on else ui.WHITE, None, ign))
         tx, ty = flight_hud.draw_hud(self.lay, entries, bars)
         # 操作説明「下の計器」: 水色の目標の列を指す矢印
         if self.cold_open and TUTORIAL[self.tut][0] == "window" and self.frame // 15 % 2:

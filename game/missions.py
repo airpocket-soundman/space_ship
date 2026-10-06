@@ -741,7 +741,8 @@ class MissionRun:
             return self.fail("墜落")
 
     def _fire(self, dt):
-        """1段目の火災。出力を絞って耐える。"""
+        """1段目の故障。出力を絞って耐える。
+        オープニングの初飛行は史実どおり燃料漏れの火災(絞っても消えない)。ほかはターボポンプの異常振動。"""
         v = self.v
         if self.fire_at is None or self.fire_done or self.stage_no != 1 or not v.engine_on or v.t < self.fire_at:
             if self.fire_active and not v.engine_on:  # エンジンを止めれば火も消える
@@ -750,7 +751,8 @@ class MissionRun:
             return False
         if not self.fire_active:
             self.fire_active = True
-            self.emit("warn", "エンジン区画で火災! 出力を最低まで絞れ!")
+            self.emit("warn", "エンジン区画で火災! 出力を最低まで絞れ!" if self.doomed else
+                      "ターボポンプに異常振動! 出力を最低まで絞れ!")
         self.fire_time += dt
         over = (v.throttle - v.p.min_throttle) / (1.0 - v.p.min_throttle)
         if self.doomed:  # 絞っても消えない
@@ -760,12 +762,12 @@ class MissionRun:
         else:
             self.heat = max(0.0, self.heat - 6.0 * dt)
         if self.heat >= 100.0:
-            self.fail("火災でエンジンが爆発")
+            self.fail("火災でエンジンが爆発" if self.doomed else "ターボポンプが壊れてエンジンが爆発")
             return True
         if self.fire_time >= 12.0:
             self.fire_active = False
             self.fire_done = True
-            self.emit("info", "消火を確認。出力を戻してよし")
+            self.emit("info", "振動が収まった。出力を戻してよし")
         return False
 
     def _gimmick(self, dt):
