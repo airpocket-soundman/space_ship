@@ -5,7 +5,7 @@ import random
 
 import pyxel
 
-from . import audio, rocket_art, ui
+from . import audio, flight_hud, rocket_art, ui
 from .docking import DockRun
 from .i18n import tr, trf
 from .particles import Particles
@@ -19,10 +19,9 @@ class DockScene:
         self.app = app
         self.m = mdef
         self.run = DockRun(mdef)
-        panel_w = 144 * ui.K if ui.COMPACT else 188  # 720x720 は文字が 2 倍なので、詰めた配置を 2 倍に
-        self.panel_x = ui.W - panel_w
-        self.view_w = self.panel_x - 4
-        self.fs = 10 if ui.COMPACT else 12
+        # 配置は打ち上げ画面と同じ: 左上が飛行画面、右がメッセージ欄、下が計器
+        self.lay = flight_hud.FlightLayout()
+        self.view_w, self.view_h = self.lay.view_w, self.lay.view_h
         self.phase = "count"  # count / flight / end
         self.count = COUNTDOWN
         self.frame = 0
@@ -32,15 +31,16 @@ class DockScene:
         self.parts = Particles()
         self.parts.ground = lambda x: -1e9  # 宇宙には地面がない
         rng = random.Random(11)
-        self.stars = [(rng.uniform(0, self.view_w), rng.uniform(0, ui.H), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
+        self.stars = [(rng.uniform(0, self.view_w), rng.uniform(0, self.view_h), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
                       for _ in range(120)]
         audio.bgm(None)
         self.say("ステーションまで 170 m。接近を始める", ui.WHITE)
         self.update_zoom(snap=True)
 
-    def say(self, text, col=ui.WHITE, frames=200):
+    def say(self, text, col=ui.WHITE, frames=0):
+        """右のメッセージ欄に通知を足す(古いものから押し出される)。"""
         self.messages.append([tr(text), col, frames])
-        self.messages = self.messages[-3:]
+        self.messages = self.messages[-8:]
 
     # ---- 更新 ----
     def update(self):
@@ -82,9 +82,6 @@ class DockScene:
             self.say(text, col, 240)
         run.events.clear()
         self.update_zoom()
-        for msg in self.messages:
-            msg[2] -= 1
-        self.messages = [m for m in self.messages if m[2] > 0]
 
     def update_zoom(self, snap=False):
         """カプセルと把持点の両方が入るように、近づくほど大きく映す。"""
@@ -94,7 +91,7 @@ class DockScene:
         self.ppm = want if snap else self.ppm + (want - self.ppm) * 0.05
         # 把持点を画面の右寄りに置く(ステーションは右、カプセルは左から来る)
         self.ox = self.view_w * 0.58
-        self.oy = ui.H * 0.5
+        self.oy = self.view_h * 0.5
 
     def sx(self, x):
         return self.ox + x * self.ppm
@@ -104,21 +101,23 @@ class DockScene:
 
     # ---- 描画 ----
     def draw(self):
-        pyxel.clip(0, 0, self.view_w, ui.H)
-        pyxel.rect(0, 0, self.view_w, ui.H, ui.BLACK)
+        pyxel.clip(0, 0, self.view_w, self.view_h)
+        pyxel.rect(0, 0, self.view_w, self.view_h, ui.BLACK)
         for x, y, c in self.stars:
             pyxel.pset(x, y, c)
         # 下に地球の縁
-        pyxel.elli(-self.view_w * 1.1, ui.H * 0.86 - 3, self.view_w * 3.2, ui.H, ui.LBLUE)
-        pyxel.elli(-self.view_w * 1.1, ui.H * 0.86, self.view_w * 3.2, ui.H, ui.DBLUE)
+        vh = self.view_h
+        pyxel.elli(-self.view_w * 1.1, vh * 0.86 - 3, self.view_w * 3.2, vh, ui.LBLUE)
+        pyxel.elli(-self.view_w * 1.1, vh * 0.86, self.view_w * 3.2, vh, ui.DBLUE)
         self.draw_station()
-        self.parts.draw(self.ox, self.oy, 0.0, 0.0, self.ppm, self.view_w, ui.H)
+        self.parts.draw(self.ox, self.oy, 0.0, 0.0, self.ppm, self.view_w, self.view_h)
         self.draw_capsule()
         self.draw_texts()
         if self.phase == "end":
             self.draw_banner()
         pyxel.clip()
-        self.draw_panel()
+        self.draw_message_panel()
+        self.draw_hud()
 
     def draw_station(self):
         run, ppm, sx, sy = self.run, self.ppm, self.sx, self.sy
@@ -166,41 +165,9 @@ class DockScene:
             pyxel.circ(ex, ey, 1, ui.CYAN)
 
     def draw_texts(self):
-        K = ui.K
-        step = (self.fs + 6) * K
-        mx = 8 * K if ui.COMPACT else 12
-        lines = [(line, col) for text, col, _ in self.messages
-                 for line in ui.wrap(text, self.view_w - mx * 2, self.fs)]
-        y = ui.H - (self.fs + 14) * K - step * (len(lines) - 1)
-        for line, col in lines:
-            ui.text(mx, y, line, col, size=self.fs, border=ui.BLACK)
-            y += step
-        help_text = "←→↑↓ スラスター" if ui.COMPACT else "←→ ↑↓ スラスター(押した向きへ加速)"
-        ui.text(self.view_w - ui.text_width(help_text, 10) - 8 * K, 6 * K, help_text, ui.WHITE, size=10, border=ui.BLACK)
+        """飛行画面の中: カウントダウンの大きな数字。"""
         if self.phase == "count":
-            ui.text_center(self.view_w // 2, ui.H // 4, f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
-        if self.phase == "end":
-            return
-        run = self.run
-        if run.dist > run.ZONE:
-            i, text = 1, "←→↑↓ で噴いて、緑の枠(把持点)へ近づく。水色の線がいまの動き"
-        elif run.dist > run.BOX:
-            i, text = 2, trf("黄色の円の内側は {v} m/s 以下で。反対に噴いて減速する", v=run.ZONE_SPEED)
-        else:
-            i, text = 3, trf("枠の中で止まる。{t:.0f} 秒静止すれば、アームがつかむ", t=run.HOLD_TIME)
-        fs = self.fs
-        lines = ui.wrap(trf("手順 {i}/{n}  ", i=i, n=3) + tr(text), self.view_w - 40 * K, fs)
-        h = (14 + len(lines) * (fs + 4)) * K
-        x, y, w = 12 * K, (24 if not ui.TINY else 18) * K, self.view_w - 24 * K
-        pyxel.dither(0.8)
-        pyxel.rect(x, y, w, h, ui.BLACK)
-        pyxel.dither(1.0)
-        pyxel.rectb(x, y, w, h, ui.DBLUE)
-        for j, line in enumerate(lines):
-            ui.text(x + 8 * K, y + (7 + j * (fs + 4)) * K, line, ui.WHITE, size=fs)
-        prompt = run.prompt()
-        if prompt and self.frame // 12 % 3:
-            ui.text_center(self.view_w // 2, y + h + 10 * K, prompt, ui.YELLOW, border=ui.BLACK)
+            flight_hud.big_count(self.lay, max(0, math.ceil(self.count)))
 
     def draw_banner(self):
         run = self.run
@@ -209,7 +176,7 @@ class DockScene:
         sub = trf("ランク {rank}", rank=run.rank()) if ok else run.fail_reason
         subs = ui.wrap(sub, self.view_w - 16 * K)
         h = (70 + 14 * len(subs)) * K
-        y = ui.H * 3 // 8
+        y = (self.view_h - h) // 2
         pyxel.dither(0.7)
         pyxel.rect(0, y, self.view_w, h, ui.BLACK)
         pyxel.dither(1.0)
@@ -220,62 +187,35 @@ class DockScene:
         if self.end_timer > 60 and self.frame // 20 % 2:
             ui.text_center(self.view_w // 2, y + h - 22 * K, "SPACE で続ける", ui.WHITE, size=10)
 
-    def draw_panel(self):
+    def draw_message_panel(self):
         run = self.run
-        x = self.panel_x
-        small, tiny, K = ui.COMPACT, ui.TINY, ui.K  # 720x720 は詰めた配置を K 倍
-        vx_ = (52 if small else 64) * K
-        row_h = (11 if tiny else 12 if small else 13) * K
-        bw = ui.W - x - vx_ - 10 * K if small else 112
-        pyxel.rect(x - 4, 0, ui.W - x + 4, ui.H, ui.NAVY)
-        pyxel.line(x - 4, 0, x - 4, ui.H, ui.DBLUE)
-        if tiny:
-            y = 4
-            ui.text(x + 4, y, self.m.title, ui.YELLOW, size=10)
-            y += 13
-        else:
-            y = 8 * K
-            ui.text(x + 4 * K, y, self.m.title, ui.YELLOW, size=10 if K > 1 else 12)
-            y += 16 * K
-            for line in ui.wrap(self.m.goal, ui.W - x - 8 * K, 10)[:2]:
-                ui.text(x + 4 * K, y, line, ui.WHITE, size=10)
-                y += 12 * K
-            y += 8 * K
+        guide = ""
+        if self.phase != "end":
+            if run.dist > run.ZONE:
+                i, text = 1, "←→↑↓ で噴いて、緑の枠(把持点)へ近づく。水色の線がいまの動き"
+            elif run.dist > run.BOX:
+                i, text = 2, trf("黄色の円の内側は {v} m/s 以下で。反対に噴いて減速する", v=run.ZONE_SPEED)
+            else:
+                i, text = 3, trf("枠の中で止まる。{t:.0f} 秒静止すれば、アームがつかむ", t=run.HOLD_TIME)
+            guide = trf("手順 {i}/{n}  ", i=i, n=3) + tr(text)
+        prompt = run.prompt() if self.phase == "flight" else ""
+        if self.phase == "end" and self.end_timer > 60:
+            prompt = "SPACE で続ける"
+        log = [(text, col) for text, col, _ in self.messages]
+        flight_hud.draw_messages(self.lay, tr(self.m.title), tr(self.m.goal), guide, ui.DBLUE, [], tr(prompt),
+                                 self.frame // 12 % 3 != 0, "", log, [tr("←→↑↓ スラスター")])
 
-        def row(label, value, col=ui.WHITE):
-            nonlocal y
-            ui.text(x + 4 * K, y, label, ui.GRAY, size=10)
-            ui.text(x + vx_, y, value, col, size=10)
-            y += row_h
-
+    def draw_hud(self):
+        run, small = self.run, ui.COMPACT
         left = self.m.time_limit - run.t
-        row("T+", f"{run.t:6.1f} s")
-        row("残り時間", f"{max(0.0, left):6.1f} s", ui.RED if left < 30 else ui.WHITE)
-        row("距離", f"{run.dist:7.1f} m")
-        row("前後の速度", f"{run.vx:+6.2f} m/s")
-        row("上下の速度", f"{run.vy:+6.2f} m/s")
-        y += 4 * K
-        ui.text(x + 4 * K, y, "燃料", ui.GRAY, size=10)
-        bx = x + vx_
-        pyxel.rect(bx, y + K, bw, 8 * K, ui.BLACK)
-        pyxel.rect(bx, y + K, int(bw * run.fuel / run.FUEL), 8 * K, ui.CYAN)
-        pyxel.rectb(bx, y + K, bw, 8 * K, ui.DBLUE)
-        y += row_h + 6 * K
-
-        rows = run.rows()
-        ww = ui.W - x - 6 * K
-        pad = (6 if small else 10) * K
-        cols = (48 * K, 104 * K) if small else (64, 130)
-        wh = 24 + row_h * len(rows) if tiny else 40 * K + (row_h + K) * len(rows) + 4 * K
-        ui.window(x, y, ww, wh, fill=ui.BLACK, border=ui.LIME, shadow=False)
-        ui.text(x + pad, y + (4 if tiny else 8) * K, "把持の条件", ui.LIME, size=10)
-        pw = ww - pad * 2 - 4 * K if small else 160
-        py, ph = (y + 16, 3) if tiny else (y + 24 * K, 6 * K)
-        pyxel.rect(x + pad, py, pw, ph, ui.NAVY)
-        pyxel.rect(x + pad, py, int(pw * max(0.0, min(1.0, 1.0 - run.dist / 170.0))), ph, ui.LIME)
-        yy = y + (22 if tiny else 38) * K
-        for label, rng, cur, ok in rows:
-            ui.text(x + pad, yy, tr(label, "window"), ui.GRAY, size=10)
-            ui.text(x + cols[0], yy, rng, ui.WHITE, size=10)
-            ui.text(x + cols[1], yy, cur, ui.LIME if ok else ui.RED, size=10)
-            yy += row_h if tiny else row_h + K
+        if small:
+            l1 = [("T+", f"{run.t:.1f}", ui.WHITE), ("残り", f"{max(0.0, left):.0f}", ui.RED if left < 30 else ui.WHITE),
+                  ("距離", f"{run.dist:.1f}", ui.WHITE)]
+            l2 = [("前後", f"{run.vx:+.2f}", ui.WHITE), ("上下", f"{run.vy:+.2f}", ui.WHITE)]
+        else:
+            l1 = [("T+", f"{run.t:.1f} s", ui.WHITE),
+                  ("残り時間", f"{max(0.0, left):.1f} s", ui.RED if left < 30 else ui.WHITE),
+                  ("距離", f"{run.dist:.1f} m", ui.WHITE)]
+            l2 = [("前後の速度", f"{run.vx:+.2f} m/s", ui.WHITE), ("上下の速度", f"{run.vy:+.2f} m/s", ui.WHITE)]
+        bars = [("燃料", run.fuel / run.FUEL, ui.CYAN, None, f"{run.fuel / run.FUEL * 100:.0f}%")]
+        flight_hud.draw_hud(self.lay, l1, l2, bars, tr("把持の条件"), 1.0 - run.dist / 170.0, run.rows())

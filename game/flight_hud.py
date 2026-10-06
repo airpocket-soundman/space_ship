@@ -1,0 +1,186 @@
+"""飛行画面の配置と、計器(下の帯)・メッセージ欄(右)の描画。打ち上げ画面と接近画面で共通。
+
+    +----------------------------+-----------+
+    |                            | メッセージ |
+    |        飛行画面(view)      | 手順・案内 |
+    |                            | 通知の履歴 |
+    +----------------------------+-----------+
+    | 計器(2列) | バー | 目標の表(項目・目標・現在値) |
+    +-----------------------------------------+
+
+文字の入る枠は、詰めた配置(360x360 / 320x240)と通常(640x480)の 2 通り。720x720 は詰めた配置を K 倍する。
+"""
+
+import pyxel
+
+from . import ui
+from .i18n import tr
+
+
+class FlightLayout:
+    def __init__(self):
+        K, compact, tiny = ui.K, ui.COMPACT, ui.TINY
+        self.K = K
+        self.compact = compact
+        self.tiny = tiny
+        self.pad = (3 if tiny else 4 if compact else 8) * K
+        self.row_h = (10 if tiny else 12 if compact else 14) * K
+        self.hud_h = self.pad * 2 + self.row_h * 6
+        self.msg_w = (116 if tiny else 128 if compact else 196) * K
+        self.view_w = ui.W - self.msg_w
+        self.view_h = ui.H - self.hud_h
+        # 計器の帯の列: 計器 2 列 / バー / 目標の表
+        if tiny:
+            cols, bar, gap = (52, 62), (30, 36), 4
+        elif compact:
+            cols, bar, gap = (56, 70), (32, 44), 5
+        else:
+            cols, bar, gap = (120, 130), (52, 88), 10
+        x = self.pad
+        self.col1 = (x, cols[0] * K)
+        x += cols[0] * K + gap * K
+        self.col2 = (x, cols[1] * K)
+        x += cols[1] * K + gap * K
+        self.bar = (x, bar[0] * K, bar[1] * K)
+        x += (bar[0] + bar[1]) * K + gap * K
+        self.table = (x, ui.W - self.pad - x)
+
+
+def draw_hud(lay, left, right, bars, head, prog, rows):
+    """下の帯の計器。
+
+    left / right: 計器の 2 列。(ラベル, 値, 色) の並び
+    bars: (ラベル, 割合, 色, 目盛り or None, 右端の文字 or "") の並び。割合が None ならジンバル(-1〜1)
+    head, prog: 目標の表の見出しと進み具合(0〜1)
+    rows: 目標の表の行。(項目, 目標, 現在値, 入っているか)
+    """
+    K, rh = lay.K, lay.row_h
+    y0 = ui.H - lay.hud_h
+    pyxel.rect(0, y0, ui.W, lay.hud_h, ui.NAVY)
+    pyxel.rect(0, y0, ui.W, K, ui.DBLUE)
+    top = y0 + lay.pad
+
+    for (x, w), items in ((lay.col1, left), (lay.col2, right)):
+        y = top
+        for label, value, col in items:
+            ui.text(x, y, tr(label, "hud"), ui.GRAY, size=10)
+            ui.text(x + w - ui.text_width(value, 10), y, value, col, size=10)
+            y += rh
+
+    bx0, lw, bw = lay.bar
+    bh = max(4, rh - 5 * K)
+    y = top
+    for label, frac, col, marker, text in bars:
+        ui.text(bx0, y, tr(label, "hud"), ui.GRAY, size=10)
+        bx, by = bx0 + lw, y + (rh - bh) // 2 - K
+        pyxel.rect(bx, by, bw, bh, ui.BLACK)
+        if frac is None:  # ジンバル: 真ん中からの振れ
+            pyxel.rect(bx + bw // 2, by - K, K, bh + 2 * K, ui.DBLUE)
+            gx = bx + bw // 2 + int(marker * (bw // 2 - 3 * K))
+            pyxel.rect(gx - 2 * K, by, 5 * K, bh, col)
+        else:
+            pyxel.rect(bx, by, int(bw * max(0.0, min(1.0, frac))), bh, col)
+            if marker is not None:
+                pyxel.rect(bx + int(bw * marker), by - K, K, bh + 2 * K, ui.WHITE)
+        pyxel.rectb(bx, by, bw, bh, ui.DBLUE)
+        if text:
+            ui.text(bx + bw - ui.text_width(text, 10) - 2 * K, y, text, ui.WHITE, size=10)
+        y += rh
+
+    # 目標の表: 見出しと進み具合、そのあと 項目 / 目標 / 現在値
+    tx, tw = lay.table
+    pyxel.rect(tx - 2 * K, top - 2 * K, tw + 4 * K, rh * 6 + 2 * K, ui.BLACK)
+    pyxel.rectb(tx - 2 * K, top - 2 * K, tw + 4 * K, rh * 6 + 2 * K, ui.LIME)
+    ui.text(tx + K, top, head, ui.LIME, size=10)
+    hw = ui.text_width(head, 10)
+    px = tx + hw + 6 * K
+    pw = tx + tw - px - 2 * K
+    if pw > 12 * K:
+        py = top + rh // 2 - 2 * K
+        pyxel.rect(px, py, pw, 3 * K, ui.NAVY)
+        pyxel.rect(px, py, int(pw * max(0.0, min(1.0, prog))), 3 * K, ui.LIME)
+    label_w = (40 if lay.tiny else 44 if lay.compact else 76) * K
+    y = top + rh
+    for label, rng, cur, ok in rows[:5]:
+        ui.text(tx + K, y, tr(label, "window"), ui.GRAY, size=10)
+        ui.text(tx + K + label_w, y, rng, ui.WHITE, size=10)
+        ui.text(tx + tw - ui.text_width(cur, 10) - K, y, cur, ui.LIME if ok else ui.RED, size=10)
+        y += rh
+    return tx, top  # 目標の表の左上(操作説明の矢印で指す)
+
+
+def draw_messages(lay, title, goal, guide, guide_col, extra, prompt, blink, warp, log, keys):
+    """右のメッセージ欄。上から: ミッション名と目標 / 手順の案内 / 目安 / 押すキー / 通知の履歴 / 操作キー。
+
+    guide: 手順の案内の文(枠で囲む。guide_col は枠の色)。extra: 案内の下に出す補足の行
+    log: (文, 色) の並び(新しいものが下)
+    """
+    K = lay.K
+    x0, w, h = lay.view_w, lay.msg_w, lay.view_h
+    pad = (4 if lay.compact else 8) * K
+    fs = 10
+    lh = (11 if lay.tiny else 12) * K if lay.compact else 14
+    tw = w - pad * 2
+    pyxel.rect(x0, 0, w, h, ui.NAVY)
+    pyxel.rect(x0, 0, K, h, ui.DBLUE)
+    x = x0 + pad
+    y = pad
+
+    tfs = fs if lay.compact else 12
+    for line in ui.wrap(title, tw, tfs)[:2]:  # 長いステージ名は折り返す
+        ui.text(x, y, line, ui.YELLOW, size=tfs)
+        y += lh if lay.compact else 18
+    if goal and not lay.tiny:
+        for line in ui.wrap(goal, tw, fs)[:2]:
+            ui.text(x, y, line, ui.WHITE, size=fs)
+            y += lh
+    y += 3 * K
+
+    if guide:
+        lines = ui.wrap(guide, tw - 6 * K, fs)
+        bh = len(lines) * lh + 6 * K
+        pyxel.rect(x - 2 * K, y, tw + 4 * K, bh, ui.BLACK)
+        pyxel.rectb(x - 2 * K, y, tw + 4 * K, bh, guide_col)
+        for i, line in enumerate(lines):
+            ui.text(x + 2 * K, y + 3 * K + i * lh, line, ui.WHITE, size=fs)
+        y += bh + 3 * K
+    for line in extra:
+        for part in ui.wrap(line, tw, fs):
+            ui.text(x, y, part, ui.CYAN, size=fs)
+            y += lh
+    if prompt and blink:
+        for part in ui.wrap(prompt, tw, fs):
+            ui.text(x, y, part, ui.YELLOW, size=fs)
+            y += lh
+    elif prompt:
+        y += lh * len(ui.wrap(prompt, tw, fs))
+    if warp:
+        ui.text(x, y, warp, ui.CYAN, size=fs)
+        y += lh
+
+    # 操作キー(いちばん下)
+    key_lines = [part for line in keys for part in ui.wrap(line, tw, fs)]
+    ky = h - pad - len(key_lines) * lh
+    for i, line in enumerate(key_lines):
+        ui.text(x, ky + i * lh, line, ui.GRAY, size=fs)
+
+    # 通知の履歴: 操作キーの上に、新しいものが下になるよう詰める
+    y = max(y + 3 * K, 0)
+    space = ky - 3 * K - y
+    lines = [(part, col) for text, col in log for part in ui.wrap(text, tw, fs)]
+    n = max(0, space // lh)
+    lines = lines[-n:] if n else []
+    yy = ky - 3 * K - len(lines) * lh
+    if lines:
+        pyxel.rect(x - 2 * K, yy - 2 * K, tw + 4 * K, K, ui.DBLUE)
+    for text, col in lines:
+        ui.text(x, yy, text, col, size=fs)
+        yy += lh
+
+
+def big_count(lay, n):
+    """カウントダウンの数字を、飛行画面の真ん中に大きく出す。"""
+    s = str(n)
+    scale = (6 if lay.compact else 10) * lay.K
+    w = ui.big_text_width(s, scale)
+    ui.big_text((lay.view_w - w) // 2, (lay.view_h - 7 * scale) // 2, s, scale, ui.WHITE, shadow=ui.BLACK)

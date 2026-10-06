@@ -5,7 +5,7 @@ import random
 
 import pyxel
 
-from . import audio, rocket_art, ui
+from . import audio, flight_hud, rocket_art, ui
 from .i18n import tr, trf
 from .missions import MissionRun
 from .particles import Particles
@@ -22,7 +22,7 @@ TUTORIAL = [
     ("ignite", "SPACE で点火!", 0, 0),
     ("throttle", "↑↓ でスロットル(推力)。このエンジンは 70% より下には絞れない。", 3, 7),
     ("steer", "←→ でノズルを振って姿勢を変える。傾いたら、反対に当てて戻す。", 3, 8),
-    ("window", "右のウィンドウ: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
+    ("window", "下の表: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
     ("good", "いい調子だ。そのまま、まっすぐ上へ!", 0, 0),
 ]
 
@@ -37,18 +37,16 @@ class MissionScene:
         self.cold_open = cold_open
         self.tut = 0  # 操作説明の何番目か
         self.tut_time = 0.0
-        # 画面サイズごとの配置: 左が飛行画面、右が計器パネル
-        panel_w = 144 * ui.K if ui.COMPACT else 188  # 720x720 は文字が 2 倍なので、詰めた配置を 2 倍に
-        self.panel_x = ui.W - panel_w
-        self.view_w = self.panel_x - 4
+        # 配置: 左上が飛行画面、右がメッセージ欄、下が計器(flight_hud)
+        self.lay = flight_hud.FlightLayout()
+        self.view_w, self.view_h = self.lay.view_w, self.lay.view_h
         self.anchor_x = self.view_w // 2
-        self.anchor_y = ui.H * 5 // 8  # 機体を置く高さ
+        self.anchor_y = self.view_h * 5 // 8  # 機体を置く高さ
         self.base_ppm = 1.0 if ui.TINY else 1.5 if ui.SMALL else 2.0  # 1 m あたりのピクセル数
         if mdef.kind == "reentry":
             self.base_ppm *= 2.0  # カプセルは小さいので、大きく映す
         self.zoom = 1.0  # 着陸のときは、高いところほど引いて見せる
         self.ppm = self.base_ppm
-        self.fs = 10 if ui.COMPACT else 12  # 飛行画面に出すメッセージの文字(720x720 はこれが 2 倍で描かれる)
         self.m = mdef
         self.run = MissionRun(mdef, inspected=app.state.inspected, doomed=cold_open)
         self.v = self.run.v
@@ -70,16 +68,17 @@ class MissionScene:
         rng = random.Random(7)
         self.clouds = [(rng.uniform(-600, 600), rng.uniform(1200, 4200), rng.uniform(60, 180), rng.uniform(14, 30))
                        for _ in range(40)]
-        self.stars = [(rng.uniform(0, self.view_w), rng.uniform(0, ui.H), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
+        self.stars = [(rng.uniform(0, self.view_w), rng.uniform(0, self.view_h), rng.choice((ui.WHITE, ui.LBLUE, ui.GRAY)))
                       for _ in range(160)]
         self.say("カウントダウン開始" if self.airborne else "射場クリア。カウントダウン開始", ui.WHITE)
         if not cold_open:
             audio.bgm(None)  # 本番の打ち上げはエンジン音だけ(オープニングは曲を流したまま)
         self.update_camera(snap=True)
 
-    def say(self, text, col=ui.WHITE, frames=180):
+    def say(self, text, col=ui.WHITE, frames=0):
+        """右のメッセージ欄に通知を足す(古いものから押し出される)。"""
         self.messages.append([tr(text), col, frames])
-        self.messages = self.messages[-3:]
+        self.messages = self.messages[-8:]
 
     # ---- 更新 ----
     def update(self):
@@ -99,10 +98,7 @@ class MissionScene:
         v, run = self.v, self.run
 
         if self.phase == "count":
-            prev = math.ceil(self.count)
-            self.count -= 1 / 60
-            if math.ceil(self.count) != prev and self.count > 0:
-                self.say(f"T-{math.ceil(self.count)}", ui.WHITE, 50)
+            self.count -= 1 / 60  # 残り秒数は飛行画面の真ん中に大きく出す
             if self.count <= 0:
                 if self.airborne:
                     self.phase = "flight"
@@ -157,9 +153,6 @@ class MissionScene:
         self.update_camera()
         self.update_objects()
         self.update_particles()
-        for msg in self.messages:
-            msg[2] -= 1
-        self.messages = [m for m in self.messages if m[2] > 0]
 
     def update_tutorial(self, steer, thr):
         tid = TUTORIAL[self.tut][0]
@@ -266,7 +259,7 @@ class MissionScene:
         s, c = math.sin(v.theta), math.cos(v.theta)
         gvx = self.ground_vx()  # 粒は画面上の機体と同じ速さで運ぶ
         # 先にいまある粒を動かしてから、このフレームの粒を出す(出したばかりの粒を先へ進めない)
-        parts.update(self.cam_x, self.cam_y, max(self.view_w, ui.H) / self.ppm * 1.3, air)
+        parts.update(self.cam_x, self.cam_y, max(self.view_w, self.view_h) / self.ppm * 1.3, air)
         # 早送り中は機体が 1 フレームに何倍も進む。粒も機体と一緒に運んで、置き去りにしない
         w = self.warp_used if self.phase == "flight" else 1
         if w > 1:
@@ -337,13 +330,13 @@ class MissionScene:
         if land and descending:
             h = max(0.0, v.y - run.deck_y())
             zoom = max(0.2, min(1.0, 1.0 / (1.0 + h / 260.0)))
-        anchor = ui.H * (4 if descending and self.m.kind != "hop" else 5) // 8
+        anchor = self.view_h * (4 if descending and self.m.kind != "hop" else 5) // 8
         k = 1.0 if snap else 0.06
         self.zoom += (zoom - self.zoom) * k
         self.anchor_y += (anchor - self.anchor_y) * k
         self.ppm = self.base_ppm * self.zoom
         # 地表の近くでは、地面が画面の下に見える高さより下へカメラを下げない
-        floor = (ui.H - (44 * ui.K if ui.COMPACT else 60) - self.anchor_y) / self.ppm
+        floor = (self.view_h - (44 * ui.K if ui.COMPACT else 60) - self.anchor_y) / self.ppm
         self.cam_x = cx
         self.cam_y = max(cy, floor)
 
@@ -356,25 +349,24 @@ class MissionScene:
 
     # ---- 描画 ----
     def draw(self):
-        pyxel.clip(0, 0, self.view_w, ui.H)
+        pyxel.clip(0, 0, self.view_w, self.view_h)
         self.draw_sky()
         self.draw_clouds()
         self.draw_ground()
-        self.parts.draw(self.anchor_x, self.anchor_y, self.cam_x, self.cam_y, self.ppm, self.view_w, ui.H)
+        self.parts.draw(self.anchor_x, self.anchor_y, self.cam_x, self.cam_y, self.ppm, self.view_w, self.view_h)
         self.draw_objects()
         if not self.exploded:
             self.draw_rocket()
         self.draw_ladder()
         self.draw_markers()
-        self.draw_messages()
+        self.draw_view_texts()
         self.draw_alert_border()
-        self.draw_tutorial()
-        self.draw_guide()
         self.draw_orbit_map()
         if self.phase == "end":
             self.draw_banner()
         pyxel.clip()
-        self.draw_panel()
+        self.draw_message_panel()
+        self.draw_hud()
 
     SKY = [(0, ui.CYAN), (3000, ui.DBLUE), (9000, ui.NAVY), (20000, ui.BLACK)]
     SKY_BLEND = 1500.0  # 色が切り替わる高度の幅 [m]
@@ -392,9 +384,9 @@ class MissionScene:
     def draw_sky(self):
         alt = self.cam_y
         if alt > 24_000:
-            pyxel.rect(0, 0, self.view_w, ui.H, ui.BLACK)
+            pyxel.rect(0, 0, self.view_w, self.view_h, ui.BLACK)
         else:
-            for y in range(0, ui.H, 2):
+            for y in range(0, self.view_h, 2):
                 base, nxt, t = self.sky_color(self.cam_y + (self.anchor_y - y) / self.ppm)
                 pyxel.rect(0, y, self.view_w, 2, base)
                 if t > 0:
@@ -414,7 +406,7 @@ class MissionScene:
 
     def draw_limb(self, alt):
         """高いところから見える惑星の縁(青い弧)。高度が上がるほど丸く見える。"""
-        w, h = self.view_w, ui.H
+        w, h = self.view_w, self.view_h
         k = min(1.0, (alt - 18_000) / 22_000)  # 0 → 1 で画面の下からせり上がる
         rise = h * (0.30 - 0.12 * min(1.0, alt / 140_000)) * k
         top = h - rise
@@ -440,19 +432,19 @@ class MissionScene:
             # 雲は遠くまで続いているものとして、横に繰り返す
             wx = (wx - self.cam_x + 600) % 1200 - 600 + self.cam_x
             x, y = self.sx(wx), self.sy(wy)
-            if -w * ppm < x < self.view_w + w * ppm and -h * ppm < y < ui.H + h * ppm:
+            if -w * ppm < x < self.view_w + w * ppm and -h * ppm < y < self.view_h + h * ppm:
                 pyxel.elli(x - w * ppm / 2, y - h * ppm / 2 + 3 * ppm, w * ppm, h * ppm, ui.GRAY)
                 pyxel.elli(x - w * ppm / 2, y - h * ppm / 2, w * ppm, h * ppm, ui.WHITE)
 
     def draw_ground(self):
         gy = self.sy(0)
-        if gy > ui.H + 40:
+        if gy > self.view_h + 40:
             return
         ppm, sx = self.ppm, self.sx
         land = self.m.land
         # 海
-        pyxel.rect(0, gy, self.view_w, ui.H - gy, ui.DBLUE)
-        for i in range(0, int(ui.H - gy) // 14 + 1):
+        pyxel.rect(0, gy, self.view_w, self.view_h - gy, ui.DBLUE)
+        for i in range(0, int(self.view_h - gy) // 14 + 1):
             y = gy + 8 + i * 14
             off = (self.frame // 2 + i * 13 - int(self.cam_x * ppm)) % 40
             for x in range(-40 + off, self.view_w, 40):
@@ -572,11 +564,11 @@ class MissionScene:
         ppm = self.ppm
         step = next(s for s in (10, 50, 100, 500, 1000, 5000, 10_000, 50_000) if s * ppm >= 8)
         big = {10: 50, 50: 500, 100: 500, 500: 5000, 1000: 5000, 5000: 50_000}.get(step, step * 5)
-        lo = int((self.cam_y - (ui.H - self.anchor_y) / ppm) // step) * step
+        lo = int((self.cam_y - (self.view_h - self.anchor_y) / ppm) // step) * step
         hi = int((self.cam_y + self.anchor_y / ppm) // step + 1) * step
         for alt in range(max(0, lo), hi + step, step):
             y = self.sy(alt)
-            if not (0 <= y < ui.H):
+            if not (0 <= y < self.view_h):
                 continue
             if alt % big == 0:
                 pyxel.line(0, y, 14, y, ui.WHITE)
@@ -596,7 +588,7 @@ class MissionScene:
         if m.kind == "ascent":
             wp = m.waypoint
             wy = self.sy(wp.altitude)
-            if 0 <= wy < ui.H:
+            if 0 <= wy < self.view_h:
                 self.dashed(wy, ui.LIME)
                 ui.text(self.view_w - 90, wy - 14, f"{wp.name} {wp.altitude / 1000:.1f}km", ui.LIME, border=ui.BLACK)
             return
@@ -605,7 +597,7 @@ class MissionScene:
             return
         if land.hop_alt:
             wy = self.sy(land.hop_alt)
-            if 0 <= wy < ui.H and run.apex < land.hop_alt:
+            if 0 <= wy < self.view_h and run.apex < land.hop_alt:
                 self.dashed(wy, ui.LIME)
                 ui.text(self.view_w - 60, wy - 14, f"{land.hop_alt:.0f}m", ui.LIME, border=ui.BLACK)
         if self.phase != "flight" or (m.kind == "recover" and run.phase != "descent"):
@@ -614,7 +606,7 @@ class MissionScene:
         cue = run.burn_cue()
         if cue is not None and not v.engine_on and v.y < run.LANDING_ALT:
             cy = self.sy(cue)
-            if 0 <= cy < ui.H:
+            if 0 <= cy < self.view_h:
                 col = ui.YELLOW if v.y > cue else ui.RED
                 self.dashed(cy, col)
                 ui.text(self.view_w - ui.text_width("噴射の目安", 10) - 8, cy - 13, "噴射の目安", col, size=10,
@@ -622,7 +614,7 @@ class MissionScene:
         if land.site == "sea":
             return
         # 着陸目標: 画面の外にあるときは、端に矢印と距離を出す
-        gy = min(ui.H - 14, max(30, self.sy(run.deck_y())))
+        gy = min(self.view_h - 14, max(30, self.sy(run.deck_y())))
         tx = self.sx(run.ship_x)
         d = run.ship_x - v.x
         if tx < 8 or tx > self.view_w - 8:
@@ -632,93 +624,66 @@ class MissionScene:
             label = f"{abs(d) / 1000:.1f}km" if abs(d) >= 1000 else f"{abs(d):.0f}m"
             lx = ex + 12 if sgn < 0 else ex - 12 - ui.text_width(label, 10)
             ui.text(lx, gy - 5, label, ui.LIME, size=10, border=ui.BLACK)
-        elif self.sy(run.deck_y()) > ui.H - 4:
-            pyxel.tri(tx - 5, ui.H - 12, tx + 5, ui.H - 12, tx, ui.H - 4, ui.LIME)
+        elif self.sy(run.deck_y()) > self.view_h - 4:
+            pyxel.tri(tx - 5, self.view_h - 12, tx + 5, self.view_h - 12, tx, self.view_h - 4, ui.LIME)
         # 着地予想点
         if run.pred_x is not None and run.phase == "descent":
             px = self.sx(run.pred_x)
-            py = min(ui.H - 4, max(40, self.sy(run.deck_y())))
+            py = min(self.view_h - 4, max(40, self.sy(run.deck_y())))
             ok = abs(run.pred_x - run.ship_x) <= land.half_w
             if 4 <= px <= self.view_w - 4:
                 col = ui.LIME if ok else ui.YELLOW
                 pyxel.line(px - 4, py - 8, px + 4, py, col)
                 pyxel.line(px + 4, py - 8, px - 4, py, col)
 
-    def draw_messages(self):
-        K = ui.K
-        step = (self.fs + 6) * K
-        mx = 8 * K if ui.COMPACT else 12
-        # 飛行画面の幅に収まらないメッセージは折り返す
-        lines = [(line, col) for text, col, _ in self.messages
-                 for line in ui.wrap(text, self.view_w - mx * 2, self.fs)]
-        y = ui.H - (self.fs + 14) * K - step * (len(lines) - 1)
-        for line, col in lines:
-            ui.text(mx, y, line, col, size=self.fs, border=ui.BLACK)
-            y += step
+    def draw_view_texts(self):
+        """飛行画面の中に出す文字: カウントダウンの大きな数字と、目標・目安の矢印など。"""
         if self.phase == "count":
-            ui.text_center(self.view_w // 2, ui.H // 3 if self.cold_open else ui.H // 4,
-                           f"T-{max(0, math.ceil(self.count))}", ui.WHITE, border=ui.BLACK)
-        if self.phase != "flight":
-            return
-        # いま押すキーの案内と、早送りの表示
-        prompt = self.run.prompt()
-        py = ui.H // 4 + (18 * K if ui.COMPACT else 26)
-        if prompt and self.frame // 12 % 3:
-            ui.text_center(self.view_w // 2, py, prompt, ui.YELLOW, border=ui.BLACK)
-        if self.run.warp > 1:
-            ui.text_center(self.view_w // 2, py + (self.fs + 8) * K, trf(">> 早送り ×{n}", n=self.run.warp), ui.CYAN,
-                           size=10, border=ui.BLACK)
+            flight_hud.big_count(self.lay, max(0, math.ceil(self.count)))
 
     def draw_alert_border(self):
         run = self.run
         if (run.fire_active or run.anomaly_left is not None) and self.frame // 8 % 2:
-            for i in range(4):
-                pyxel.rectb(i, i, self.view_w - 2 * i, ui.H - 2 * i, ui.RED)
+            for i in range(4 * ui.K):
+                pyxel.rectb(i, i, self.view_w - 2 * i, self.view_h - 2 * i, ui.RED)
             text = "!! エンジン火災 !!" if run.fire_active else "!! タンク異常 !!"
-            ui.text_center(self.view_w // 2, 60 * ui.K, text, ui.RED, border=ui.BLACK)
+            ui.text_center(self.view_w // 2, 30 * ui.K, text, ui.RED, border=ui.BLACK)
 
-    def top_box(self, text, border):
-        """飛行画面の上に出す説明の枠。枠の下端の y を返す。"""
-        fs, K = self.fs, ui.K
-        lines = ui.wrap(text, self.view_w - 40 * K, fs)
-        h = (14 + len(lines) * (fs + 4)) * K
-        x, y, w = 12 * K, (24 if not ui.TINY else 18) * K, self.view_w - 24 * K
-        pyxel.dither(0.8)
-        pyxel.rect(x, y, w, h, ui.BLACK)
-        pyxel.dither(1.0)
-        pyxel.rectb(x, y, w, h, border)
-        for i, line in enumerate(lines):
-            ui.text(x + 8 * K, y + (7 + i * (fs + 4)) * K, line, ui.WHITE, size=fs)
-        return y + h
-
-    def draw_tutorial(self):
-        """画面上部の操作説明。火災が起きたら消す。"""
-        if not self.cold_open or self.phase == "end" or self.run.fire_active:
-            return
-        tid, text, _, _ = TUTORIAL[self.tut]
-        bottom = self.top_box(text, ui.YELLOW if tid in ("ignite", "throttle", "steer") else ui.WHITE)
-        if tid == "window" and self.frame // 15 % 2:  # 右のウィンドウを指す矢印
-            ax, ay = self.view_w - 14, bottom + 10
-            pyxel.tri(ax, ay - 6, ax, ay + 6, ax + 10, ay, ui.YELLOW)
-
-    def draw_guide(self):
-        """いまやることの案内(手順の何番目か)。"""
-        small = ui.COMPACT
-        help_text = "SPACE点火 ↑↓出力 ←→姿勢" if small else "SPACE 点火   ↑↓ スロットル   ←→ 姿勢"
+    def keys_help(self):
+        """操作キーの説明(メッセージ欄のいちばん下)。"""
         if self.m.sep or self.m.kind in ("orbit", "reentry"):
-            help_text = "SPACE点火/停止 Z分離・放出" if small else "SPACE 点火/停止   Z 分離・放出   ↑↓ 出力   ←→ 姿勢"
             if self.m.kind == "reentry":
-                help_text = "SPACE噴射 Zパラシュート" if small else "SPACE 噴射/停止   Z パラシュート   ←→ 姿勢"
-        elif self.m.can_cutoff:
-            help_text = "SPACE点火/停止 ↑↓出力" if small else "SPACE 点火/停止   ↑↓ スロットル   ←→ 姿勢"
-        ui.text(self.view_w - ui.text_width(help_text, 10) - 8 * ui.K, 6 * ui.K, help_text, ui.WHITE, size=10,
-                border=ui.BLACK)
-        if self.cold_open or self.phase == "end" or self.run.fire_active or self.run.anomaly_left is not None:
-            return
-        guide = self.run.guide()
-        if guide:
-            i, n, text = guide
-            self.top_box(trf("手順 {i}/{n}  ", i=i, n=n) + tr(text), ui.DBLUE)
+                return ["SPACE 噴射/停止", "Z パラシュート", "←→ 姿勢"]
+            return ["SPACE 点火/停止  Z 分離・放出", "↑↓ 出力  ←→ 姿勢"]
+        if self.m.can_cutoff:
+            return ["SPACE 点火/停止", "↑↓ 出力  ←→ 姿勢"]
+        return ["SPACE 点火", "↑↓ 出力  ←→ 姿勢"]
+
+    def draw_message_panel(self):
+        """右のメッセージ欄: 手順の案内・押すキー・通知の履歴をまとめて出す。"""
+        run = self.run
+        guide, col, extra = "", ui.DBLUE, []
+        if self.cold_open:
+            if self.phase != "end" and not run.fire_active:
+                tid, text, _, _ = TUTORIAL[self.tut]
+                guide, col = tr(text), ui.YELLOW if tid in ("ignite", "throttle", "steer", "window") else ui.WHITE
+        elif self.phase != "end" and not run.fire_active and run.anomaly_left is None:
+            g = run.guide()
+            if g:
+                i, n, text = g
+                guide = trf("手順 {i}/{n}  ", i=i, n=n) + tr(text)
+        if self.phase == "flight" and self.m.guide and run.released is None:
+            nxt = next((g for g in self.m.guide if g.t not in run.guide_values), None)
+            if nxt:
+                extra.append(trf("目安 T+{t:.0f}s: 垂直 {a:.0f}~{b:.0f} 水平 {c:.0f}~{d:.0f} m/s",
+                                 t=nxt.t, a=nxt.vy_lo, b=nxt.vy_hi, c=nxt.vx_lo, d=nxt.vx_hi))
+        prompt = run.prompt() if self.phase == "flight" else ""
+        if self.phase == "end" and self.end_timer > 60:
+            prompt = tr("SPACE で続ける")
+        warp = trf(">> 早送り ×{n}", n=run.warp) if self.phase == "flight" and run.warp > 1 else ""
+        log = [(text, col) for text, col, _ in self.messages]
+        flight_hud.draw_messages(self.lay, tr(self.m.title), tr(self.m.goal), guide, col, extra, tr(prompt),
+                                 self.frame // 12 % 3 != 0, warp, log, [tr(k) for k in self.keys_help()])
 
     def draw_orbit_map(self):
         """軌道の形の小さな図(惑星と、いまの軌道)。機体はいつも惑星の真上にいるものとして描く。"""
@@ -727,7 +692,7 @@ class MissionScene:
             return
         size = 58 * ui.K if ui.COMPACT else 92
         x0 = 6
-        y0 = ui.H - size - (70 * ui.K if ui.COMPACT else 96)
+        y0 = self.view_h - size - 6 * ui.K
         pyxel.rect(x0, y0, size, size, ui.BLACK)
         pyxel.rectb(x0, y0, size, size, ui.DBLUE)
         pyxel.clip(x0 + 1, y0 + 1, size - 2, size - 2)
@@ -761,7 +726,7 @@ class MissionScene:
                 pyxel.line(cx + math.sin(a0) * rr, cy - math.cos(a0) * rr, cx + math.sin(a1) * rr,
                            cy - math.cos(a1) * rr, ui.GRAY)
         pyxel.rect(cx - 1, cy - r * k - 1, 3, 3, ui.WHITE if self.frame // 10 % 2 else ui.RED)
-        pyxel.clip(0, 0, self.view_w, ui.H)
+        pyxel.clip(0, 0, self.view_w, self.view_h)
 
     def draw_banner(self):
         run = self.run
@@ -771,7 +736,7 @@ class MissionScene:
         K = ui.K
         subs = ui.wrap(sub, self.view_w - 16 * K)
         h = (70 + 14 * len(subs)) * K
-        y = ui.H * 3 // 8
+        y = (self.view_h - h) // 2
         pyxel.dither(0.7)
         pyxel.rect(0, y, self.view_w, h, ui.BLACK)
         pyxel.dither(1.0)
@@ -781,134 +746,65 @@ class MissionScene:
         if self.end_timer > 60 and self.frame // 20 % 2:
             ui.text_center(self.view_w // 2, y + h - 22 * K, "SPACE で続ける", ui.WHITE, size=10)
 
-    # ---- 計器パネル ----
-    def draw_panel(self):
-        v = self.v
-        run = self.run
-        x = self.panel_x
-        small, tiny, K = ui.COMPACT, ui.TINY, ui.K  # 720x720 は詰めた配置を K 倍
-        vx_ = (52 if small else 64) * K  # 値の列
-        row_h = (11 if tiny else 12 if small else 13) * K
-        bh = 8 * K  # バーの太さ
-        bw = ui.W - x - vx_ - 10 * K if small else 112  # バーの長さ
-        pyxel.rect(x - 4, 0, ui.W - x + 4, ui.H, ui.NAVY)
-        pyxel.line(x - 4, 0, x - 4, ui.H, ui.DBLUE)
-        if tiny:  # 320x240: 目標は下のウィンドウに出ているので省く
-            y = 4
-            ui.text(x + 4, y, self.m.title, ui.YELLOW, size=10)
-            y += 13
-        else:
-            y = 8 * K
-            ui.text(x + 4 * K, y, self.m.title, ui.YELLOW, size=10 if K > 1 else 12)
-            y += 16 * K
-            for line in ui.wrap(self.m.goal, ui.W - x - 8 * K, 10)[:2]:
-                ui.text(x + 4 * K, y, line, ui.WHITE, size=10)
-                y += 12 * K
-            y += 8 * K
 
+    # ---- 計器(下の帯) ----
+    def draw_hud(self):
+        v, run, small = self.v, self.run, ui.COMPACT
         targets = run.hud_targets()
-        # 列をそろえる: 値は右端に右寄せ。目標(WP)は、値の列のすぐ左に右寄せ(値の長さで位置が動かないように)
-        # 小さい画面(詰めた配置)は横が狭いので、目標を出せる行(key のある行)は単位を省く
-        right = ui.W - 4 * K
-        tgt_right = right - ui.text_width("+00000.00" if small else "+00000.0 m/s", 10) - 4 * K
 
-        def row(label, value, col=ui.WHITE, key=None, now=None):
-            """key に目標(WP)があれば、値の左に目標の範囲を書き、値を範囲に入っているかで色分けする。"""
-            nonlocal y
-            ui.text(x + 4 * K, y, label, ui.GRAY, size=10)
-            target = targets.get(key)
-            if target is not None:
-                lo, hi = target
-                col = ui.LIME if lo <= now <= hi else ui.RED
-                tgt = f"~{hi:g}" if key == "t" else f"{lo:g}~{hi:g}"
-                ui.text(tgt_right - ui.text_width(tgt, 10), y, tgt, ui.CYAN, size=10)
-            value = value.split()[0] if small and key else value.strip()
-            ui.text(right - ui.text_width(value, 10), y, value, col, size=10)
-            y += row_h
+        def val(key, now, col=ui.WHITE):
+            """目標(WP)があれば、範囲に入っているかで色を変える。"""
+            if key in targets:
+                lo, hi = targets[key]
+                return ui.LIME if lo <= now <= hi else ui.RED
+            return col
 
-        row("T+", f"{v.t:6.1f} s", key="t", now=v.t)
-        row("高度", f"{v.y:8.0f} m" if v.y < 100_000 else f"{v.y / 1000:7.1f} km")
-        row("垂直" if small else "垂直速度", f"{v.vy:+7.1f} m/s", key="vy", now=v.vy)
-        row("水平" if small else "水平速度", f"{v.vx:+7.1f} m/s", key="vx", now=v.vx)
-        limit = self.m.land.q_limit if self.m.land and run.phase == "descent" else 30_000
-        row("動圧", f"{v.q / 1000:6.1f} kPa", ui.ORANGE if limit and v.q > limit * 0.7 else ui.WHITE)
-        row("傾き", f"{run.tilt_deg():+6.1f} °", key="ang", now=run.tilt_deg())
-        if not tiny:
-            rate = math.degrees(v.omega)
-            row("角速度", f"{rate:+6.2f} °/s", key="rate", now=rate)
+        rate = math.degrees(v.omega)
         aoa = math.degrees(v.aoa_tail if run.phase in ("descent", "entry", "deorbit") else v.aoa)
         if v.air_speed < 30:
             aoa = 0.0
-        row("迎角", f"{aoa:+6.1f} °", ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE)
-        eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
-        eng_tpl = "{eng} 点火残{n}" if small else "{eng}  点火残 {n}"
-        row("エンジン", trf(eng_tpl, eng=eng, n=v.ignitions_left), ui.ORANGE if v.engine_on else ui.WHITE)
-        y += (2 if tiny else 4) * K
-
-        def bar(label, frac, col, marker=None, text=None):
-            nonlocal y
-            ui.text(x + 4 * K, y, label, ui.GRAY, size=10)
-            bx = x + vx_
-            pyxel.rect(bx, y + K, bw, bh, ui.BLACK)
-            pyxel.rect(bx, y + K, int(bw * max(0.0, min(1.0, frac))), bh, col)
-            pyxel.rectb(bx, y + K, bw, bh, ui.DBLUE)
-            if marker is not None:
-                mx = bx + int(bw * marker)
-                pyxel.rect(mx, y - K, K, bh + 3 * K, ui.WHITE)
-            if text:
-                ui.text(bx + bw - ui.text_width(text, 10) - 2 * K, y, text, ui.WHITE, size=10)
-            y += row_h + K
-
-        bar("出力" if small else "スロットル", v.throttle, ui.ORANGE, marker=v.throttle_cmd if v.engine_on else None,
-            text=f"{v.throttle * 100:3.0f}%")
-        bar("推進剤", v.prop / v.p.prop_mass, ui.LIME, text=f"{v.prop / v.p.prop_mass * 100:3.0f}%")
-        bar("RCS", v.rcs_fuel / v.p.rcs_fuel, ui.CYAN)
-        # ジンバル
+        limit = self.m.land.q_limit if self.m.land and run.phase == "descent" else 30_000
+        tilt = run.tilt_deg()
+        if small:  # 詰めた配置: ラベルを短く、単位を省く
+            alt = f"{v.y:.0f}" if v.y < 100_000 else f"{v.y / 1000:.1f}k"
+            left = [("T+", f"{v.t:.1f}", val("t", v.t)), ("高度", alt, ui.WHITE),
+                    ("垂直", f"{v.vy:+.0f}", val("vy", v.vy)), ("水平", f"{v.vx:+.0f}", val("vx", v.vx)),
+                    ("動圧", f"{v.q / 1000:.1f}k", ui.ORANGE if v.q > limit * 0.7 else ui.WHITE)]
+            right = [("傾き", f"{tilt:+.1f}", val("ang", tilt)), ("角速", f"{rate:+.2f}", val("rate", rate)),
+                     ("迎角", f"{aoa:+.1f}", ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
+                     ("点火", trf("残{n}", n=v.ignitions_left), ui.ORANGE if v.engine_on else ui.WHITE)]
+        else:
+            left = [("T+", f"{v.t:.1f} s", val("t", v.t)),
+                    ("高度", f"{v.y:.0f} m" if v.y < 100_000 else f"{v.y / 1000:.1f} km", ui.WHITE),
+                    ("垂直速度", f"{v.vy:+.1f} m/s", val("vy", v.vy)), ("水平速度", f"{v.vx:+.1f} m/s", val("vx", v.vx)),
+                    ("動圧", f"{v.q / 1000:.1f} kPa", ui.ORANGE if v.q > limit * 0.7 else ui.WHITE)]
+            eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
+            right = [("傾き", f"{tilt:+.1f} °", val("ang", tilt)), ("角速度", f"{rate:+.2f} °/s", val("rate", rate)),
+                     ("迎角", f"{aoa:+.1f} °", ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
+                     ("エンジン", trf("{eng} 残{n}", eng=eng, n=v.ignitions_left),
+                      ui.ORANGE if v.engine_on else ui.WHITE)]
+        bars = [("出力" if small else "スロットル", v.throttle, ui.ORANGE,
+                 v.throttle_cmd if v.engine_on else None, f"{v.throttle * 100:.0f}%"),
+                ("燃料" if small else "推進剤", v.prop / v.p.prop_mass, ui.LIME, None,
+                 f"{v.prop / v.p.prop_mass * 100:.0f}%"),
+                ("RCS", v.rcs_fuel / v.p.rcs_fuel, ui.CYAN, None, "")]
         if v.p.gimbal_max:
-            ui.text(x + 4 * K, y, "ジンバル", ui.GRAY, size=10)
-            bx = x + vx_
-            pyxel.rect(bx, y + K, bw, bh, ui.BLACK)
-            pyxel.rect(bx + bw // 2, y, K, bh + 2 * K, ui.DBLUE)
-            gx = bx + bw // 2 + int(v.gimbal / v.p.gimbal_max * (bw // 2 - 2 * K))
-            pyxel.rect(gx - 2 * K, y + K, 5 * K, bh, ui.YELLOW)
-            pyxel.rectb(bx, y + K, bw, bh, ui.DBLUE)
-            y += row_h + (1 if tiny else 3) * K
+            bars.append(("ジンバ" if small else "ジンバル", None, ui.YELLOW, v.gimbal / v.p.gimbal_max, ""))
         if run.fire_at is not None and (run.fire_active or run.heat > 0) and self.m.kind != "reentry":
-            bar("温度", run.heat / 100, ui.RED, text="火災!" if run.fire_active else "")
+            bars.append(("温度", run.heat / 100, ui.RED, None, "火災!" if run.fire_active else ""))
         elif self.m.kind == "reentry" and run.phase != "deorbit":
-            bar("温度", run.heat / 100, ui.RED if run.heat > 80 else ui.ORANGE, text=f"{run.heat:3.0f}")
+            bars.append(("温度", run.heat / 100, ui.RED if run.heat > 80 else ui.ORANGE, None, f"{run.heat:.0f}"))
         elif run.slosh > 0:
-            bar("揺れ", run.slosh / run.SLOSH[1], ui.PINK)
+            bars.append(("揺れ", run.slosh / run.SLOSH[1], ui.PINK, None, ""))
         elif run.anomaly_left is not None:
-            bar("タンク", 1.0 - run.anomaly_left / 5.0, ui.RED, text=f"{max(0.0, run.anomaly_left):.1f}")
-
-        # 目標のウィンドウ(320x240 は見出しと進み具合を詰め、下の説明を省く)
-        y += (2 if tiny else 4) * K
-        rows = run.rows()
-        ww = ui.W - x - 6 * K
-        pad = (6 if small else 10) * K
-        cols = (48 * K, 104 * K) if small else (64, 130)  # 範囲 / 現在値 の列
-        n = len(rows)
-        foot = self.m.kind == "ascent" and not tiny
-        wh = 24 + row_h * n if tiny else 40 * K + (row_h + K) * n + (20 if foot else 4) * K
-        wh = min(wh, ui.H - y - 2)
-        ui.window(x, y, ww, wh, fill=ui.BLACK, border=ui.LIME, shadow=False)
+            bars.append(("タンク", 1.0 - run.anomaly_left / 5.0, ui.RED, None, f"{max(0.0, run.anomaly_left):.1f}"))
         head, prog = self.objective()
-        ui.text(x + pad, y + (4 if tiny else 8) * K, head, ui.LIME, size=10)
-        pw = ww - pad * 2 - 4 * K if small else 160
-        py, ph = (y + 16, 3) if tiny else (y + 24 * K, 6 * K)
-        pyxel.rect(x + pad, py, pw, ph, ui.NAVY)
-        pyxel.rect(x + pad, py, int(pw * min(1.0, max(0.0, prog))), ph, ui.LIME)
-        yy = y + (22 if tiny else 38) * K
-        for label, rng, cur, ok in rows:
-            if yy + 10 * K > y + wh:
-                break
-            ui.text(x + pad, yy, tr(label, "window"), ui.GRAY, size=10)
-            ui.text(x + cols[0], yy, rng, ui.WHITE, size=10)
-            ui.text(x + cols[1], yy, cur, ui.LIME if ok else ui.RED, size=10)
-            yy += row_h if tiny else row_h + K
-        if foot:
-            ui.text(x + pad, yy + 4 * K, "ウィンドウ内でランクUP" if small else "ウィンドウに入るほどランクが上がる", ui.GRAY, size=10)
+        tx, ty = flight_hud.draw_hud(self.lay, left, right, bars[:5], head, prog, run.rows())
+        # 操作説明「下の表」: 表を指す矢印
+        if self.cold_open and TUTORIAL[self.tut][0] == "window" and self.frame // 15 % 2:
+            K = ui.K
+            ax, ay = tx + 30 * K, ty - 10 * K
+            pyxel.tri(ax - 7 * K, ay - 6 * K, ax + 7 * K, ay - 6 * K, ax, ay + 2 * K, ui.YELLOW)
 
     def objective(self):
         """目標のウィンドウの見出しと、進み具合(0〜1)。"""
