@@ -819,8 +819,8 @@ EN = {
     "……判断の癖も、そっくりです。": "...Its judgment is just like yours, too.",
     "また届かなかった……。宇宙の入口が、遠い。": "Missed again... The edge of space is so far.",
     # ---- 飛行画面: 下の計器・右のメッセージ欄 ----
-    "下の表: 高度 10 km を通過するとき、この範囲に入っていれば高評価。":
-        "The table below: be inside these ranges when you pass 10 km for a high rank.",
+    "下の計器の水色の数字: 高度 10 km を通過するとき、この範囲に入っていれば高評価。":
+        "The cyan numbers below: be inside these ranges when you pass 10 km for a high rank.",
     "SPACE 点火": "SPACE ignite",
     "SPACE 点火/停止": "SPACE ignite/cut",
     "SPACE 点火/停止  Z 分離・放出": "SPACE ignite/cut  Z separate/release",

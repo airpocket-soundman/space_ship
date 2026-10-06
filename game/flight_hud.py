@@ -5,11 +5,13 @@
     |        飛行画面(view)      | 手順・案内 |
     |                            | 通知の履歴 |
     +----------------------------+-----------+
-    | 計器(2列) | バー | 目標の表(項目・目標・現在値) |
+    | 計器 2 列(項目・目標・現在値)      | バー |
     +-----------------------------------------+
 
 文字の入る枠は、詰めた配置(360x360 / 320x240)と通常(640x480)の 2 通り。720x720 は詰めた配置を K 倍する。
 """
+
+import re
 
 import pyxel
 
@@ -25,34 +27,49 @@ class FlightLayout:
         self.tiny = tiny
         self.pad = (3 if tiny else 4 if compact else 8) * K
         self.row_h = (10 if tiny else 12 if compact else 14) * K
-        self.hud_h = self.pad * 2 + self.row_h * 6
+        self.rows = 6  # 計器の行数(2 列)
+        self.hud_h = self.pad * 2 + self.row_h * self.rows
         self.msg_w = (116 if tiny else 128 if compact else 196) * K
         self.view_w = ui.W - self.msg_w
         self.view_h = ui.H - self.hud_h
-        # 計器の帯の列: 計器 2 列 / バー / 目標の表
+        # 計器の帯: 計器 2 列(項目・目標・現在値)/ 右端にバー
         if tiny:
-            cols, bar, gap = (52, 62), (30, 36), 4
+            bar, gap, self.val_w, self.tgt_w = (30, 36), 4, 30, 40
         elif compact:
-            cols, bar, gap = (56, 70), (32, 44), 5
+            bar, gap, self.val_w, self.tgt_w = (32, 44), 5, 36, 46
         else:
-            cols, bar, gap = (120, 130), (52, 88), 10
-        x = self.pad
-        self.col1 = (x, cols[0] * K)
-        x += cols[0] * K + gap * K
-        self.col2 = (x, cols[1] * K)
-        x += cols[1] * K + gap * K
-        self.bar = (x, bar[0] * K, bar[1] * K)
-        x += (bar[0] + bar[1]) * K + gap * K
-        self.table = (x, ui.W - self.pad - x)
+            bar, gap, self.val_w, self.tgt_w = (52, 88), 10, 76, 84
+        self.val_w *= K
+        self.tgt_w *= K
+        bar_w = (bar[0] + bar[1]) * K
+        self.bar = (ui.W - self.pad - bar_w, bar[0] * K, bar[1] * K)
+        inst_w = self.bar[0] - gap * K - self.pad
+        col_w = (inst_w - gap * K) // 2
+        self.cols = [(self.pad, col_w), (self.pad + col_w + gap * K, col_w)]
 
 
-def draw_hud(lay, left, right, bars, head, prog, rows):
+def plus_minus(lo, hi):
+    """目標の範囲を「中央±幅」の文字にする(中央が 0 なら「±幅」)。"""
+    c, d = (lo + hi) / 2, (hi - lo) / 2
+    def num(x):
+        return f"{x:.0f}" if abs(x) >= 10 or x == int(x) else f"{x:.1f}"
+    return f"±{num(d)}" if abs(c) < 1e-9 else f"{num(c)}±{num(d)}"
+
+
+def target_text(rng):
+    """ミッションの表の範囲の文字(「250~500」など)を「中央±幅」に直す。片側だけの条件はそのまま。"""
+    m = re.match(r"^([+-]?[\d.]+)~([+-]?[\d.]+)(.*)$", rng)
+    if not m:
+        return rng
+    return plus_minus(float(m.group(1)), float(m.group(2))) + m.group(3)
+
+
+def draw_hud(lay, entries, bars):
     """下の帯の計器。
 
-    left / right: 計器の 2 列。(ラベル, 値, 色) の並び
+    entries: 計器の行。(項目, 目標 or "", 現在値, 色)。2 列に、上から順に詰める
     bars: (ラベル, 割合, 色, 目盛り or None, 右端の文字 or "") の並び。割合が None ならジンバル(-1〜1)
-    head, prog: 目標の表の見出しと進み具合(0〜1)
-    rows: 目標の表の行。(項目, 目標, 現在値, 入っているか)
+    戻り値: 1 行目の目標の列の位置(操作説明の矢印で指す)
     """
     K, rh = lay.K, lay.row_h
     y0 = ui.H - lay.hud_h
@@ -60,17 +77,19 @@ def draw_hud(lay, left, right, bars, head, prog, rows):
     pyxel.rect(0, y0, ui.W, K, ui.DBLUE)
     top = y0 + lay.pad
 
-    for (x, w), items in ((lay.col1, left), (lay.col2, right)):
-        y = top
-        for label, value, col in items:
-            ui.text(x, y, tr(label, "hud"), ui.GRAY, size=10)
-            ui.text(x + w - ui.text_width(value, 10), y, value, col, size=10)
-            y += rh
+    for n, (label, target, value, col) in enumerate(entries[:lay.rows * 2]):
+        x, w = lay.cols[n // lay.rows]
+        y = top + (n % lay.rows) * rh
+        ui.text(x, y, tr(label, "hud"), ui.GRAY, size=10)
+        if target:
+            tx = x + w - lay.val_w - K
+            ui.text(tx - ui.text_width(target, 10), y, target, ui.CYAN, size=10)
+        ui.text(x + w - ui.text_width(value, 10), y, value, col, size=10)
 
     bx0, lw, bw = lay.bar
     bh = max(4, rh - 5 * K)
     y = top
-    for label, frac, col, marker, text in bars:
+    for label, frac, col, marker, text in bars[:lay.rows]:
         ui.text(bx0, y, tr(label, "hud"), ui.GRAY, size=10)
         bx, by = bx0 + lw, y + (rh - bh) // 2 - K
         pyxel.rect(bx, by, bw, bh, ui.BLACK)
@@ -86,30 +105,11 @@ def draw_hud(lay, left, right, bars, head, prog, rows):
         if text:
             ui.text(bx + bw - ui.text_width(text, 10) - 2 * K, y, text, ui.WHITE, size=10)
         y += rh
-
-    # 目標の表: 見出しと進み具合、そのあと 項目 / 目標 / 現在値
-    tx, tw = lay.table
-    pyxel.rect(tx - 2 * K, top - 2 * K, tw + 4 * K, rh * 6 + 2 * K, ui.BLACK)
-    pyxel.rectb(tx - 2 * K, top - 2 * K, tw + 4 * K, rh * 6 + 2 * K, ui.LIME)
-    ui.text(tx + K, top, head, ui.LIME, size=10)
-    hw = ui.text_width(head, 10)
-    px = tx + hw + 6 * K
-    pw = tx + tw - px - 2 * K
-    if pw > 12 * K:
-        py = top + rh // 2 - 2 * K
-        pyxel.rect(px, py, pw, 3 * K, ui.NAVY)
-        pyxel.rect(px, py, int(pw * max(0.0, min(1.0, prog))), 3 * K, ui.LIME)
-    label_w = (40 if lay.tiny else 44 if lay.compact else 76) * K
-    y = top + rh
-    for label, rng, cur, ok in rows[:5]:
-        ui.text(tx + K, y, tr(label, "window"), ui.GRAY, size=10)
-        ui.text(tx + K + label_w, y, rng, ui.WHITE, size=10)
-        ui.text(tx + tw - ui.text_width(cur, 10) - K, y, cur, ui.LIME if ok else ui.RED, size=10)
-        y += rh
-    return tx, top  # 目標の表の左上(操作説明の矢印で指す)
+    x, w = lay.cols[0]
+    return x + w - lay.val_w - lay.tgt_w // 2, top
 
 
-def draw_messages(lay, title, goal, guide, guide_col, extra, prompt, blink, warp, log, keys):
+def draw_messages(lay, title, goal, guide, guide_col, extra, prompt, blink, warp, log, keys, objective=None):
     """右のメッセージ欄。上から: ミッション名と目標 / 手順の案内 / 目安 / 押すキー / 通知の履歴 / 操作キー。
 
     guide: 手順の案内の文(枠で囲む。guide_col は枠の色)。extra: 案内の下に出す補足の行
@@ -134,6 +134,14 @@ def draw_messages(lay, title, goal, guide, guide_col, extra, prompt, blink, warp
         for line in ui.wrap(goal, tw, fs)[:2]:
             ui.text(x, y, line, ui.WHITE, size=fs)
             y += lh
+    if objective:  # いま目指すもの(計器の水色の目標の見出し)と進み具合
+        head, prog = objective
+        for line in ui.wrap(head, tw, fs)[:2]:
+            ui.text(x, y, line, ui.CYAN, size=fs)
+            y += lh
+        pyxel.rect(x, y, tw, 3 * K, ui.BLACK)
+        pyxel.rect(x, y, int(tw * max(0.0, min(1.0, prog))), 3 * K, ui.CYAN)
+        y += 5 * K
     y += 3 * K
 
     if guide:

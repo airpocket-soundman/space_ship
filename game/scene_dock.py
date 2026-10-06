@@ -203,19 +203,21 @@ class DockScene:
             prompt = "SPACE で続ける"
         log = [(text, col) for text, col, _ in self.messages]
         flight_hud.draw_messages(self.lay, tr(self.m.title), tr(self.m.goal), guide, ui.DBLUE, [], tr(prompt),
-                                 self.frame // 12 % 3 != 0, "", log, [tr("←→↑↓ スラスター")])
+                                 self.frame // 12 % 3 != 0, "", log, [tr("←→↑↓ スラスター")],
+                                 (tr("把持の条件"), 1.0 - run.dist / 170.0))
 
     def draw_hud(self):
         run, small = self.run, ui.COMPACT
         left = self.m.time_limit - run.t
         if small:
-            l1 = [("T+", f"{run.t:.1f}", ui.WHITE), ("残り", f"{max(0.0, left):.0f}", ui.RED if left < 30 else ui.WHITE),
-                  ("距離", f"{run.dist:.1f}", ui.WHITE)]
-            l2 = [("前後", f"{run.vx:+.2f}", ui.WHITE), ("上下", f"{run.vy:+.2f}", ui.WHITE)]
+            entries = [("T+", "", f"{run.t:.1f}", ui.WHITE),
+                       ("残り", "", f"{max(0.0, left):.0f}", ui.RED if left < 30 else ui.WHITE),
+                       ("前後", "", f"{run.vx:+.2f}", ui.WHITE), ("上下", "", f"{run.vy:+.2f}", ui.WHITE)]
         else:
-            l1 = [("T+", f"{run.t:.1f} s", ui.WHITE),
-                  ("残り時間", f"{max(0.0, left):.1f} s", ui.RED if left < 30 else ui.WHITE),
-                  ("距離", f"{run.dist:.1f} m", ui.WHITE)]
-            l2 = [("前後の速度", f"{run.vx:+.2f} m/s", ui.WHITE), ("上下の速度", f"{run.vy:+.2f} m/s", ui.WHITE)]
+            entries = [("T+", "", f"{run.t:.1f} s", ui.WHITE),
+                       ("残り時間", "", f"{max(0.0, left):.1f} s", ui.RED if left < 30 else ui.WHITE),
+                       ("前後の速度", "", f"{run.vx:+.2f} m/s", ui.WHITE), ("上下の速度", "", f"{run.vy:+.2f} m/s", ui.WHITE)]
+        entries += [(label, flight_hud.target_text(rng), cur, ui.LIME if ok else ui.RED)
+                    for label, rng, cur, ok in run.rows()]
         bars = [("燃料", run.fuel / run.FUEL, ui.CYAN, None, f"{run.fuel / run.FUEL * 100:.0f}%")]
-        flight_hud.draw_hud(self.lay, l1, l2, bars, tr("把持の条件"), 1.0 - run.dist / 170.0, run.rows())
+        flight_hud.draw_hud(self.lay, entries, bars)

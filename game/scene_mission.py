@@ -22,7 +22,7 @@ TUTORIAL = [
     ("ignite", "SPACE で点火!", 0, 0),
     ("throttle", "↑↓ でスロットル(推力)。このエンジンは 70% より下には絞れない。", 3, 7),
     ("steer", "←→ でノズルを振って姿勢を変える。傾いたら、反対に当てて戻す。", 3, 8),
-    ("window", "下の表: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
+    ("window", "下の計器の水色の数字: 高度 10 km を通過するとき、この範囲に入っていれば高評価。", 5, 5),
     ("good", "いい調子だ。そのまま、まっすぐ上へ!", 0, 0),
 ]
 
@@ -683,7 +683,8 @@ class MissionScene:
         warp = trf(">> 早送り ×{n}", n=run.warp) if self.phase == "flight" and run.warp > 1 else ""
         log = [(text, col) for text, col, _ in self.messages]
         flight_hud.draw_messages(self.lay, tr(self.m.title), tr(self.m.goal), guide, col, extra, tr(prompt),
-                                 self.frame // 12 % 3 != 0, warp, log, [tr(k) for k in self.keys_help()])
+                                 self.frame // 12 % 3 != 0, warp, log, [tr(k) for k in self.keys_help()],
+                                 self.objective())
 
     def draw_orbit_map(self):
         """軌道の形の小さな図(惑星と、いまの軌道)。機体はいつも惑星の真上にいるものとして描く。"""
@@ -748,41 +749,62 @@ class MissionScene:
 
 
     # ---- 計器(下の帯) ----
+    # ミッションの表(run.rows)の項目のうち、計器と同じものは計器の行に目標として載せる
+    ROW_KEYS = {"時刻": "t", "垂直速度": "vy", "水平速度": "vx", "傾き": "ang", "角速度": "rate",
+                "分離高度": "alt", "動圧": "q"}
+    ROW_SKIP = {"推進剤", "温度"}  # バーに出ているもの
+    DROP_ORDER = ("aoa", "q", "ign")  # 行が足りないときに省く計器(空気が薄いときの迎角から)
+
     def draw_hud(self):
         v, run, small = self.v, self.run, ui.COMPACT
-        targets = run.hud_targets()
-
-        def val(key, now, col=ui.WHITE):
-            """目標(WP)があれば、範囲に入っているかで色を変える。"""
-            if key in targets:
-                lo, hi = targets[key]
-                return ui.LIME if lo <= now <= hi else ui.RED
-            return col
-
         rate = math.degrees(v.omega)
         aoa = math.degrees(v.aoa_tail if run.phase in ("descent", "entry", "deorbit") else v.aoa)
         if v.air_speed < 30:
             aoa = 0.0
         limit = self.m.land.q_limit if self.m.land and run.phase == "descent" else 30_000
         tilt = run.tilt_deg()
+        eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
+        # 計器: (キー, ラベル, 値の文字, いまの値, ふだんの色)
         if small:  # 詰めた配置: ラベルを短く、単位を省く
             alt = f"{v.y:.0f}" if v.y < 100_000 else f"{v.y / 1000:.1f}k"
-            left = [("T+", f"{v.t:.1f}", val("t", v.t)), ("高度", alt, ui.WHITE),
-                    ("垂直", f"{v.vy:+.0f}", val("vy", v.vy)), ("水平", f"{v.vx:+.0f}", val("vx", v.vx)),
-                    ("動圧", f"{v.q / 1000:.1f}k", ui.ORANGE if v.q > limit * 0.7 else ui.WHITE)]
-            right = [("傾き", f"{tilt:+.1f}", val("ang", tilt)), ("角速", f"{rate:+.2f}", val("rate", rate)),
-                     ("迎角", f"{aoa:+.1f}", ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
-                     ("点火", trf("残{n}", n=v.ignitions_left), ui.ORANGE if v.engine_on else ui.WHITE)]
+            inst = [("t", "T+", f"{v.t:.1f}", v.t, ui.WHITE), ("alt", "高度", alt, v.y, ui.WHITE),
+                    ("vy", "垂直", f"{v.vy:+.0f}", v.vy, ui.WHITE), ("vx", "水平", f"{v.vx:+.0f}", v.vx, ui.WHITE),
+                    ("q", "動圧", f"{v.q / 1000:.1f}k", v.q, ui.ORANGE if v.q > limit * 0.7 else ui.WHITE),
+                    ("ang", "傾き", f"{tilt:+.1f}", tilt, ui.WHITE), ("rate", "角速", f"{rate:+.2f}", rate, ui.WHITE),
+                    ("aoa", "迎角", f"{aoa:+.1f}", aoa, ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
+                    ("ign", "点火", trf("残{n}", n=v.ignitions_left), 0, ui.ORANGE if v.engine_on else ui.WHITE)]
         else:
-            left = [("T+", f"{v.t:.1f} s", val("t", v.t)),
-                    ("高度", f"{v.y:.0f} m" if v.y < 100_000 else f"{v.y / 1000:.1f} km", ui.WHITE),
-                    ("垂直速度", f"{v.vy:+.1f} m/s", val("vy", v.vy)), ("水平速度", f"{v.vx:+.1f} m/s", val("vx", v.vx)),
-                    ("動圧", f"{v.q / 1000:.1f} kPa", ui.ORANGE if v.q > limit * 0.7 else ui.WHITE)]
-            eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
-            right = [("傾き", f"{tilt:+.1f} °", val("ang", tilt)), ("角速度", f"{rate:+.2f} °/s", val("rate", rate)),
-                     ("迎角", f"{aoa:+.1f} °", ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
-                     ("エンジン", trf("{eng} 残{n}", eng=eng, n=v.ignitions_left),
-                      ui.ORANGE if v.engine_on else ui.WHITE)]
+            inst = [("t", "T+", f"{v.t:.1f} s", v.t, ui.WHITE),
+                    ("alt", "高度", f"{v.y:.0f} m" if v.y < 100_000 else f"{v.y / 1000:.1f} km", v.y, ui.WHITE),
+                    ("vy", "垂直速度", f"{v.vy:+.1f} m/s", v.vy, ui.WHITE),
+                    ("vx", "水平速度", f"{v.vx:+.1f} m/s", v.vx, ui.WHITE),
+                    ("q", "動圧", f"{v.q / 1000:.1f} kPa", v.q, ui.ORANGE if v.q > limit * 0.7 else ui.WHITE),
+                    ("ang", "傾き", f"{tilt:+.1f} °", tilt, ui.WHITE), ("rate", "角速度", f"{rate:+.2f} °/s", rate, ui.WHITE),
+                    ("aoa", "迎角", f"{aoa:+.1f} °", aoa, ui.RED if abs(aoa) > 8 and v.q > 5000 else ui.WHITE),
+                    ("ign", "エンジン", trf("{eng} 残{n}", eng=eng, n=v.ignitions_left), 0,
+                     ui.ORANGE if v.engine_on else ui.WHITE)]
+        # 目標: ミッションの表の行(範囲の文字と、入っているか)と、計器の横に出す目安(WP)
+        goals, extra = {}, []
+        for label, rng, cur, ok in run.rows():
+            key = self.ROW_KEYS.get(label)
+            if key:
+                goals[key] = (flight_hud.target_text(rng), ok)
+            elif label not in self.ROW_SKIP:
+                extra.append((label, flight_hud.target_text(rng), cur, ui.LIME if ok else ui.RED))
+        now = {k: val for k, _, _, val, _ in inst}
+        for key, (lo, hi) in run.hud_targets().items():
+            if key not in goals:
+                text = f"~{hi:g}" if key == "t" else flight_hud.plus_minus(lo, hi)
+                goals[key] = (text, lo <= now[key] <= hi)
+        cap = self.lay.rows * 2
+        drop = [k for k in self.DROP_ORDER if k not in goals][:max(0, len(inst) + len(extra) - cap)]
+        entries = []
+        for key, label, text, _, col in inst:
+            if key in drop:
+                continue
+            target, ok = goals.get(key, ("", None))
+            entries.append((label, target, text, col if ok is None else ui.LIME if ok else ui.RED))
+        entries += extra
         bars = [("出力" if small else "スロットル", v.throttle, ui.ORANGE,
                  v.throttle_cmd if v.engine_on else None, f"{v.throttle * 100:.0f}%"),
                 ("燃料" if small else "推進剤", v.prop / v.p.prop_mass, ui.LIME, None,
@@ -798,13 +820,12 @@ class MissionScene:
             bars.append(("揺れ", run.slosh / run.SLOSH[1], ui.PINK, None, ""))
         elif run.anomaly_left is not None:
             bars.append(("タンク", 1.0 - run.anomaly_left / 5.0, ui.RED, None, f"{max(0.0, run.anomaly_left):.1f}"))
-        head, prog = self.objective()
-        tx, ty = flight_hud.draw_hud(self.lay, left, right, bars[:5], head, prog, run.rows())
-        # 操作説明「下の表」: 表を指す矢印
+        tx, ty = flight_hud.draw_hud(self.lay, entries, bars)
+        # 操作説明「下の計器」: 水色の目標の列を指す矢印
         if self.cold_open and TUTORIAL[self.tut][0] == "window" and self.frame // 15 % 2:
             K = ui.K
-            ax, ay = tx + 30 * K, ty - 10 * K
-            pyxel.tri(ax - 7 * K, ay - 6 * K, ax + 7 * K, ay - 6 * K, ax, ay + 2 * K, ui.YELLOW)
+            ax, ay = tx, ty - 4 * K
+            pyxel.tri(ax - 7 * K, ay - 8 * K, ax + 7 * K, ay - 8 * K, ax, ay, ui.YELLOW)
 
     def objective(self):
         """目標のウィンドウの見出しと、進み具合(0〜1)。"""
