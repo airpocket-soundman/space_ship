@@ -67,7 +67,7 @@ def target_text(rng):
 def draw_hud(lay, entries, bars):
     """下の帯の計器。
 
-    entries: 計器の行。(項目, 目標 or "", 現在値, 色)。2 列に、上から順に詰める
+    entries: 計器の行。(項目, 目標 or "", 現在値, 色)。2 列に、上から順に詰める(None は空き行)
     bars: (ラベル, 割合, 色, 目盛り or None, 右端の文字 or "") の並び。割合が None ならジンバル(-1〜1)
     戻り値: 1 行目の目標の列の位置(操作説明の矢印で指す)
     """
@@ -77,7 +77,10 @@ def draw_hud(lay, entries, bars):
     pyxel.rect(0, y0, ui.W, K, ui.DBLUE)
     top = y0 + lay.pad
 
-    for n, (label, target, value, col) in enumerate(entries[:lay.rows * 2]):
+    for n, entry in enumerate(entries[:lay.rows * 2]):
+        if entry is None:
+            continue
+        label, target, value, col = entry
         x, w = lay.cols[n // lay.rows]
         y = top + (n % lay.rows) * rh
         ui.text(x, y, tr(label, "hud"), ui.GRAY, size=10)

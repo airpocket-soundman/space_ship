@@ -754,6 +754,7 @@ class MissionScene:
                 "分離高度": "alt", "動圧": "q"}
     ROW_SKIP = {"推進剤", "温度"}  # バーに出ているもの
     DROP_ORDER = ("aoa", "q", "ign")  # 行が足りないときに省く計器(空気が薄いときの迎角から)
+    LEFT_KEYS = {"t", "alt", "vy", "vx", "q"}  # 左の列に出す計器
 
     def draw_hud(self):
         v, run, small = self.v, self.run, ui.COMPACT
@@ -764,7 +765,7 @@ class MissionScene:
         limit = self.m.land.q_limit if self.m.land and run.phase == "descent" else 30_000
         tilt = run.tilt_deg()
         eng = tr("燃焼中") if v.engine_on else (tr("停止") if v.t > 0 else tr("待機", "engine"))
-        # 計器: (キー, ラベル, 値の文字, いまの値, ふだんの色)
+        # 計器: (キー, ラベル, 値の文字, いまの値, ふだんの色)。左の列は時刻〜動圧、右の列は姿勢とエンジン
         if small:  # 詰めた配置: ラベルを短く、単位を省く
             alt = f"{v.y:.0f}" if v.y < 100_000 else f"{v.y / 1000:.1f}k"
             inst = [("t", "T+", f"{v.t:.1f}", v.t, ui.WHITE), ("alt", "高度", alt, v.y, ui.WHITE),
@@ -798,13 +799,17 @@ class MissionScene:
                 goals[key] = (text, lo <= now[key] <= hi)
         cap = self.lay.rows * 2
         drop = [k for k in self.DROP_ORDER if k not in goals][:max(0, len(inst) + len(extra) - cap)]
-        entries = []
+        left, right = [], []
         for key, label, text, _, col in inst:
             if key in drop:
                 continue
             target, ok = goals.get(key, ("", None))
-            entries.append((label, target, text, col if ok is None else ui.LIME if ok else ui.RED))
-        entries += extra
+            (left if key in self.LEFT_KEYS else right).append(
+                (label, target, text, col if ok is None else ui.LIME if ok else ui.RED))
+        right += extra
+        rows = self.lay.rows
+        left += right[rows:]  # 右の列に入りきらない目標の行は、左の列の空きへ
+        entries = left + [None] * (rows - len(left)) + right[:rows]
         bars = [("出力" if small else "スロットル", v.throttle, ui.ORANGE,
                  v.throttle_cmd if v.engine_on else None, f"{v.throttle * 100:.0f}%"),
                 ("燃料" if small else "推進剤", v.prop / v.p.prop_mass, ui.LIME, None,
