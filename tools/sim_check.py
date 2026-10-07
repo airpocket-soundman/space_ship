@@ -66,6 +66,12 @@ class AscentPilot(Pilot):
         run, v = self.run, self.run.v
         if not v.launched:
             run.space()
+        # WP1 のあとの分離(WP2): 姿勢が窓に入っていれば、エンジンを止める
+        w = run.m.sep_windows
+        if w and run.stage_no == 1 and run.wp_values is not None and v.engine_on:
+            now = run._wp_now()
+            if self.late("cut", all(win.ok(now[k]) for k, win in w.items())):
+                run.space()
         if run.stage_no == 2 and not v.engine_on and v.ignitions_left == v.p.ignitions:
             if self.late("s2", True):
                 run.space()

@@ -106,7 +106,8 @@ class Vehicle:
     rcs_fuel: float = 0.0
     lifted_off: bool = False
     launched: bool = False  # 最初の点火を済ませたか
-    t: float = 0.0  # 最初の点火からの経過時間
+    clock_on: bool = False  # 時刻(T+)を進めるか。カウントダウン 0 で立てる(点火していなくても進む)
+    t: float = 0.0  # 時刻 T+(カウントダウン 0 から。途中から始めるステージは、その時刻から)
     rcs_firing: int = 0
     rcs_translate: int = 0  # 平行移動のスラスターの向き(機体から見て +1 右 / -1 左)
     gust: float = 0.0
@@ -115,6 +116,7 @@ class Vehicle:
     fins: bool = False  # グリッドフィンを開いているか
     drag_mult: float = 1.0  # パラシュートなどによる抗力の倍率
     torque_bias: float = 0.0  # 故障や揺れによる外乱の角加速度 [rad/s^2]
+    steer_gain: float = 1.0  # 姿勢の操作の効きの倍率(推進剤が偏ると大きくなり、ピーキーになる)
     time_scale: float = TIME_SCALE  # 物理を実時間の何倍で進めているか(操縦と回転を画面の時間で進めるのに使う)
     rng: random.Random = field(default_factory=random.Random)
 
@@ -204,7 +206,7 @@ class Vehicle:
         if not self.upper:
             return None
         L = self.p.length
-        gone = dict(x=self.x, y=self.y, vx=self.vx, vy=self.vy, theta=self.theta, omega=self.omega)
+        gone = dict(x=self.x, y=self.y, vx=self.vx, vy=self.vy, theta=self.theta, omega=self.omega, t=self.t)
         if keep_lower:
             gone.update(params=self.upper[0], upper=self.upper[1:], lower=False,
                         x=self.x + math.sin(self.theta) * L, y=self.y + math.cos(self.theta) * L)
@@ -231,7 +233,7 @@ class Vehicle:
         """steer: -1(左) / 0 / +1(右)、throttle_input: -1 / 0 / +1
         translate: スラスターで機体の横(機軸と直角)へ押す向き。+1 で機体から見て右、-1 で左。"""
         p = self.p
-        if self.launched:
+        if self.launched or self.clock_on:
             self.t += dt
         cdt = dt / self.time_scale  # 画面の時間(操縦と回転はこちらで進める)
 
@@ -254,10 +256,10 @@ class Vehicle:
         arm = L * 0.5
 
         # 角加速度: ジンバル + スラスター + グリッドフィン + 空力 + 突風 + 外乱
-        alpha = thrust * math.sin(self.gimbal) * arm / inertia
+        alpha = thrust * math.sin(self.gimbal) * arm / inertia * self.steer_gain
         self.rcs_firing = 0
         if steer != 0 and self.rcs_fuel > 0:
-            alpha += steer * p.rcs_accel
+            alpha += steer * p.rcs_accel * self.steer_gain
             self.rcs_fuel = max(0.0, self.rcs_fuel - cdt)
             self.rcs_firing = steer
         if self.lifted_off:

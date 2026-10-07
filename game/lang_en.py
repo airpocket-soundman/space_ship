@@ -81,6 +81,25 @@ EN = {
     "最大動圧を通過": "Passed max Q",
     "エンジン区画で火災! 出力を最低まで絞れ!": "Engine bay fire! Throttle down to minimum!",
     "ターボポンプに異常振動! 出力を最低まで絞れ!": "Turbopump vibration! Throttle down to minimum!",
+    "次は WP2: 姿勢を整えて SPACE でエンジン停止。推力が消えたら自動で分離":
+        "Next, WP2: steady the attitude and press SPACE to cut the engine. Stage 1 drops once thrust fades",
+    "WP2: WP1 より前に分離した": "WP2: separated before WP1",
+    "WP2 分離: 高度 {alt:.0f} km 傾き {ang:+.1f}° 角速度 {rate:+.2f}°/s":
+        "WP2 separation: alt {alt:.0f} km tilt {ang:+.1f}° rate {rate:+.2f}°/s",
+    "2段目の推進剤が偏っている! 姿勢の効きが不安定": "Stage 2 propellant is off balance! Attitude control is going erratic",
+    "迎角が大きい! 姿勢を保てない!": "Angle of attack too high! Can't hold attitude!",
+    "推進剤の偏りで迎角が大きくなりすぎ、2段目が爆発":
+        "Propellant imbalance: the angle of attack grew too large and stage 2 exploded",
+    "推進剤が偏って姿勢の効きがピーキー! ←→ は小さく当てろ": "Propellant imbalance makes control twitchy! Use tiny taps of ←→",
+    "まっすぐ上へ。WP1(高度 {alt:.0f} km)を通過すれば成功": "Straight up. Pass WP1 ({alt:.0f} km) and the mission is a success",
+    "WP2: 傾き ±{a:.0f}°・角速度 ±{r:.1f}°/s に整えて、SPACE でエンジン停止":
+        "WP2: get tilt within ±{a:.0f}° and rate within ±{r:.1f}°/s, then SPACE to cut the engine",
+    "推力が消えたら自動で分離する": "Stage 1 drops by itself once thrust fades",
+    "WP3: 高度 {alt:.0f} km へ": "WP3: climb to {alt:.0f} km",
+    "WP2  分離の条件": "WP2  Separation",
+    "WP3  高度 {alt:.0f} km": "WP3  {alt:.0f} km",
+    "2段目は推進剤が偏って、姿勢を崩した。軌道には届かなかったけど……データは全部取れたわ。":
+        "Stage 2's propellant went off balance and it lost attitude. It didn't reach orbit... but we got all the data.",
     "振動が収まった。出力を戻してよし": "Vibration has settled. Throttle back up.",
     "ターボポンプが壊れてエンジンが爆発": "The turbopump failed and the engine exploded",
     "!! ターボポンプ異常 !!": "!! TURBOPUMP FAULT !!",
@@ -556,8 +575,10 @@ EN = {
         "No vehicle. \"Build\" a {name} ({cost:.0f}M$, {months} months).",
 
     # ---- 会話: ブリーフィング ----
-    "今度は2段目の点火まで。1段目が燃え尽きたら自動で切り離すから、SPACE で2段目に点火して。":
-        "This time, all the way to stage 2 ignition. Stage 1 drops by itself when it burns out; press SPACE to light stage 2.",
+    "WP1 を通過したら、それで成功。そのあとは姿勢を整えて、SPACE で1段目のエンジンを止めて。":
+        "Pass WP1 and it's a success. After that, steady the attitude and press SPACE to cut stage 1.",
+    "推力が消えたら自動で切り離すから、もう一度 SPACE で2段目に点火。高度 300 km を目指すわ。":
+        "Once thrust fades it separates by itself; press SPACE again to light stage 2. We're aiming for 300 km.",
     "2段目は推進剤が揺れて、機体が振られるわ。逆に当てて支えて。":
         "Fuel sloshes in stage 2 and shoves the vehicle around. Counter-steer to hold it.",
     "今回は段の切り離しも手動。エンジンが止まっても、推力はしばらく残るの。":

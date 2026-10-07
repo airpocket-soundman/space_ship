@@ -100,12 +100,14 @@ class MissionScene:
         if self.phase == "count":
             self.count -= 1 / 60  # 残り秒数は飛行画面の真ん中に大きく出す
             if self.count <= 0:
+                v.clock_on = True  # 時刻(T+)はカウントダウン 0 から。点火を待たずに進める
                 if self.airborne:
                     self.phase = "flight"
                 else:
                     self.phase = "ready"
                     self.say("点火準備よし。SPACE で点火!", ui.YELLOW, 600)
         elif self.phase == "ready":
+            v.t += run.time_scale / 60  # 物理はまだ進めないので、時刻だけここで進める
             if ignite:
                 run.space()
                 if v.engine_on:
@@ -178,6 +180,9 @@ class MissionScene:
             if run.vehicle_lost:
                 self.explode()
             return
+        if run.lost_after_success:  # 成功は決まったが、そのあと機体が爆発した
+            self.explode()
+            return
         kind = self.m.kind
         if kind == "reentry" or (self.m.land and self.m.land.site == "sea"):
             self.parts.splash(v.x, 0.0, 90)
@@ -203,6 +208,8 @@ class MissionScene:
         v = self.v
         return v.vx * PLANET_R / (PLANET_R + max(v.y, 0.0))
 
+    BILLOW_H = 50.0  # 噴射がこの高さ [m] より地面に近いと、煙が巻き上がる
+
     def ground_y(self, x):
         """地表の高さ [m]。台船の上なら甲板の高さ。"""
         land = self.m.land
@@ -217,10 +224,18 @@ class MissionScene:
         o = dict(d)
         o["age"] = 0
         o["stages"] = [d["params"]] + list(d.get("upper") or []) if d.get("params") else []
-        if d.get("lower"):  # 捨てた1段目は、ゆっくり回りながら離れていく
-            o["omega"] = d["omega"] + math.radians(random.choice((-14, 14)))
+        if d.get("lower"):  # 捨てた1段目は、ゆっくり傾きながら離れていく
+            o["omega"] = d["omega"] + math.radians(random.uniform(2.0, 4.0) * random.choice((-1, 1)))
             o["vx"] -= math.sin(d["theta"]) * 3.0
             o["vy"] -= math.cos(d["theta"]) * 3.0
+        # 物理は 1 フレームを細かく刻んで進めるので、切り離しはフレームの途中で起きる。
+        # このあと update_objects で 1 フレームぶん進めるので、そのぶんを差し引いて、いまの時刻にそろえる
+        if "t" in d:
+            catch = self.v.t - d["t"] - 1 / 60 * (self.warp_used if self.phase == "flight" else 1)
+            r = PLANET_R + max(o["y"], 0.0)
+            o["x"] += o["vx"] * catch * PLANET_R / r
+            o["y"] += o["vy"] * catch
+            o["theta"] += o["omega"] * catch
         self.objs.append(o)
         # 切り離した面から白い煙(下の段を捨てたなら機体の底、上を送り出したなら機体の先)
         v = self.v
@@ -273,6 +288,22 @@ class MissionScene:
             ang = v.theta - v.gimbal + math.pi
             frac = math.sqrt(v.engine_frac)
             vac = air < 0.03
+            # 噴射が地面に近いあいだは、地面に当たった噴射がたくさんの煙の粒になって、左右へ大きく広がり、
+            # 機体のまわりに巻き上がる(機体が隠れるほど)。粒はその場(ワールド座標)に残るので、
+            # 機体が上がって画面が上へ進むと、煙は画面の下へ流れて消える
+            gy = self.ground_y(nx)
+            near = 1.0 - (ny - gy) / self.BILLOW_H
+            if near > 0 and air > 0.5 and style != "phoenix":
+                big = 1.4 if style in ("eagle9", "eagle9r") else 1.0
+                for _ in range(int(near * 16 * big * v.throttle + random.random())):
+                    side = random.choice((-1, 1))
+                    if random.random() < 0.3:  # 噴射に押されて、機体のまわりを上へ吹き上がる
+                        vx, vy = side * random.uniform(0.0, 14.0), random.uniform(10.0, 40.0)
+                    else:  # 地面を這って左右へ広がり、遠くのものほど低い
+                        vx = side * random.uniform(10.0, 70.0) * big
+                        vy = random.random() ** 2 * 14.0 * (1.0 - abs(vx) / (80.0 * big))
+                    parts.billow(nx + side * random.uniform(0.0, 4.0), gy + random.uniform(0.3, 2.0), vx, vy,
+                                 random.uniform(140, 260), random.uniform(0.8, 1.6), random.uniform(2.2, 4.2) * big)
             if style == "phoenix":
                 parts.flame(nx, ny, gvx, v.vy, ang, 5, 60.0, 0.45, hw * 1.2, 5, 1)
             else:
@@ -357,6 +388,8 @@ class MissionScene:
         self.draw_objects()
         if not self.exploded:
             self.draw_rocket()
+        self.parts.draw_billows(self.anchor_x, self.anchor_y, self.cam_x, self.cam_y, self.ppm,
+                                self.view_w, self.view_h)
         self.draw_ladder()
         self.draw_markers()
         self.draw_view_texts()
@@ -562,15 +595,24 @@ class MissionScene:
         for side in (-1, 0, 1):
             pyxel.line(*tf(L, 0.0), *tf(L + 17.0, side * hw * 2.4), ui.WHITE)
 
+    LADDER_SPEED = 2.0  # 高度の目盛りが 1 フレームに流れてよい量 [px]
+
     def draw_ladder(self):
-        """左端の高度の目盛り。ズームに合わせて間隔を変える。"""
-        ppm = self.ppm
-        step = next(s for s in (10, 50, 100, 500, 1000, 5000, 10_000, 50_000) if s * ppm >= 8)
+        """左端の高度の目盛り。ふだんは画面と同じ縮尺。速く上がる(下がる)ときは、高度計のように
+        目盛りだけ縮尺を縮めて、数字の流れる速さを LADDER_SPEED までに抑える(数値の間隔が広がる)。"""
+        v = self.v
+        moved = abs(v.vy) * (self.warp_used if self.phase == "flight" else 1) / 60  # 1 フレームに進む高さ [m]
+        target = min(self.ppm, self.LADDER_SPEED * ui.K / moved) if moved > 0 else self.ppm
+        lp = getattr(self, "ladder_ppm", target)
+        lp += (target - lp) * (0.08 if target < lp else 0.03)  # 急に縮尺が変わらないよう、なめらかに
+        self.ladder_ppm = lp
+        step = next((s for s in (10, 50, 100, 500, 1000, 5000, 10_000, 50_000, 100_000) if s * lp >= 8 * ui.K),
+                    500_000)
         big = {10: 50, 50: 500, 100: 500, 500: 5000, 1000: 5000, 5000: 50_000}.get(step, step * 5)
-        lo = int((self.cam_y - (self.view_h - self.anchor_y) / ppm) // step) * step
-        hi = int((self.cam_y + self.anchor_y / ppm) // step + 1) * step
+        lo = int((self.cam_y - (self.view_h - self.anchor_y) / lp) // step) * step
+        hi = int((self.cam_y + self.anchor_y / lp) // step + 1) * step
         for alt in range(max(0, lo), hi + step, step):
-            y = self.sy(alt)
+            y = self.anchor_y - (alt - self.cam_y) * lp
             if not (0 <= y < self.view_h):
                 continue
             if alt % big == 0:
@@ -755,6 +797,8 @@ class MissionScene:
         sub = trf("ランク {rank}", rank=run.rank()) if ok else run.fail_reason
         K = ui.K
         subs = ui.wrap(sub, self.view_w - 16 * K)
+        if ok and run.end_note:
+            subs += ui.wrap(tr(run.end_note), self.view_w - 16 * K)
         h = (70 + 14 * len(subs)) * K
         y = (self.view_h - h) // 2
         pyxel.dither(0.7)
@@ -811,7 +855,8 @@ class MissionScene:
         now = {k: val for k, _, _, val, _ in inst}
         for key, (lo, hi) in run.hud_targets().items():
             if key not in goals:
-                text = f"~{hi:g}" if key == "t" else flight_hud.plus_minus(lo, hi)
+                text = f"~{hi:g}" if key == "t" else f"{lo / 1000:.0f}k~" if key == "alt" and hi == math.inf \
+                    else flight_hud.plus_minus(lo, hi)
                 goals[key] = (text, lo <= now[key] <= hi)
         cap = self.lay.rows * 2
         drop = [k for k in self.DROP_ORDER if k not in goals][:max(0, len(inst) + len(extra) - cap)]
@@ -863,6 +908,10 @@ class MissionScene:
         small = ui.COMPACT
         if m.kind == "ascent":
             wp = m.waypoint
+            if run.wp_values is not None and m.wp3_alt:  # WP1 のあとは、いま目指している WP
+                if run.stage_no == 1:
+                    return tr("WP2  分離の条件"), 1.0
+                return trf("WP3  高度 {alt:.0f} km", alt=m.wp3_alt / 1000), v.y / m.wp3_alt
             head = trf("{name} 高度{alt:.0f}km 通過時" if small else "{name}  高度 {alt:.0f} km 通過時",
                        name=wp.name, alt=wp.altitude / 1000)
             return head, v.y / wp.altitude

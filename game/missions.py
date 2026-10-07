@@ -131,6 +131,12 @@ class MissionDef:
     gimmick: str = ""  # slosh(推進剤の揺れ)/ anomaly(タンク異常)/ engine_out(エンジン1基停止)
     gimmick_chance: float = 1.0
     gimmick_chance_inspected: float = 1.0
+    # WP1 を通過して成功が決まったあとも飛び続ける打ち上げ(Ch1-1)。評価は WP1 の値だけ
+    #   WP2: 分離。姿勢をこの窓({キー: Window})に入れて SPACE でエンジンを止め、推力が消えたら自動で分離
+    #   WP3: 2段目でこの高さ [m] を目指すが、推進剤の偏りで姿勢を崩して必ず爆発する
+    #   (史実: Falcon 1 の 2 号機。推進剤の揺れが止まらず、宇宙には届いたが軌道には届かなかった)
+    sep_windows: dict = None
+    wp3_alt: float = 0.0
     tlm_success: int = 40
     rep_success: int = 10
     reward: float = 0.0  # 初めて成功したときの報酬 [M$]
@@ -175,8 +181,8 @@ CH1_1 = MissionDef(
         name="WP1",
         altitude=100_000.0,
         windows={
-            "t": Window("時刻", 100.0, 150.0, "s"),
-            "vy": Window("垂直速度", 500.0, 2000.0, "m/s"),
+            "t": Window("時刻", 125.0, 175.0, "s"),
+            "vy": Window("垂直速度", 1500.0, 2500.0, "m/s"),
             "ang": Window("傾き", -12.0, 12.0, "°"),
             "rate": Window("角速度", -2.0, 2.0, "°/s"),
         },
@@ -186,6 +192,12 @@ CH1_1 = MissionDef(
     fire_chance=0.35,
     fire_chance_inspected=0.08,
     gimmick="slosh",
+    can_cutoff=True,
+    sep_windows={
+        "ang": Window("傾き", -5.0, 5.0, "°"),
+        "rate": Window("角速度", -0.5, 0.5, "°/s"),
+    },
+    wp3_alt=300_000.0,
     tlm_success=50,
     rep_success=12,
     reward=30.0,
@@ -540,6 +552,12 @@ class MissionRun:
         self.apex = 0.0
         self.q_stress = 0.0
         self.vehicle_lost = True  # 失敗したとき機体を失うか(安全に降りた失敗なら False)
+        self.tumble_t = None  # 2段目が揺れ始めてからの時間(wp3_alt のミッション)
+        self.sep_t = None  # 分離した時刻
+        self.wp2_values = None  # WP2(分離)のときの値
+        self.tumble_warned = False
+        self.end_note = ""  # 成功のあとに起きたこと(結果の画面に出す)
+        self.lost_after_success = False  # 成功は決まったが、そのあと機体を失った
         self.saved = False  # 機体は失ったが、カプセルは救えた(Ch2-5)
         self.warp = 1  # 早送りの倍率
         self.steer_in = 0
@@ -607,8 +625,13 @@ class MissionRun:
                 and self.m.kind != "recover" and self.phase == "s1":
             self.emit("warn", "先に Z で1段目を分離して")
             return
+        first = not v.launched
         if v.ignite():
             self.emit("good", "点火!")
+            if first and v.t > 0:  # 時刻はカウントダウン 0 から。点火までの待ちのぶん、故障の時刻を後ろへずらす
+                if self.fire_at is not None:
+                    self.fire_at += v.t
+                self.gimmick_at += v.t
         elif v.ignitions_left <= 0:
             self.emit("warn", "もう点火できない")
 
@@ -674,7 +697,7 @@ class MissionRun:
         self.dropped.append(dict(x=v.x + math.sin(v.theta) * v.length, y=v.y + math.cos(v.theta) * v.length,
                                  vx=v.vx + math.sin(v.theta) * 2, vy=v.vy + math.cos(v.theta) * 2,
                                  theta=v.theta, omega=0.0, params=None, upper=[], lower=False,
-                                 cargo=self.m.rocket.cargo))
+                                 cargo=self.m.rocket.cargo, t=v.t))
         self.emit("good", "放出成功! 軌道投入を確認")
 
     def _chute(self):
@@ -730,6 +753,8 @@ class MissionRun:
             self.stress = max(0.0, self.stress - rt)
 
         if m.tilt_limit and v.lifted_off and abs(v.theta) > math.radians(m.tilt_limit):
+            if self.tumble_t is not None:
+                return self._s2_lost()
             return self.fail("姿勢を失ったため飛行中断(自爆)")
         if v.t > m.time_limit:
             return self.fail("時間切れ")
@@ -816,10 +841,25 @@ class MissionRun:
         if not (sep and sep.auto and self.stage_no == 1 and v.upper and v.launched and not v.engine_on):
             return
         if v.throttle <= sep.tail:
+            if self.m.sep_windows:
+                self._judge_wp2()
             self.dropped.append(v.separate())
             self.stage_no = 2
             self.phase = "s2"
+            self.sep_t = v.t
             self.emit("good", "1段分離(自動)。SPACE で2段目に点火")
+
+    def _judge_wp2(self):
+        """WP2(分離)の判定。評価(ランク)には入れず、メッセージで知らせる。"""
+        v = self.v
+        if self.wp_values is None:
+            self.emit("info", "WP2: WP1 より前に分離した")
+            return
+        now = self._wp_now()
+        self.wp2_values = {k: now[k] for k in self.m.sep_windows}
+        ok = all(w.ok(now[k]) for k, w in self.m.sep_windows.items())
+        self.emit("good" if ok else "info", trf("WP2 分離: 高度 {alt:.0f} km 傾き {ang:+.1f}° 角速度 {rate:+.2f}°/s",
+                                                alt=v.y / 1000, ang=now["ang"], rate=now["rate"]))
 
     def _step_ascent(self, dt):
         v, wp = self.v, self.m.waypoint
@@ -831,11 +871,59 @@ class MissionRun:
                 return self.fail("燃料切れ")
         if v.launched and v.vy < -50 and v.y < wp.altitude:
             return self.fail("高度が足りず落下")
+        if self.wp_values is not None and self.m.wp3_alt:
+            return self._tumble(dt)
         if v.y >= wp.altitude and self.wp_values is None:
             self.wp_values = self._wp_now()
-            self.result = "success"
             self.emit("good", trf("{name} 通過! 高度 {alt:.0f} km を突破", name=wp.name, alt=wp.altitude / 1000))
+            if self.m.wp3_alt:  # 成功は決まり。飛行は続けて、分離(WP2)と WP3 を目指す
+                if self.stage_no == 1:
+                    self.emit("info", "次は WP2: 姿勢を整えて SPACE でエンジン停止。推力が消えたら自動で分離")
+            else:
+                self.result = "success"
         return False
+
+    TUMBLE_RAMP = 4.0  # 推進剤の偏りが最大になるまで [s](画面の時間)
+    TUMBLE_TIME = 15.0  # 念のための上限。ふつうはその前に迎角が大きくなって爆発する [s]
+    TUMBLE_AOA = math.radians(20.0)  # 迎角がこれを超えると爆発する
+
+    def _tumble(self, dt):
+        """WP1 通過後の2段目: WP3 を目指して点火すると、推進剤が偏って姿勢を崩し、爆発する(必ず)。
+        点火しないまま 15 秒たったときも、同じように揺れ始める。
+        推進剤が偏ると姿勢の操作がだんだん効きすぎる(ピーキー)ようになり、当てすぎて迎角が大きくなると爆発する。"""
+        v = self.v
+        if self.stage_no != 2:
+            return False
+        rt = dt / self.time_scale
+        if self.tumble_t is None:
+            if not v.engine_on and v.t - self.sep_t < 15.0:
+                return False
+            self.tumble_t = 0.0
+            self.slosh_phase = 0.0
+            self.tumble_dir = v.rng.choice((-1.0, 1.0))  # 偏りで回される向き
+            self.emit("warn", "2段目の推進剤が偏っている! 姿勢の効きが不安定")
+        self.tumble_t += rt
+        k = min(1.0, self.tumble_t / self.TUMBLE_RAMP)
+        v.steer_gain = 1.0 + 9.0 * k  # 操作が効きすぎる(最後は 10 倍)
+        self.slosh_phase += math.tau / (2.6 - 1.0 * k) * rt  # 偏った推進剤が揺れて、機体を振る
+        # 偏りで重心がずれ、推力が機体を一方へ回そうとする。この力は時間とともに強まり、
+        # 効きすぎる操作でも 8 秒ほどで支えきれなくなる。そこに揺れが重なる
+        v.torque_bias = self.tumble_dir * math.radians(2.2 * self.tumble_t) +             math.radians(2.0 + 6.0 * k) * math.sin(self.slosh_phase)
+        aoa = abs(v.aoa)
+        if aoa > self.TUMBLE_AOA * 0.5 and not self.tumble_warned:
+            self.tumble_warned = True
+            self.emit("bad", "迎角が大きい! 姿勢を保てない!")
+        # WP3 には届かせない(届きそうなら、そこで爆発させる)
+        if (aoa > self.TUMBLE_AOA and self.tumble_t > 3.0) or self.tumble_t >= self.TUMBLE_TIME                 or v.y > self.m.wp3_alt - 20_000:
+            return self._s2_lost()
+        return False
+
+    def _s2_lost(self):
+        self.result = "success"
+        self.lost_after_success = True
+        self.end_note = "推進剤の偏りで迎角が大きくなりすぎ、2段目が爆発"
+        self.emit("bad", self.end_note)
+        return True
 
     def _wp_now(self):
         v = self.v
@@ -1109,6 +1197,23 @@ class MissionRun:
                 return "Z: パラシュート"
         return ""
 
+    def _guide_wp3(self):
+        """WP1(成功)→ WP2(分離)→ WP3 と飛ぶ打ち上げ(Ch1-1)の案内。"""
+        v, m = self.v, self.m
+        if self.tumble_t is not None:
+            return 4, 4, "推進剤が偏って姿勢の効きがピーキー! ←→ は小さく当てろ"
+        if self.stage_no == 1:
+            if self.wp_values is None:
+                return 1, 4, trf("まっすぐ上へ。WP1(高度 {alt:.0f} km)を通過すれば成功", alt=m.waypoint.altitude / 1000)
+            if v.engine_on:
+                w = m.sep_windows
+                return 2, 4, trf("WP2: 傾き ±{a:.0f}°・角速度 ±{r:.1f}°/s に整えて、SPACE でエンジン停止",
+                                 a=w["ang"].hi, r=w["rate"].hi)
+            return 2, 4, "推力が消えたら自動で分離する"
+        if not v.engine_on and v.ignitions_left == v.p.ignitions:
+            return 3, 4, "SPACE で2段目に点火"
+        return 4, 4, trf("WP3: 高度 {alt:.0f} km へ", alt=m.wp3_alt / 1000)
+
     def guide(self):
         """いまやることの案内: (何番目, 全部でいくつ, 文)。案内がないステージでは None。"""
         v, m = self.v, self.m
@@ -1117,6 +1222,8 @@ class MissionRun:
         if m.kind == "ascent":
             if not m.sep:
                 return None
+            if m.wp3_alt:
+                return self._guide_wp3()
             if self.stage_no == 1:
                 return 1, 3, "まっすぐ上へ。1段目は燃え尽きると自動で分離する"
             if not v.engine_on and v.ignitions_left == v.p.ignitions:
@@ -1195,6 +1302,10 @@ class MissionRun:
         m = self.m
         if m.kind == "ascent" and self.wp_values is None:
             return {k: (w.lo, w.hi) for k, w in m.waypoint.windows.items()}
+        if m.kind == "ascent" and m.sep_windows and self.stage_no == 1:  # WP2(分離)の窓
+            return {k: (w.lo, w.hi) for k, w in m.sep_windows.items()}
+        if m.kind == "ascent" and m.wp3_alt:  # WP3: 2段目で目指す高さ
+            return {"alt": (m.wp3_alt, math.inf)}
         nxt = next((g for g in m.guide if g.t not in self.guide_values), None)
         if nxt is None or self.released is not None:
             return {}
@@ -1205,6 +1316,8 @@ class MissionRun:
         v, m = self.v, self.m
         if m.kind == "ascent":
             wp = m.waypoint
+            if self.wp_values is not None and m.wp3_alt:
+                return []  # WP1 を通過したあとは、次の WP の値(hud_targets)を出す
             status = self.window_status() if self.wp_values is None else \
                 {k: (self.wp_values[k], w.ok(self.wp_values[k])) for k, w in wp.windows.items()}
             return [(w.label, f"{w.lo:+.0f}~{w.hi:+.0f}", f"{status[k][0]:+.0f}", status[k][1])

@@ -280,6 +280,8 @@ class ResultScene:
         ui.text_center(cx, oy + ys["status"], "ミッション成功" if ok else "ミッション失敗", ui.LIME if ok else ui.RED)
         if not ok:
             ui.text_center(cx, oy + ys["reason"], run.fail_reason, ui.WHITE, size=fs)
+        elif getattr(run, "end_note", ""):
+            ui.text_center(cx, oy + ys["reason"], ui.tr(run.end_note), ui.ORANGE, size=fs)
         y = oy + ys["wp"]
         ui.text(ox + cols["head"], y, run.report_head(), ui.YELLOW, size=fs)
         y = oy + ys["rows"]

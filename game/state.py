@@ -96,8 +96,11 @@ class GameState:
         delivered = ok or getattr(run, "phase", "") == "descent"
         funds = (m.income if delivered else 0.0) + (m.reward if first else 0.0)
         # 燃料ボーナス: 成功したとき、最後の段に残った推進剤の割合に応じて(全部残れば FUEL_BONUS)
+        # 成功のあとで機体が爆発したとき(Ch1-1 の2段目)は、残った推進剤も失われているのでなし
         v = getattr(run, "v", None)
-        fuel_bonus = round(FUEL_BONUS * v.prop / v.p.prop_mass, 1) if ok and v is not None and v.p.prop_mass else 0.0
+        lost = getattr(run, "lost_after_success", False)
+        fuel_bonus = round(FUEL_BONUS * v.prop / v.p.prop_mass, 1) \
+            if ok and not lost and v is not None and v.p.prop_mass else 0.0
         funds += fuel_bonus
         self.funds += funds
         if ok:

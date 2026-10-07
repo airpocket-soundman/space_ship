@@ -5,6 +5,7 @@
   - 消えた炎の粒は煙になって残る
   - 炎が地面に当たると、煙になって横へ広がり、地面で跳ねる
   - スラスターは、機体の横から出る寿命の短い粒
+  - 打ち上げで地面に当たった噴射は、たくさんの煙の粒になって左右へ広がり、巻き上がる(機体より手前に描き、機体を隠す)
 重くならないように、粒の総数に上限を設け、古い煙から捨てる。座標はワールド座標 [m]。
 """
 
@@ -26,6 +27,7 @@ FLAME_HOT = (ui.WHITE, ui.PINK, ui.ORANGE)  # 再突入の加熱
 MAX_FLAME = 260
 MAX_SMOKE = 420
 MAX_SPARK = 420
+MAX_BILLOW = 900
 
 
 class Particles:
@@ -33,15 +35,17 @@ class Particles:
         self.flames = []
         self.smokes = []  # 色の種類: 0 = 白い煙 / 1 = 黒い煙
         self.sparks = []  # 色の種類 = 色番号(爆発の火花・水しぶき・破片)
+        self.billows = []  # 巻き上がる煙の粒 [x, y, vx, vy, 残り寿命, 元の寿命, 最初の半径, 最後の半径]
         self.ground = None  # x [m] → 地表(甲板)の高さ [m]。None なら高さ 0
 
     def clear(self):
         self.flames.clear()
         self.smokes.clear()
         self.sparks.clear()
+        self.billows.clear()
 
     def count(self):
-        return len(self.flames) + len(self.smokes) + len(self.sparks)
+        return len(self.flames) + len(self.smokes) + len(self.sparks) + len(self.billows)
 
     # ---- 出す ----
     def flame(self, x, y, vx, vy, angle, n, speed, spread, width, life, palette=0, smoke=0.0):
@@ -72,6 +76,12 @@ class Particles:
             sp = random.uniform(0.2, 1.0) * speed
             lf = life * random.uniform(0.6, 1.3)
             add([x, y, vx + math.cos(a) * sp, vy + math.sin(a) * sp, lf, lf, dark])
+
+    def billow(self, x, y, vx, vy, life, r0, r1):
+        """巻き上がる煙の粒を 1 つ出す。半径 [m] は r0 から r1 へ、だんだん膨らむ。"""
+        self.billows.append([x, y, vx, vy, life, life, r0, r1])
+        if len(self.billows) > MAX_BILLOW:
+            del self.billows[:len(self.billows) - MAX_BILLOW]
 
     def jet(self, x, y, vx, vy, angle, n=3, speed=30.0):
         """スラスター(RCS)の噴射。寿命の短い白い粒。"""
@@ -110,7 +120,7 @@ class Particles:
 
     def shift(self, dx, dy):
         """すべての粒を同じだけ動かす。"""
-        for group in (self.flames, self.smokes, self.sparks):
+        for group in (self.flames, self.smokes, self.sparks, self.billows):
             for p in group:
                 p[0] += dx
                 p[1] += dy
@@ -195,7 +205,52 @@ class Particles:
             del keep[:len(keep) - MAX_SPARK]
         self.sparks = keep
 
+        # 巻き上がる煙の粒: 横へ広がりながら減速する。上へ吹き上がった粒も、機体の高さあたりで止まる
+        keep = []
+        add = keep.append
+        for p in self.billows:
+            p[4] -= 1
+            if p[4] <= 0:
+                continue
+            p[2] *= 0.982
+            p[3] = p[3] * 0.955 + 0.15 * DT
+            x = p[0] + p[2] * DT
+            y = p[1] + p[3] * DT
+            if abs(x - cam_x) > reach or abs(y - cam_y) > reach:
+                continue
+            gy = ground(x) if ground else 0.0
+            if y < gy:
+                y = gy
+                p[3] = abs(p[3]) * 0.3
+            p[0], p[1] = x, y
+            add(p)
+        self.billows = keep
+
     # ---- 描く ----
+    def draw_billows(self, ax, ay, cam_x, cam_y, ppm, w, h):
+        """巻き上がる煙の粒。機体を描いたあとに呼び、機体を隠す。古いものから描いて、新しいものを手前に。"""
+        circ = pyxel.circ
+        ox = ax - cam_x * ppm
+        oy = ay + cam_y * ppm
+        thin = []
+        for p in self.billows:
+            f = p[4] / p[5]  # 1 → 0
+            r = (p[6] + (p[7] - p[6]) * (1.0 - f) ** 0.5) * ppm
+            x = ox + p[0] * ppm
+            y = oy - p[1] * ppm
+            if x < -r or x > w + r or y < -r or y > h + r or r < 1:
+                continue
+            if f < 0.25:  # 消えかけは薄く
+                thin.append((x, y, r))
+                continue
+            circ(x, y, r, ui.GRAY)  # 影
+            circ(x - r * 0.18, y - r * 0.22, r * 0.78, ui.WHITE)  # 日の当たる側
+        if thin:
+            pyxel.dither(0.45)
+            for x, y, r in thin:
+                circ(x, y, r, ui.GRAY)
+            pyxel.dither(1.0)
+
     def draw(self, ax, ay, cam_x, cam_y, ppm, w, h):
         """(ax, ay) はカメラ位置が映る画面上の点、ppm は 1 m あたりのピクセル数。"""
         pset, rect, circ = pyxel.pset, pyxel.rect, pyxel.circ
