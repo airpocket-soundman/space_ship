@@ -99,6 +99,10 @@ header.hero .play-grid .lang { font-size: 13px; color: #c9ccd4; padding-right: 4
 header.hero .play-grid a { display: block; text-align: center; padding: 7px 4px; border-radius: 6px; background: #ff7a3d; color: #0b0d14; font-weight: 700; font-size: 13px; text-decoration: none; font-family: "JetBrains Mono", ui-monospace, monospace; }
 header.hero .play-grid a:hover { background: #ffa06f; }
 @media (max-width: 480px) { header.hero .play-grid a { font-size: 11px; padding: 7px 2px; } }
+header.hero .play-board { margin-top: 12px; padding-top: 10px; border-top: 1px solid #2c3242; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+header.hero .play-board a { color: #ff7a3d; font-weight: 700; font-size: 13px; text-decoration: none; }
+header.hero .play-board a:hover { text-decoration: underline; }
+header.hero .play-board span { font-size: 12px; color: #8d93a0; min-width: 0; }
 
 /* layout */
 .layout { max-width: 1080px; margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; }
@@ -241,6 +245,7 @@ footer { border-top: 1px solid var(--border); padding: 24px 16px; text-align: ce
       <a href="https://kitao.github.io/pyxel/wasm/launcher/?play=airpocket-soundman/space_ship/main/web/starx&amp;packages=numpy&amp;gamepad=enabled&amp;screen=360x360&amp;lang=en" target="_blank" rel="noopener">360×360</a>
       <a href="https://kitao.github.io/pyxel/wasm/launcher/?play=airpocket-soundman/space_ship/main/web/starx&amp;packages=numpy&amp;gamepad=enabled&amp;screen=320x240&amp;lang=en" target="_blank" rel="noopener">320×240</a>
     </div>
+    <div class="play-board"><a href="https://claude.ai/artifact/P4HMJnSX8NaVC9bJBkFWPf" target="_blank" rel="noopener">進捗ボード →</a><span>いま作っているもの・確かめているもの・公開中の版(claude.ai。共有された人だけが開けます)</span></div>
     </div>
   </div>
 </header>
